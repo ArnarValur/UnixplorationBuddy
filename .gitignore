@@ -1,12 +1,5 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-*.egg-info/
-dist/
-build/
-*.egg
+# Rust
+/target/
 
 # IDE
 .idea/
@@ -18,7 +11,3 @@ build/
 # OS
 .DS_Store
 Thumbs.db
-
-# EDMC plugin runtime
-*.db
-*.log
