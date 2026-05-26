@@ -8,13 +8,15 @@ All tracks organized by domain. Each track links to its dedicated folder.
 
 | Domain | Path | Caution Level |
 |--------|------|---------------|
-| _Define domains when creating tracks_ | | |
+| core | `conductor/tracks/core/` | 🟡 Careful |
 
 ---
 
 ## Active Tracks
 
-_No tracks yet._
+- [ ] **Phase 1 — Bodies + History**
+  - *Type:* feature | *Domain:* core | *Status:* new
+  - *Link:* [tracks/core/phase1_bodies_history_20260527/](./tracks/core/phase1_bodies_history_20260527/)
 
 ## Completed Tracks
 

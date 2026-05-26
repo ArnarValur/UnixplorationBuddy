@@ -1,0 +1,9 @@
+{
+  "track_id": "phase1_bodies_history_20260527",
+  "type": "feature",
+  "status": "new",
+  "domain": "core",
+  "created_at": "2026-05-27T00:31:00+02:00",
+  "updated_at": "2026-05-27T00:31:00+02:00",
+  "description": "Phase 1 — Bodies view, History view, system header, value calculation, journal integration, and trip persistence"
+}

@@ -1,0 +1,150 @@
+# Implementation Plan: Phase 1 — Bodies + History
+
+> **Track:** `phase1_bodies_history_20260527`
+> **Workflow:** Light (plan → execute → verify)
+> **Key dependency:** `ed-journals = "0.12.4"` (beta — pin version)
+
+---
+
+## Phase 1: Project Bootstrap
+
+- [ ] Task: Initialize Rust project
+    - [ ] `cargo init` in repo root
+    - [ ] Add dependencies to `Cargo.toml`: `ratatui`, `crossterm`, `ed-journals`, `serde`, `serde_json`, `chrono`, `dirs`
+    - [ ] Verify `cargo check` passes
+    - [ ] Update `.gitignore` for Rust (`/target/`, etc.)
+
+- [ ] Task: Define core data model
+    - [ ] `System` struct: name, system_address, body count (discovered/total), total value
+    - [ ] `Body` struct: body_id, name, body_type, atmosphere, distance_ls, scan_state, mass, terraformability, bio_signals, geo_signals, calculated_value, was_discovered, was_mapped
+    - [ ] `ScanState` enum: Unseen, Honked, FSSScanned, DSSMapped
+    - [ ] `BodyHierarchy` tree structure: parent→child relationships derived from naming convention
+    - [ ] `Trip` struct: systems_visited, bodies_scanned_fss, bodies_mapped_dss, first_discoveries, first_mappings, bio_detected, bio_analysed, total_value
+
+- [ ] Task: Set up application skeleton
+    - [ ] Main loop: terminal init → event loop → cleanup
+    - [ ] `App` struct holding System, Bodies, Trip, active tab
+    - [ ] Basic Ratatui setup with crossterm backend
+    - [ ] Graceful exit on `q` / `Ctrl+C`
+
+---
+
+## Phase 2: Journal Ingestion
+
+- [ ] Task: Journal directory discovery
+    - [ ] CLI argument `--journal-path <dir>` for explicit path
+    - [ ] Default path: Steam Proton journal directory
+    - [ ] Validate directory exists and contains journal files
+    - [ ] Clear error message if path not found
+
+- [ ] Task: Full session replay
+    - [ ] Use `ed-journals` `JournalReader` to parse journal log files
+    - [ ] Identify current game session boundary (`Fileheader` / `LoadGame` events)
+    - [ ] Parse all journal files belonging to current session in chronological order
+    - [ ] Process relevant events: `FSDJump`, `Location`, `Scan`, `FSSDiscoveryScan`, `FSSBodySignals`, `SAAScanComplete`, `SAASignalsFound`
+    - [ ] Evaluate `ed-journals` `state` module for session replay — use if it covers our needs, build own state layer on top if not
+    - [ ] Populate System and Body state from replayed events
+
+- [ ] Task: Live journal watcher
+    - [ ] Use `ed-journals` `LiveJournalDirReader` for real-time event delivery
+    - [ ] Handle journal file rotation (new file on game restart)
+    - [ ] Feed new events into the same processing pipeline as replay
+    - [ ] Trigger TUI re-render on state change
+
+---
+
+## Phase 3: Body Hierarchy & Value Calculation
+
+- [ ] Task: Naming convention parser for Body Hierarchy
+    - [ ] Parse Elite's body naming scheme to extract hierarchy
+    - [ ] Handle star designations (A, B, C, ABC)
+    - [ ] Handle planet numbering (1, 2, 3...)
+    - [ ] Handle moon lettering (a, b, c...)
+    - [ ] Handle belt clusters as root-level entries
+    - [ ] Fallback to flat list for unparseable names
+    - [ ] Test with known systems: Sol, Colonia, procedural names
+
+- [ ] Task: Validate `ed-journals` exploration value calculation (ADR-0003)
+    - [ ] Use the crate's `exploration` module for Body Value estimation
+    - [ ] Validate outputs against Pioneer's known correct values for 5+ body types
+    - [ ] Verify first discovery bonus modifier
+    - [ ] Verify first mapping bonus modifier (with efficiency bonus)
+    - [ ] If values diverge from Pioneer: implement own formulas as override
+    - [ ] Total system value aggregation from individual Body Values
+
+---
+
+## Phase 4: TUI Rendering
+
+- [ ] Task: System Header widget
+    - [ ] Slim single-line top bar
+    - [ ] Display: system name, "N of M bodies", total system value
+    - [ ] Elite orange-on-black styling
+    - [ ] Updates on FSDJump and body scan events
+
+- [ ] Task: Bodies View tab
+    - [ ] Hierarchical table with indentation for parent→child Bodies
+    - [ ] Columns: Name, Type, Atmosphere, Distance (Ls), Scan State icons, Value (cr), Bio count, Geo count
+    - [ ] Scan State rendered as icons/symbols (e.g., ○ unseen, ◐ honked, ● FSS, ★ DSS)
+    - [ ] Scrollable table for large systems
+    - [ ] Highlight selected row (keyboard navigation: ↑/↓)
+    - [ ] Elite orange-on-black color scheme with Ratatui styles
+    - [ ] "No bodies discovered" placeholder for empty systems
+
+- [ ] Task: History View tab
+    - [ ] Trip statistics display: systems, bodies FSS'd, bodies DSS'd, first discoveries, first mappings, bio counts, total value
+    - [ ] Clean layout with labeled stat rows
+    - [ ] Same color scheme as Bodies View
+
+- [ ] Task: Tab navigation
+    - [ ] Tab key or 1/2 to switch between Bodies and History
+    - [ ] Visual tab indicator (header bar or highlighted tab name)
+    - [ ] System Header persists across both tabs
+
+---
+
+## Phase 5: Trip Persistence
+
+- [ ] Task: Trip file I/O
+    - [ ] Serialize Trip to JSON at `~/.local/share/unixploration-buddy/trip.json`
+    - [ ] Create directory if it doesn't exist (XDG compliant via `dirs` crate)
+    - [ ] Load Trip on startup (if file exists)
+    - [ ] Save Trip on each state change (debounced — at most once per second)
+    - [ ] Handle malformed trip file gracefully (fresh trip + warning)
+
+- [ ] Task: Manual trip reset
+    - [ ] Keybinding (e.g., `r` with confirmation prompt) to reset Trip stats
+    - [ ] Clear all counters, save empty trip to disk
+    - [ ] Display confirmation in status bar
+
+- [ ] Task: Trip accumulation from journal events
+    - [ ] Increment systems_visited on `FSDJump`
+    - [ ] Increment bodies_scanned on `Scan` (FSS) / `SAAScanComplete` (DSS)
+    - [ ] Track first discoveries via `Scan` event `was_discovered` field
+    - [ ] Track first mappings via `SAAScanComplete` `was_mapped` field
+    - [ ] Track bio signals from `FSSBodySignals` / `SAASignalsFound`
+    - [ ] Accumulate total value from Body Value calculations
+
+---
+
+## Phase 6: Integration & Polish
+
+- [ ] Task: End-to-end integration testing
+    - [ ] Test with real journal files from player's journal directory
+    - [ ] Verify body hierarchy for 3+ known systems
+    - [ ] Verify value calculations match Pioneer for 3+ known systems
+    - [ ] Test tab switching, scrolling, keyboard navigation
+    - [ ] Test startup with no journal files (error handling)
+    - [ ] Test startup with corrupted trip file
+
+- [ ] Task: Terminal compatibility verification
+    - [ ] Test in kitty
+    - [ ] Test in alacritty
+    - [ ] Test in gnome-terminal
+    - [ ] Fix any rendering issues (color fallback, unicode support)
+
+- [ ] Task: Polish & UX
+    - [ ] Loading indicator during session replay
+    - [ ] Status bar with current activity (watching journal, last event time)
+    - [ ] Keybinding help (press `?` for help overlay or footer hint)
+    - [ ] README.md with installation and usage instructions
