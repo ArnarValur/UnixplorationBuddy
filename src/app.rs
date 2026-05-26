@@ -33,6 +33,8 @@ pub struct App {
     pub selected_body_index: usize,
     /// Cached display order: `(body_id, depth)` pairs derived from the body hierarchy.
     pub body_display_order: Vec<(u32, u32)>,
+    /// Status message displayed in the footer bar.
+    pub status_message: Option<String>,
 }
 
 impl App {
@@ -46,6 +48,7 @@ impl App {
             should_quit: false,
             selected_body_index: 0,
             body_display_order: Vec::new(),
+            status_message: None,
         }
     }
 
