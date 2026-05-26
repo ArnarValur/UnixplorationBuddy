@@ -31,25 +31,24 @@
 
 ## Phase 2: Journal Ingestion
 
-- [ ] Task: Journal directory discovery
-    - [ ] CLI argument `--journal-path <dir>` for explicit path
-    - [ ] Default path: Steam Proton journal directory
-    - [ ] Validate directory exists and contains journal files
-    - [ ] Clear error message if path not found
+- [x] Task: Journal directory discovery `40dd102`
+    - [x] CLI argument `--journal-path <dir>` for explicit path
+    - [x] Default path: Steam Proton journal directory
+    - [x] Validate directory exists and contains journal files
+    - [x] Clear error message if path not found
 
-- [ ] Task: Full session replay
-    - [ ] Use `ed-journals` `JournalReader` to parse journal log files
-    - [ ] Identify current game session boundary (`Fileheader` / `LoadGame` events)
-    - [ ] Parse all journal files belonging to current session in chronological order
-    - [ ] Process relevant events: `FSDJump`, `Location`, `Scan`, `FSSDiscoveryScan`, `FSSBodySignals`, `SAAScanComplete`, `SAASignalsFound`
-    - [ ] Evaluate `ed-journals` `state` module for session replay — use if it covers our needs, build own state layer on top if not
-    - [ ] Populate System and Body state from replayed events
+- [x] Task: Full session replay `40dd102`
+    - [x] Use `ed-journals` `LogDir` + `LogFile` + blocking reader to parse journal log files
+    - [x] Parse all journal files in chronological order (oldest first)
+    - [x] Process relevant events: `FSDJump`, `Location`, `Scan`, `FSSDiscoveryScan`, `FSSBodySignals`, `SAAScanComplete`, `SAASignalsFound`
+    - [x] Built own state layer on top of raw events (ed-journals state module not used — too opaque for our needs)
+    - [x] Populate System and Body state from replayed events
 
-- [ ] Task: Live journal watcher
-    - [ ] Use `ed-journals` `LiveJournalDirReader` for real-time event delivery
-    - [ ] Handle journal file rotation (new file on game restart)
-    - [ ] Feed new events into the same processing pipeline as replay
-    - [ ] Trigger TUI re-render on state change
+- [x] Task: Live journal watcher `40dd102`
+    - [x] Use `ed-journals` `LiveLogDirReader` for real-time event delivery
+    - [x] Handle journal file rotation (LiveLogDirReader handles this internally)
+    - [x] Feed new events into same `process_event` pipeline as replay
+    - [x] Trigger TUI re-render on state change (mpsc channel + 250ms poll)
 
 ---
 
