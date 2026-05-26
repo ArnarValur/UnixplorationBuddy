@@ -2,6 +2,8 @@
 
 ## Context
 - [Project Context](./project-context.md)
+- [Domain Glossary](./context.md)
+- [Product Requirements](./prd.md)
 - [Workflow](./workflow.md)
 - [Code Style Guides](./code_styleguides/)
 

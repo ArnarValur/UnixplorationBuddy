@@ -14,15 +14,15 @@
 ## 1. Product Definition
 
 - **Name:** UnixplorationBuddy
-- **Tagline:** A premium exploration companion for Linux commanders, built as an EDMC plugin.
-- **Description:** Reverse-engineers the Windows-only "Elite Dangerous Exploration Buddy" (by Panostrede) as an open-source EDMC plugin for Linux. Replaces the plain-text, vertically-scrolling body list from Pioneer with a rich-formatted, hierarchical body display featuring tabular layout, color-coded scan values, parent→moon grouping, and premium aesthetics. Forked from Silarn/EDMC-Pioneer, which provides the data layer (body scanning, value calculation, EDSM integration, ExploData database). UnixplorationBuddy focuses exclusively on the **display layer** — making that data beautiful and usable.
-- **Target Audience:** Linux Elite Dangerous pilots who use EDMC (via Flatpak or native install) and lack a proper exploration companion equivalent to the Windows Exploration Buddy.
+- **Tagline:** A standalone TUI exploration companion for Linux commanders.
+- **Description:** A Rust-based terminal user interface (TUI) application for Elite Dangerous explorers on Linux. Monitors the player journal in real-time and displays system body hierarchy, scan states, calculated exploration values, bio/geo signals, and trip statistics on a second monitor while playing. Built with Ratatui for rich terminal rendering — tables, color-coded values, expandable rows, and the signature Elite orange-on-black aesthetic.
+- **Target Audience:** Linux Elite Dangerous pilots who want a dedicated exploration companion without depending on EDMC or Windows-only tools.
 - **Key Differentiators:**
-  - Only dedicated exploration companion plugin for Linux
-  - Native EDMC plugin — no Wine, no workarounds
-  - Open-source (community-driven, unlike the Windows original)
-  - Rich Tkinter UI using `tk.Text` tags for per-element styling
-  - Reuses Pioneer's battle-tested data layer instead of reinventing it
+  - Standalone terminal app — no EDMC, no Wine, no GUI framework
+  - Single static binary — zero runtime dependencies
+  - Rust performance — instant journal parsing, sub-millisecond rendering
+  - Second-monitor optimized — auto-updates, high contrast, readable at a glance
+  - Open-source (community-driven, unlike the Windows Exploration Buddy)
 
 ---
 
@@ -32,19 +32,23 @@
 - **UX Principles:**
   - **Information density** — tabular layout like Windows Exploration Buddy; no wasted vertical space
   - **Hierarchy clarity** — parent→moon grouping visible at a glance via indentation and naming convention parsing
-  - **EDMC theme integration** — respects EDMC's orange-on-black theme engine; extends it with richer formatting (bold, color-coded values, strikethrough for lost data)
-  - **Compact by default** — moons inline/nested under parents, not each on 4-5 lines
-- **Accessibility:** Keyboard navigable within EDMC's Tkinter context. Respect system font scaling. High-contrast orange-on-black inherited from EDMC theme.
+  - **Glanceable** — second-monitor use means high contrast, clear status at a distance
+  - **Interactive on demand** — expandable bio species rows when you focus the terminal
+  - **Compact by default** — moons nested under parents, bio details collapsed until expanded
+- **Accessibility:** Full keyboard navigation. Terminal-native — respects user font/terminal settings. High-contrast orange-on-black as default theme.
 
 ---
 
 ## 3. Tech Stack
 
-- **Languages:** Python 3.x
-- **Frameworks:** Tkinter (via EDMC's bundled tk), EDMC Plugin API
-- **Databases:** SQLAlchemy (via ExploData dependency — provides the body/system/value database)
-- **Deployment Targets:** EDMC plugin directory (local install). Must be Flatpak-compatible (`io.edcd.EDMarketConnector`).
-- **Hosting:** GitHub (open-source distribution). Users clone/download into their EDMC plugins folder.
+- **Language:** Rust (latest stable)
+- **TUI Framework:** Ratatui (v0.30+)
+- **Terminal Backend:** Crossterm (Ratatui default)
+- **Journal Parsing:** `ed_journals` crate (journal reading, file watching, game state tracking)
+- **Value Calculation:** Self-contained Rust port of community-derived formulas (see ADR-0003)
+- **Bio Data:** Canonn species data bundled as static dataset (stored in `conductor/canonn-data/`)
+- **Build:** Cargo (standard Rust toolchain)
+- **Distribution:** GitHub releases (prebuilt Linux binary) + `cargo install`
 
 ---
 
@@ -52,12 +56,13 @@
 
 | Domain                        | Level       | Notes                                                    |
 |-------------------------------|-------------|----------------------------------------------------------|
-| Display / UI layer            | 🟡 Careful  | Visual impact — test rendering in EDMC                   |
-| Pioneer data layer            | 🔴 Critical | Upstream code — changes here must be cherry-pickable     |
-| EDMC plugin API surface       | 🔴 Critical | Breaking the API contract = plugin won't load            |
-| ExploData / SQLAlchemy models | 🔴 Critical | Shared database — never alter schema without ExploData   |
-| Theme / color values          | 🟢 Normal   | Aesthetic only — low risk                                |
+| Journal parsing               | 🔴 Critical | Data correctness depends on parsing every event type     |
+| Value calculation formulas    | 🔴 Critical | Must match community-verified values — test thoroughly   |
+| TUI rendering / layout        | 🟡 Careful  | Visual impact — test in multiple terminal emulators      |
+| Bio species prediction        | 🟡 Careful  | Must match Canonn data accurately                        |
+| Canonn data processing        | 🟡 Careful  | Source of truth for bio predictions                      |
 | conductor/ files              | 🟡 Careful  | Source of truth — don't corrupt                          |
+| Terminal compatibility        | 🟢 Normal   | Ratatui handles most backends                            |
 
 ---
 
@@ -65,11 +70,11 @@
 
 | Area                    | Confidence | Notes                                                       |
 |-------------------------|------------|-------------------------------------------------------------|
-| Python / Tkinter        | High       | Standard library, well-documented                           |
-| EDMC Plugin API         | Medium     | Documented but not deeply explored yet; Pioneer is reference |
-| Elite Dangerous Journal | Medium     | JSON events from game client; Pioneer already parses these  |
-| ExploData / SQLAlchemy  | Medium     | Pioneer's dependency; we query but don't own the schema     |
-| Exploration Buddy (Win) | Low        | Reverse-engineering from UI screenshots and user reports    |
+| Rust / Ratatui          | Medium     | Well-documented ecosystem; community templates available     |
+| Elite Dangerous Journal | Medium     | JSON events from game client; `ed_journals` crate handles parsing |
+| Exploration value formulas | Medium  | Community-derived; Pioneer's `body_calc.py` is reference    |
+| Canonn bio data         | Medium     | Rich dataset gathered in `conductor/canonn-data/`           |
+| EDSM / Spansh APIs      | Low       | Phase 2 enrichment — investigate when needed                |
 
 ---
 
@@ -90,29 +95,28 @@
    - Verify actual state on disk before proposing changes
 
 4. **Debugging Protocol:**
-   - Test in a running EDMC instance — the plugin only works inside EDMC
-   - Check Pioneer's original behavior before assuming bugs are ours
+   - Test with real journal files from the player's journal directory
+   - Verify value calculations against known systems
+   - Test TUI in at least 2 terminal emulators (kitty, alacritty, gnome-terminal)
    - If a fix fails twice, stop and escalate
-   - Audit actual state vs documented state
 
 ---
 
 ## 7. Project-Specific Constraints
 
-- **EDMC Flatpak compatibility:** Plugin must work under `io.edcd.EDMarketConnector` Flatpak sandbox
-- **Pioneer compatibility:** Display layer changes must not break Pioneer's data flow (`journal_entry`, `dashboard_entry` hooks)
-- **No external dependencies beyond Pioneer's:** Can't add packages that EDMC's Python environment doesn't have
-- **Theme respect:** Must integrate with EDMC's theme engine (`theme.apply()`) — never hardcode colors that break in non-default themes
-- **Python version:** Must work with whatever Python version EDMC bundles (currently 3.11+)
+- **Journal file path:** `~/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/` (Steam Proton). Must support auto-detection or config.
+- **No GUI dependencies:** Pure terminal app — no X11, no Wayland, no Tkinter
+- **Offline-first:** Core functionality (journal parsing, value calculation) works without network. EDSM/Spansh are optional enrichment.
+- **Single binary:** `cargo build --release` produces one executable. No config files required for basic operation.
 
 ---
 
 ## 8. Environment Notes
 
 - **Dev machine:** Pop!_OS (PlutoII), user `solmundur`
-- **EDMC install:** Flatpak `io.edcd.EDMarketConnector`
+- **Game install:** Steam (Flatpak) with Proton
 - **Journal path:** `~/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/`
-- **Plugin dev path:** `~/.var/app/io.edcd.EDMarketConnector/data/EDMarketConnector/plugins/` (Flatpak) or equivalent
-- **Pioneer source (upstream):** `https://github.com/Silarn/EDMC-Pioneer`
-- **ExploData source (upstream):** `https://github.com/Silarn/EDMC-ExploData`
-- **Testing:** Load plugin in EDMC, enter a system with bodies, verify display renders correctly
+- **EDMC install:** Flatpak `io.edcd.EDMarketConnector` (still used for trade/EDSM uploads — UnixplorationBuddy is independent)
+- **Canonn data:** `conductor/canonn-data/` — Obsidian markdown clippings + JSON files
+- **Pioneer source (reference):** `https://github.com/Silarn/EDMC-Pioneer` — value calculation formulas
+- **CETI (reference):** `https://github.com/carsonbfl/CETI` — journal monitoring and API querying patterns

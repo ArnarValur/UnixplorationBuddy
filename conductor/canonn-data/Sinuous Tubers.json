@@ -1,0 +1,3287 @@
+{
+  "2100501": {
+    "atmosComposition": [], 
+    "atmosphereType": [
+      "Thin Argon-rich", 
+      "Thin Oxygen", 
+      "Thin Carbon dioxide", 
+      "No atmosphere", 
+      "Thin Sulphur dioxide", 
+      "Thin Carbon dioxide-rich"
+    ], 
+    "bodies": [
+      "High metal content world", 
+      "Rocky Ice world", 
+      "Rocky body"
+    ], 
+    "count": 1045, 
+    "fdevname": "$Codex_Ent_Tube_Name;", 
+    "histograms": {
+      "atmos_types": {
+        "No atmosphere": 942, 
+        "Thin Argon-rich": 3, 
+        "Thin Carbon dioxide": 50, 
+        "Thin Carbon dioxide-rich": 3, 
+        "Thin Oxygen": 1, 
+        "Thin Sulphur dioxide": 9
+      }, 
+      "body_types": {
+        "High metal content world": 678, 
+        "Rocky Ice world": 2, 
+        "Rocky body": 328
+      }, 
+      "distance": [
+        {
+          "max": 44168.40841533334, 
+          "min": 7.524373, 
+          "value": 887
+        }, 
+        {
+          "max": 88329.29245766668, 
+          "min": 44168.40841533334, 
+          "value": 36
+        }, 
+        {
+          "max": 132490.1765, 
+          "min": 88329.29245766667, 
+          "value": 21
+        }, 
+        {
+          "max": 176651.06054233335, 
+          "min": 132490.1765, 
+          "value": 14
+        }, 
+        {
+          "max": 220811.9445846667, 
+          "min": 176651.06054233335, 
+          "value": 13
+        }, 
+        {
+          "max": 264972.82862700004, 
+          "min": 220811.9445846667, 
+          "value": 9
+        }, 
+        {
+          "max": 309133.7126693334, 
+          "min": 264972.82862700004, 
+          "value": 5
+        }, 
+        {
+          "max": 353294.59671166673, 
+          "min": 309133.7126693334, 
+          "value": 10
+        }, 
+        {
+          "max": 397455.4807540001, 
+          "min": 353294.59671166673, 
+          "value": 4
+        }, 
+        {
+          "max": 441616.3647963334, 
+          "min": 397455.4807540001, 
+          "value": 5
+        }, 
+        {
+          "max": 485777.24883866677, 
+          "min": 441616.3647963334, 
+          "value": 1
+        }, 
+        {
+          "max": 529938.132881, 
+          "min": 485777.24883866677, 
+          "value": 3
+        }
+      ], 
+      "gravity": [
+        {
+          "max": 0.3290394446143907, 
+          "min": 0.0436952177016417, 
+          "value": 570
+        }, 
+        {
+          "max": 0.6143836715271398, 
+          "min": 0.3290394446143907, 
+          "value": 64
+        }, 
+        {
+          "max": 0.8997278984398889, 
+          "min": 0.6143836715271398, 
+          "value": 8
+        }, 
+        {
+          "max": 1.1850721253526377, 
+          "min": 0.8997278984398887, 
+          "value": 195
+        }, 
+        {
+          "max": 1.4704163522653868, 
+          "min": 1.1850721253526377, 
+          "value": 77
+        }, 
+        {
+          "max": 1.7557605791781359, 
+          "min": 1.4704163522653868, 
+          "value": 19
+        }, 
+        {
+          "max": 2.0411048060908845, 
+          "min": 1.7557605791781357, 
+          "value": 35
+        }, 
+        {
+          "max": 2.326449033003634, 
+          "min": 2.041104806090885, 
+          "value": 26
+        }, 
+        {
+          "max": 2.6117932599163827, 
+          "min": 2.326449033003634, 
+          "value": 5
+        }, 
+        {
+          "max": 2.8971374868291315, 
+          "min": 2.6117932599163827, 
+          "value": 5
+        }, 
+        {
+          "max": 3.182481713741881, 
+          "min": 2.897137486829132, 
+          "value": 2
+        }, 
+        {
+          "max": 3.4678259406546297, 
+          "min": 3.182481713741881, 
+          "value": 1
+        }
+      ], 
+      "local_stars": {
+        "A (Blue-White) Star": 92, 
+        "B (Blue-White) Star": 15, 
+        "F (White) Star": 210, 
+        "G (White-Yellow) Star": 114, 
+        "K (Yellow-Orange) Star": 145, 
+        "L (Brown dwarf) Star": 131, 
+        "M (Red dwarf) Star": 165, 
+        "M (Red giant) Star": 1, 
+        "MS-type Star": 1, 
+        "Neutron Star": 47, 
+        "S-type Star": 1, 
+        "T (Brown dwarf) Star": 48, 
+        "T Tauri Star": 4, 
+        "Y (Brown dwarf) Star": 30, 
+        "null": 4
+      }, 
+      "materials": {
+        "Antimony": 152, 
+        "Arsenic": 185, 
+        "Cadmium": 408, 
+        "Carbon": 1007, 
+        "Chromium": 626, 
+        "Germanium": 366, 
+        "Iron": 1007, 
+        "Manganese": 571, 
+        "Mercury": 278, 
+        "Molybdenum": 315, 
+        "Nickel": 1007, 
+        "Niobium": 392, 
+        "Phosphorus": 1007, 
+        "Polonium": 93, 
+        "Ruthenium": 245, 
+        "Selenium": 210, 
+        "Sulphur": 1007, 
+        "Technetium": 118, 
+        "Tellurium": 185, 
+        "Tin": 334, 
+        "Tungsten": 287, 
+        "Vanadium": 440, 
+        "Yttrium": 214, 
+        "Zinc": 420, 
+        "Zirconium": 203
+      }, 
+      "pressure": [
+        {
+          "max": 0.008021004406612383, 
+          "min": 0.0, 
+          "value": 993
+        }, 
+        {
+          "max": 0.016042008813224765, 
+          "min": 0.008021004406612383, 
+          "value": 3
+        }, 
+        {
+          "max": 0.02406301321983715, 
+          "min": 0.016042008813224765, 
+          "value": 3
+        }, 
+        {}, 
+        {
+          "max": 0.04010502203306191, 
+          "min": 0.03208401762644953, 
+          "value": 1
+        }, 
+        {}, 
+        {
+          "max": 0.05614703084628668, 
+          "min": 0.0481260264396743, 
+          "value": 1
+        }, 
+        {
+          "max": 0.06416803525289906, 
+          "min": 0.05614703084628668, 
+          "value": 1
+        }, 
+        {}, 
+        {}, 
+        {
+          "max": 0.0882310484727362, 
+          "min": 0.08021004406612382, 
+          "value": 1
+        }, 
+        {
+          "max": 0.09625205287934858, 
+          "min": 0.0882310484727362, 
+          "value": 3
+        }
+      ], 
+      "primary_stars": {
+        "A (Blue-White) Star": 110, 
+        "B (Blue-White) Star": 23, 
+        "Black Hole": 3, 
+        "CN Star": 1, 
+        "F (White) Star": 249, 
+        "G (White-Yellow) Star": 158, 
+        "K (Yellow-Orange) Star": 279, 
+        "L (Brown dwarf) Star": 8, 
+        "M (Red dwarf) Star": 112, 
+        "M (Red giant) Star": 2, 
+        "MS-type Star": 1, 
+        "Neutron Star": 81, 
+        "S-type Star": 1, 
+        "T Tauri Star": 4, 
+        "White Dwarf (DA) Star": 1, 
+        "White Dwarf (DAB) Star": 2, 
+        "White Dwarf (DBV) Star": 1, 
+        "White Dwarf (DC) Star": 4, 
+        "null": 5
+      }, 
+      "system_bodies": {
+        "A (Blue-White) Star": 117, 
+        "Ammonia world": 26, 
+        "B (Blue-White) Star": 23, 
+        "Black Hole": 3, 
+        "CN Star": 1, 
+        "Class I gas giant": 386, 
+        "Class II gas giant": 179, 
+        "Class III gas giant": 399, 
+        "Class IV gas giant": 125, 
+        "Class V gas giant": 1, 
+        "Earth-like world": 28, 
+        "F (White) Star": 269, 
+        "G (White-Yellow) Star": 181, 
+        "Gas giant with ammonia-based life": 87, 
+        "Gas giant with water-based life": 180, 
+        "Helium-rich gas giant": 2, 
+        "High metal content world": 951, 
+        "Icy body": 733, 
+        "K (Yellow-Orange) Star": 377, 
+        "L (Brown dwarf) Star": 243, 
+        "M (Red dwarf) Star": 448, 
+        "M (Red giant) Star": 5, 
+        "MS-type Star": 1, 
+        "Metal-rich body": 218, 
+        "Neutron Star": 81, 
+        "Rocky Ice world": 171, 
+        "Rocky body": 794, 
+        "S-type Star": 1, 
+        "T (Brown dwarf) Star": 127, 
+        "T Tauri Star": 9, 
+        "Water giant": 35, 
+        "Water world": 194, 
+        "White Dwarf (DA) Star": 1, 
+        "White Dwarf (DAB) Star": 2, 
+        "White Dwarf (DBV) Star": 1, 
+        "White Dwarf (DC) Star": 4, 
+        "Y (Brown dwarf) Star": 124, 
+        "null": 400
+      }, 
+      "temperature": [
+        {
+          "max": 224.99525708333334, 
+          "min": 200.0, 
+          "value": 128
+        }, 
+        {
+          "max": 249.99051416666669, 
+          "min": 224.99525708333334, 
+          "value": 134
+        }, 
+        {
+          "max": 274.98577124999997, 
+          "min": 249.99051416666666, 
+          "value": 38
+        }, 
+        {
+          "max": 299.9810283333333, 
+          "min": 274.98577124999997, 
+          "value": 59
+        }, 
+        {
+          "max": 324.97628541666666, 
+          "min": 299.9810283333333, 
+          "value": 54
+        }, 
+        {
+          "max": 349.9715425, 
+          "min": 324.97628541666666, 
+          "value": 54
+        }, 
+        {
+          "max": 374.96679958333334, 
+          "min": 349.9715425, 
+          "value": 44
+        }, 
+        {
+          "max": 399.9620566666667, 
+          "min": 374.96679958333334, 
+          "value": 43
+        }, 
+        {
+          "max": 424.95731374999997, 
+          "min": 399.9620566666666, 
+          "value": 42
+        }, 
+        {
+          "max": 449.95257083333337, 
+          "min": 424.95731375, 
+          "value": 99
+        }, 
+        {
+          "max": 474.94782791666665, 
+          "min": 449.9525708333333, 
+          "value": 154
+        }, 
+        {
+          "max": 499.943085, 
+          "min": 474.94782791666665, 
+          "value": 159
+        }
+      ], 
+      "volcanic_body_types": {
+        "High metal content world - Major Rocky Magma": 398, 
+        "High metal content world - Major Silicate Vapour Geysers": 172, 
+        "High metal content world - Metallic Magma": 2, 
+        "High metal content world - Minor Rocky Magma": 44, 
+        "High metal content world - No volcanism": 5, 
+        "High metal content world - Rocky Magma": 57, 
+        "Rocky Ice world - Major Rocky Magma": 1, 
+        "Rocky Ice world - Minor Rocky Magma": 1, 
+        "Rocky body - Major Metallic Magma": 2, 
+        "Rocky body - Major Silicate Vapour Geysers": 238, 
+        "Rocky body - Metallic Magma": 3, 
+        "Rocky body - Minor Metallic Magma": 2, 
+        "Rocky body - Minor Rocky Magma": 67, 
+        "Rocky body - Minor Silicate Vapour Geysers": 2, 
+        "Rocky body - Minor Water Magma": 1, 
+        "Rocky body - No volcanism": 13
+      }
+    }, 
+    "hud_category": "Biology", 
+    "id": "$Codex_Ent_Tube_Name;", 
+    "localStars": [
+      "T Tauri Star", 
+      "K (Yellow-Orange) Star", 
+      "B (Blue-White) Star", 
+      "T (Brown dwarf) Star", 
+      "S-type Star", 
+      "Y (Brown dwarf) Star", 
+      "M (Red dwarf) Star", 
+      "MS-type Star", 
+      "Neutron Star", 
+      "L (Brown dwarf) Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "G (White-Yellow) Star", 
+      "M (Red giant) Star", 
+      null
+    ], 
+    "materials": [
+      "Iron", 
+      "Carbon", 
+      "Sulphur", 
+      "Nickel", 
+      "Phosphorus"
+    ], 
+    "maxd": 529938.132881, 
+    "maxg": 3.46782594065463, 
+    "maxp": 0.0962520528793486, 
+    "maxt": 499.943085, 
+    "mind": 7.524373, 
+    "ming": 0.0436952177016417, 
+    "minp": 3.32939254872934e-05, 
+    "mint": 200.0, 
+    "name": "Roseum Sinuous Tubers", 
+    "platform": null, 
+    "primaryStars": [
+      "T Tauri Star", 
+      "White Dwarf (DBV) Star", 
+      "S-type Star", 
+      "White Dwarf (DA) Star", 
+      "Black Hole", 
+      "G (White-Yellow) Star", 
+      "M (Red giant) Star", 
+      null, 
+      "K (Yellow-Orange) Star", 
+      "White Dwarf (DAB) Star", 
+      "M (Red dwarf) Star", 
+      "MS-type Star", 
+      "L (Brown dwarf) Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "B (Blue-White) Star", 
+      "White Dwarf (DC) Star", 
+      "CN Star", 
+      "Neutron Star"
+    ], 
+    "regions": [
+      "Galactic Centre", 
+      "Norma Arm", 
+      "Inner Orion Spur", 
+      "Ryker's Hope", 
+      "Trojan Belt", 
+      "Odin's Hold", 
+      "Izanami", 
+      "Arcadian Stream", 
+      "Inner Orion-Perseus Conflux", 
+      "Inner Scutum-Centaurus Arm", 
+      "Hawking's Gap", 
+      "Norma Expanse", 
+      "Empyrean Straits"
+    ], 
+    "reward": 1514500, 
+    "solidComposition": [
+      "Ice", 
+      "Metal", 
+      "Rock"
+    ], 
+    "systemBodyTypes": [], 
+    "volcanism": [
+      "Metallic Magma", 
+      "No volcanism", 
+      "Minor Metallic Magma", 
+      "Minor Water Magma", 
+      "Minor Rocky Magma", 
+      "Minor Silicate Vapour Geysers", 
+      "Major Silicate Vapour Geysers", 
+      "Major Rocky Magma", 
+      "Major Metallic Magma", 
+      "Rocky Magma"
+    ]
+  }, 
+  "2100502": {
+    "atmosComposition": [], 
+    "atmosphereType": [
+      "Thin Argon-rich", 
+      "Thin Oxygen", 
+      "Thin Carbon dioxide", 
+      "No atmosphere", 
+      "Thin Sulphur dioxide", 
+      "Thin Argon", 
+      "Thin Carbon dioxide-rich"
+    ], 
+    "bodies": [
+      "High metal content world", 
+      "Rocky Ice world", 
+      "Rocky body"
+    ], 
+    "count": 2424, 
+    "fdevname": "$Codex_Ent_TubeABCD_01_Name;", 
+    "histograms": {
+      "atmos_types": {
+        "No atmosphere": 2034, 
+        "Thin Argon": 1, 
+        "Thin Argon-rich": 3, 
+        "Thin Carbon dioxide": 278, 
+        "Thin Carbon dioxide-rich": 12, 
+        "Thin Oxygen": 1, 
+        "Thin Sulphur dioxide": 36
+      }, 
+      "body_types": {
+        "High metal content world": 2175, 
+        "Rocky Ice world": 1, 
+        "Rocky body": 189
+      }, 
+      "distance": [
+        {
+          "max": 44165.701502333344, 
+          "min": 4.571377, 
+          "value": 2058
+        }, 
+        {
+          "max": 88326.83162766669, 
+          "min": 44165.701502333344, 
+          "value": 83
+        }, 
+        {
+          "max": 132487.96175300004, 
+          "min": 88326.83162766669, 
+          "value": 60
+        }, 
+        {
+          "max": 176649.09187833336, 
+          "min": 132487.961753, 
+          "value": 48
+        }, 
+        {
+          "max": 220810.2220036667, 
+          "min": 176649.09187833336, 
+          "value": 33
+        }, 
+        {
+          "max": 264971.35212900006, 
+          "min": 220810.2220036667, 
+          "value": 24
+        }, 
+        {
+          "max": 309132.4822543334, 
+          "min": 264971.35212900006, 
+          "value": 17
+        }, 
+        {
+          "max": 353293.61237966677, 
+          "min": 309132.48225433344, 
+          "value": 16
+        }, 
+        {
+          "max": 397454.7425050001, 
+          "min": 353293.61237966677, 
+          "value": 5
+        }, 
+        {
+          "max": 441615.8726303334, 
+          "min": 397454.7425050001, 
+          "value": 9
+        }, 
+        {
+          "max": 485777.0027556668, 
+          "min": 441615.87263033347, 
+          "value": 8
+        }, 
+        {
+          "max": 529938.1328810002, 
+          "min": 485777.0027556668, 
+          "value": 4
+        }
+      ], 
+      "gravity": [
+        {
+          "max": 0.3748862717106828, 
+          "min": 0.043895380850413, 
+          "value": 917
+        }, 
+        {
+          "max": 0.7058771625709526, 
+          "min": 0.3748862717106828, 
+          "value": 99
+        }, 
+        {
+          "max": 1.0368680534312222, 
+          "min": 0.7058771625709526, 
+          "value": 282
+        }, 
+        {
+          "max": 1.3678589442914921, 
+          "min": 1.0368680534312222, 
+          "value": 555
+        }, 
+        {
+          "max": 1.698849835151762, 
+          "min": 1.3678589442914921, 
+          "value": 52
+        }, 
+        {
+          "max": 2.029840726012032, 
+          "min": 1.698849835151762, 
+          "value": 235
+        }, 
+        {
+          "max": 2.360831616872302, 
+          "min": 2.029840726012032, 
+          "value": 132
+        }, 
+        {
+          "max": 2.6918225077325713, 
+          "min": 2.3608316168723014, 
+          "value": 58
+        }, 
+        {
+          "max": 3.022813398592841, 
+          "min": 2.6918225077325713, 
+          "value": 23
+        }, 
+        {
+          "max": 3.353804289453111, 
+          "min": 3.022813398592841, 
+          "value": 7
+        }, 
+        {
+          "max": 3.684795180313381, 
+          "min": 3.353804289453111, 
+          "value": 2
+        }, 
+        {
+          "max": 4.01578607117365, 
+          "min": 3.6847951803133805, 
+          "value": 3
+        }
+      ], 
+      "local_stars": {
+        "A (Blue-White) Star": 291, 
+        "B (Blue-White) Star": 50, 
+        "Black Hole": 2, 
+        "CJ Star": 1, 
+        "CN Star": 2, 
+        "F (White) Star": 571, 
+        "G (White-Yellow) Star": 221, 
+        "K (Yellow-Orange giant) Star": 2, 
+        "K (Yellow-Orange) Star": 271, 
+        "L (Brown dwarf) Star": 290, 
+        "M (Red dwarf) Star": 412, 
+        "M (Red giant) Star": 9, 
+        "MS-type Star": 3, 
+        "Neutron Star": 93, 
+        "S-type Star": 6, 
+        "T (Brown dwarf) Star": 105, 
+        "T Tauri Star": 7, 
+        "White Dwarf (DA) Star": 1, 
+        "White Dwarf (DC) Star": 1, 
+        "Y (Brown dwarf) Star": 17, 
+        "null": 10
+      }, 
+      "materials": {
+        "Antimony": 379, 
+        "Arsenic": 382, 
+        "Cadmium": 980, 
+        "Carbon": 2365, 
+        "Chromium": 1494, 
+        "Germanium": 823, 
+        "Iron": 2365, 
+        "Manganese": 1397, 
+        "Mercury": 536, 
+        "Molybdenum": 854, 
+        "Nickel": 2365, 
+        "Niobium": 866, 
+        "Phosphorus": 2365, 
+        "Polonium": 215, 
+        "Ruthenium": 527, 
+        "Selenium": 459, 
+        "Sulphur": 2365, 
+        "Technetium": 288, 
+        "Tellurium": 454, 
+        "Tin": 813, 
+        "Tungsten": 681, 
+        "Vanadium": 960, 
+        "Yttrium": 502, 
+        "Zinc": 1045, 
+        "Zirconium": 535
+      }, 
+      "pressure": [
+        {
+          "max": 0.008224266586067933, 
+          "min": 0.0, 
+          "value": 2327
+        }, 
+        {
+          "max": 0.016448533172135866, 
+          "min": 0.008224266586067933, 
+          "value": 6
+        }, 
+        {
+          "max": 0.0246727997582038, 
+          "min": 0.016448533172135866, 
+          "value": 5
+        }, 
+        {
+          "max": 0.03289706634427173, 
+          "min": 0.0246727997582038, 
+          "value": 2
+        }, 
+        {}, 
+        {
+          "max": 0.049345599516407594, 
+          "min": 0.04112133293033966, 
+          "value": 5
+        }, 
+        {
+          "max": 0.05756986610247553, 
+          "min": 0.0493455995164076, 
+          "value": 7
+        }, 
+        {
+          "max": 0.06579413268854346, 
+          "min": 0.05756986610247553, 
+          "value": 5
+        }, 
+        {
+          "max": 0.0740183992746114, 
+          "min": 0.06579413268854346, 
+          "value": 1
+        }, 
+        {}, 
+        {
+          "max": 0.09046693244674726, 
+          "min": 0.08224266586067933, 
+          "value": 3
+        }, 
+        {
+          "max": 0.0986911990328152, 
+          "min": 0.09046693244674726, 
+          "value": 3
+        }
+      ], 
+      "primary_stars": {
+        "A (Blue-White) Star": 327, 
+        "B (Blue-White) Star": 60, 
+        "Black Hole": 10, 
+        "CJ Star": 1, 
+        "CN Star": 7, 
+        "F (White) Star": 686, 
+        "G (White-Yellow) Star": 269, 
+        "Herbig Ae/Be Star": 1, 
+        "K (Yellow-Orange giant) Star": 4, 
+        "K (Yellow-Orange) Star": 514, 
+        "L (Brown dwarf) Star": 15, 
+        "M (Red dwarf) Star": 240, 
+        "M (Red giant) Star": 14, 
+        "MS-type Star": 5, 
+        "Neutron Star": 210, 
+        "S-type Star": 12, 
+        "T Tauri Star": 5, 
+        "White Dwarf (DA) Star": 9, 
+        "White Dwarf (DAB) Star": 1, 
+        "White Dwarf (DAV) Star": 1, 
+        "White Dwarf (DAZ) Star": 1, 
+        "White Dwarf (DB) Star": 2, 
+        "White Dwarf (DBV) Star": 2, 
+        "White Dwarf (DC) Star": 13, 
+        "null": 15
+      }, 
+      "system_bodies": {
+        "A (Blue-White) Star": 339, 
+        "Ammonia world": 57, 
+        "B (Blue-White) Star": 60, 
+        "Black Hole": 10, 
+        "CJ Star": 1, 
+        "CN Star": 7, 
+        "Class I gas giant": 831, 
+        "Class II gas giant": 355, 
+        "Class III gas giant": 690, 
+        "Class IV gas giant": 191, 
+        "Class V gas giant": 7, 
+        "Earth-like world": 64, 
+        "F (White) Star": 718, 
+        "G (White-Yellow) Star": 337, 
+        "Gas giant with ammonia-based life": 215, 
+        "Gas giant with water-based life": 376, 
+        "Helium-rich gas giant": 3, 
+        "Herbig Ae/Be Star": 1, 
+        "High metal content world": 2369, 
+        "Icy body": 1568, 
+        "K (Yellow-Orange giant) Star": 4, 
+        "K (Yellow-Orange) Star": 799, 
+        "L (Brown dwarf) Star": 494, 
+        "M (Red dwarf) Star": 1038, 
+        "M (Red giant) Star": 16, 
+        "MS-type Star": 5, 
+        "Metal-rich body": 410, 
+        "Neutron Star": 214, 
+        "Rocky Ice world": 414, 
+        "Rocky body": 1741, 
+        "S-type Star": 12, 
+        "T (Brown dwarf) Star": 269, 
+        "T Tauri Star": 23, 
+        "Water giant": 66, 
+        "Water world": 616, 
+        "White Dwarf (DA) Star": 13, 
+        "White Dwarf (DAB) Star": 2, 
+        "White Dwarf (DAV) Star": 1, 
+        "White Dwarf (DAZ) Star": 1, 
+        "White Dwarf (DB) Star": 2, 
+        "White Dwarf (DBV) Star": 2, 
+        "White Dwarf (DC) Star": 14, 
+        "Y (Brown dwarf) Star": 231, 
+        "null": 1470
+      }, 
+      "temperature": [
+        {
+          "max": 225.20681758333333, 
+          "min": 200.236206, 
+          "value": 136
+        }, 
+        {
+          "max": 250.17742916666666, 
+          "min": 225.20681758333333, 
+          "value": 255
+        }, 
+        {
+          "max": 275.14804075, 
+          "min": 250.17742916666668, 
+          "value": 178
+        }, 
+        {
+          "max": 300.11865233333333, 
+          "min": 275.14804075, 
+          "value": 77
+        }, 
+        {
+          "max": 325.08926391666665, 
+          "min": 300.11865233333333, 
+          "value": 71
+        }, 
+        {
+          "max": 350.05987550000003, 
+          "min": 325.0892639166667, 
+          "value": 82
+        }, 
+        {
+          "max": 375.0304870833333, 
+          "min": 350.0598755, 
+          "value": 88
+        }, 
+        {
+          "max": 400.0010986666667, 
+          "min": 375.03048708333336, 
+          "value": 96
+        }, 
+        {
+          "max": 424.97171025, 
+          "min": 400.0010986666667, 
+          "value": 98
+        }, 
+        {
+          "max": 449.9423218333333, 
+          "min": 424.97171025, 
+          "value": 313
+        }, 
+        {
+          "max": 474.9129334166667, 
+          "min": 449.9423218333334, 
+          "value": 450
+        }, 
+        {
+          "max": 499.88354499999997, 
+          "min": 474.91293341666665, 
+          "value": 520
+        }
+      ], 
+      "volcanic_body_types": {
+        "High metal content world - Major Rocky Magma": 1283, 
+        "High metal content world - Major Silicate Vapour Geysers": 866, 
+        "High metal content world - Metallic Magma": 1, 
+        "High metal content world - Minor Metallic Magma": 1, 
+        "High metal content world - Minor Rocky Magma": 9, 
+        "High metal content world - Minor Silicate Vapour Geysers": 6, 
+        "High metal content world - No volcanism": 2, 
+        "High metal content world - Rocky Magma": 7, 
+        "Rocky Ice world - Major Rocky Magma": 1, 
+        "Rocky body - Major Metallic Magma": 1, 
+        "Rocky body - Major Silicate Vapour Geysers": 139, 
+        "Rocky body - Metallic Magma": 13, 
+        "Rocky body - Minor Metallic Magma": 8, 
+        "Rocky body - Minor Rocky Magma": 10, 
+        "Rocky body - Minor Silicate Vapour Geysers": 7, 
+        "Rocky body - Minor Water Magma": 1, 
+        "Rocky body - No volcanism": 10
+      }
+    }, 
+    "hud_category": "Biology", 
+    "id": "$Codex_Ent_TubeABCD_01_Name;", 
+    "localStars": [
+      "T Tauri Star", 
+      "S-type Star", 
+      "White Dwarf (DA) Star", 
+      "Black Hole", 
+      "Y (Brown dwarf) Star", 
+      "G (White-Yellow) Star", 
+      "K (Yellow-Orange giant) Star", 
+      "M (Red giant) Star", 
+      null, 
+      "K (Yellow-Orange) Star", 
+      "T (Brown dwarf) Star", 
+      "M (Red dwarf) Star", 
+      "MS-type Star", 
+      "L (Brown dwarf) Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "B (Blue-White) Star", 
+      "White Dwarf (DC) Star", 
+      "CN Star", 
+      "Neutron Star", 
+      "CJ Star"
+    ], 
+    "materials": [
+      "Carbon", 
+      "Iron", 
+      "Sulphur", 
+      "Nickel", 
+      "Phosphorus"
+    ], 
+    "maxd": 529938.132881, 
+    "maxg": 4.01578607117365, 
+    "maxp": 0.0986911990328152, 
+    "maxt": 499.883545, 
+    "mind": 4.571377, 
+    "ming": 0.043895380850413, 
+    "minp": 3.64689958055761e-05, 
+    "mint": 200.236206, 
+    "name": "Prasinum Sinuous Tubers", 
+    "platform": null, 
+    "primaryStars": [
+      "T Tauri Star", 
+      "White Dwarf (DBV) Star", 
+      "S-type Star", 
+      "White Dwarf (DA) Star", 
+      "Black Hole", 
+      "G (White-Yellow) Star", 
+      "Herbig Ae/Be Star", 
+      "White Dwarf (DB) Star", 
+      "White Dwarf (DAZ) Star", 
+      "K (Yellow-Orange giant) Star", 
+      "White Dwarf (DAV) Star", 
+      "M (Red giant) Star", 
+      null, 
+      "K (Yellow-Orange) Star", 
+      "White Dwarf (DAB) Star", 
+      "M (Red dwarf) Star", 
+      "MS-type Star", 
+      "L (Brown dwarf) Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "B (Blue-White) Star", 
+      "White Dwarf (DC) Star", 
+      "CN Star", 
+      "Neutron Star", 
+      "CJ Star"
+    ], 
+    "regions": [
+      "Galactic Centre", 
+      "Trojan Belt", 
+      "Odin's Hold", 
+      "Inner Scutum-Centaurus Arm", 
+      "Ryker's Hope", 
+      "Norma Arm", 
+      "Norma Expanse", 
+      "Empyrean Straits"
+    ], 
+    "reward": 1514500, 
+    "solidComposition": [
+      "Ice", 
+      "Metal", 
+      "Rock"
+    ], 
+    "systemBodyTypes": [], 
+    "volcanism": [
+      "Metallic Magma", 
+      "No volcanism", 
+      "Minor Metallic Magma", 
+      "Minor Water Magma", 
+      "Minor Rocky Magma", 
+      "Minor Silicate Vapour Geysers", 
+      "Major Silicate Vapour Geysers", 
+      "Major Rocky Magma", 
+      "Major Metallic Magma", 
+      "Rocky Magma"
+    ]
+  }, 
+  "2100503": {
+    "atmosComposition": [], 
+    "atmosphereType": [
+      "No atmosphere"
+    ], 
+    "bodies": [
+      "High metal content world", 
+      "Rocky body"
+    ], 
+    "count": 436, 
+    "fdevname": "$Codex_Ent_TubeABCD_02_Name;", 
+    "histograms": {
+      "atmos_types": {
+        "No atmosphere": 415
+      }, 
+      "body_types": {
+        "High metal content world": 229, 
+        "Rocky body": 186
+      }, 
+      "distance": [
+        {
+          "max": 39075.18298375, 
+          "min": 8.907581, 
+          "value": 371
+        }, 
+        {
+          "max": 78141.45838649999, 
+          "min": 39075.18298375, 
+          "value": 13
+        }, 
+        {
+          "max": 117207.73378924999, 
+          "min": 78141.4583865, 
+          "value": 10
+        }, 
+        {
+          "max": 156274.009192, 
+          "min": 117207.73378924999, 
+          "value": 5
+        }, 
+        {
+          "max": 195340.28459475, 
+          "min": 156274.009192, 
+          "value": 3
+        }, 
+        {}, 
+        {
+          "max": 273472.83540025, 
+          "min": 234406.55999749998, 
+          "value": 4
+        }, 
+        {}, 
+        {
+          "max": 351605.38620575, 
+          "min": 312539.110803, 
+          "value": 4
+        }, 
+        {
+          "max": 390671.6616085, 
+          "min": 351605.38620575, 
+          "value": 1
+        }, 
+        {
+          "max": 429737.93701125, 
+          "min": 390671.6616085, 
+          "value": 2
+        }, 
+        {
+          "max": 468804.212414, 
+          "min": 429737.93701125, 
+          "value": 2
+        }
+      ], 
+      "gravity": [
+        {
+          "max": 0.3293480847014034, 
+          "min": 0.0440319159783828, 
+          "value": 265
+        }, 
+        {
+          "max": 0.614664253424424, 
+          "min": 0.3293480847014034, 
+          "value": 16
+        }, 
+        {
+          "max": 0.8999804221474448, 
+          "min": 0.6146642534244241, 
+          "value": 2
+        }, 
+        {
+          "max": 1.1852965908704653, 
+          "min": 0.8999804221474448, 
+          "value": 54
+        }, 
+        {
+          "max": 1.470612759593486, 
+          "min": 1.1852965908704653, 
+          "value": 24
+        }, 
+        {
+          "max": 1.7559289283165065, 
+          "min": 1.470612759593486, 
+          "value": 9
+        }, 
+        {
+          "max": 2.0412450970395275, 
+          "min": 1.7559289283165067, 
+          "value": 20
+        }, 
+        {
+          "max": 2.326561265762548, 
+          "min": 2.041245097039527, 
+          "value": 16
+        }, 
+        {
+          "max": 2.6118774344855686, 
+          "min": 2.326561265762548, 
+          "value": 5
+        }, 
+        {
+          "max": 2.8971936032085894, 
+          "min": 2.6118774344855686, 
+          "value": 2
+        }, 
+        {
+          "max": 3.1825097719316098, 
+          "min": 2.897193603208589, 
+          "value": 1
+        }, 
+        {
+          "max": 3.4678259406546306, 
+          "min": 3.1825097719316098, 
+          "value": 1
+        }
+      ], 
+      "local_stars": {
+        "A (Blue-White) Star": 66, 
+        "B (Blue-White) Star": 11, 
+        "F (White) Star": 101, 
+        "G (White-Yellow) Star": 49, 
+        "K (Yellow-Orange) Star": 35, 
+        "L (Brown dwarf) Star": 49, 
+        "M (Red dwarf) Star": 51, 
+        "M (Red giant) Star": 3, 
+        "Neutron Star": 21, 
+        "T (Brown dwarf) Star": 14, 
+        "Y (Brown dwarf) Star": 13, 
+        "null": 2
+      }, 
+      "materials": {
+        "Antimony": 68, 
+        "Arsenic": 79, 
+        "Cadmium": 180, 
+        "Carbon": 415, 
+        "Chromium": 239, 
+        "Germanium": 165, 
+        "Iron": 415, 
+        "Manganese": 243, 
+        "Mercury": 102, 
+        "Molybdenum": 134, 
+        "Nickel": 415, 
+        "Niobium": 145, 
+        "Phosphorus": 415, 
+        "Polonium": 33, 
+        "Ruthenium": 99, 
+        "Selenium": 81, 
+        "Sulphur": 415, 
+        "Technetium": 49, 
+        "Tellurium": 85, 
+        "Tin": 140, 
+        "Tungsten": 129, 
+        "Vanadium": 181, 
+        "Yttrium": 81, 
+        "Zinc": 175, 
+        "Zirconium": 82
+      }, 
+      "pressure": [
+        {
+          "max": 5.4387204539847e-05, 
+          "min": 0.0, 
+          "value": 399
+        }, 
+        {}, 
+        {}, 
+        {
+          "max": 0.000217548818159388, 
+          "min": 0.000163161613619541, 
+          "value": 1
+        }, 
+        {}, 
+        {}, 
+        {
+          "max": 0.000380710431778929, 
+          "min": 0.000326323227239082, 
+          "value": 5
+        }, 
+        {}, 
+        {}, 
+        {
+          "max": 0.00054387204539847, 
+          "min": 0.000489484840858623, 
+          "value": 5
+        }, 
+        {
+          "max": 0.000598259249938317, 
+          "min": 0.00054387204539847, 
+          "value": 3
+        }, 
+        {
+          "max": 0.000652646454478164, 
+          "min": 0.000598259249938317, 
+          "value": 1
+        }
+      ], 
+      "primary_stars": {
+        "A (Blue-White) Star": 74, 
+        "B (Blue-White) Star": 16, 
+        "Black Hole": 2, 
+        "CN Star": 1, 
+        "F (White) Star": 122, 
+        "G (White-Yellow) Star": 61, 
+        "K (Yellow-Orange) Star": 79, 
+        "L (Brown dwarf) Star": 1, 
+        "M (Red dwarf) Star": 31, 
+        "M (Red giant) Star": 2, 
+        "Neutron Star": 40, 
+        "White Dwarf (DA) Star": 1, 
+        "White Dwarf (DAB) Star": 2, 
+        "White Dwarf (DC) Star": 2, 
+        "null": 2
+      }, 
+      "system_bodies": {
+        "A (Blue-White) Star": 78, 
+        "Ammonia world": 21, 
+        "B (Blue-White) Star": 16, 
+        "Black Hole": 2, 
+        "CN Star": 1, 
+        "Class I gas giant": 148, 
+        "Class II gas giant": 100, 
+        "Class III gas giant": 202, 
+        "Class IV gas giant": 83, 
+        "Class V gas giant": 1, 
+        "Earth-like world": 14, 
+        "F (White) Star": 138, 
+        "G (White-Yellow) Star": 75, 
+        "Gas giant with ammonia-based life": 37, 
+        "Gas giant with water-based life": 87, 
+        "Helium-rich gas giant": 2, 
+        "High metal content world": 393, 
+        "Icy body": 288, 
+        "K (Yellow-Orange) Star": 126, 
+        "L (Brown dwarf) Star": 78, 
+        "M (Red dwarf) Star": 162, 
+        "M (Red giant) Star": 4, 
+        "Metal-rich body": 97, 
+        "Neutron Star": 40, 
+        "Rocky Ice world": 73, 
+        "Rocky body": 367, 
+        "T (Brown dwarf) Star": 52, 
+        "T Tauri Star": 4, 
+        "Water giant": 19, 
+        "Water world": 74, 
+        "White Dwarf (DA) Star": 1, 
+        "White Dwarf (DAB) Star": 2, 
+        "White Dwarf (DC) Star": 2, 
+        "Y (Brown dwarf) Star": 73, 
+        "null": 143
+      }, 
+      "temperature": [
+        {
+          "max": 226.33868933333332, 
+          "min": 201.503998, 
+          "value": 71
+        }, 
+        {
+          "max": 251.17338066666665, 
+          "min": 226.33868933333332, 
+          "value": 55
+        }, 
+        {
+          "max": 276.008072, 
+          "min": 251.17338066666667, 
+          "value": 3
+        }, 
+        {
+          "max": 300.8427633333333, 
+          "min": 276.00807199999997, 
+          "value": 26
+        }, 
+        {
+          "max": 325.6774546666667, 
+          "min": 300.8427633333333, 
+          "value": 20
+        }, 
+        {
+          "max": 350.51214600000003, 
+          "min": 325.6774546666667, 
+          "value": 28
+        }, 
+        {
+          "max": 375.3468373333334, 
+          "min": 350.51214600000003, 
+          "value": 15
+        }, 
+        {
+          "max": 400.18152866666674, 
+          "min": 375.3468373333334, 
+          "value": 15
+        }, 
+        {
+          "max": 425.01622000000003, 
+          "min": 400.1815286666667, 
+          "value": 17
+        }, 
+        {
+          "max": 449.85091133333333, 
+          "min": 425.01622, 
+          "value": 33
+        }, 
+        {
+          "max": 474.6856026666667, 
+          "min": 449.85091133333333, 
+          "value": 63
+        }, 
+        {
+          "max": 499.52029400000004, 
+          "min": 474.6856026666667, 
+          "value": 69
+        }
+      ], 
+      "volcanic_body_types": {
+        "High metal content world - Major Rocky Magma": 119, 
+        "High metal content world - Major Silicate Vapour Geysers": 96, 
+        "High metal content world - Minor Rocky Magma": 7, 
+        "High metal content world - No volcanism": 1, 
+        "High metal content world - Rocky Magma": 6, 
+        "Rocky body - Major Metallic Magma": 2, 
+        "Rocky body - Major Silicate Vapour Geysers": 165, 
+        "Rocky body - Metallic Magma": 1, 
+        "Rocky body - Minor Rocky Magma": 8, 
+        "Rocky body - No volcanism": 10
+      }
+    }, 
+    "hud_category": "Biology", 
+    "id": "$Codex_Ent_TubeABCD_02_Name;", 
+    "localStars": [
+      "K (Yellow-Orange) Star", 
+      "B (Blue-White) Star", 
+      "T (Brown dwarf) Star", 
+      "Y (Brown dwarf) Star", 
+      "M (Red dwarf) Star", 
+      "Neutron Star", 
+      "L (Brown dwarf) Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "G (White-Yellow) Star", 
+      "M (Red giant) Star", 
+      null
+    ], 
+    "materials": [
+      "Carbon", 
+      "Iron", 
+      "Sulphur", 
+      "Nickel", 
+      "Phosphorus"
+    ], 
+    "maxd": 468804.212414, 
+    "maxg": 3.46782594065463, 
+    "maxp": 0.000652646454478164, 
+    "maxt": 499.520294, 
+    "mind": 8.907581, 
+    "ming": 0.0440319159783828, 
+    "minp": 4.09504663212435e-05, 
+    "mint": 201.503998, 
+    "name": "Albidum Sinuous Tubers", 
+    "platform": null, 
+    "primaryStars": [
+      "K (Yellow-Orange) Star", 
+      "B (Blue-White) Star", 
+      "White Dwarf (DC) Star", 
+      "White Dwarf (DAB) Star", 
+      "White Dwarf (DA) Star", 
+      "Black Hole", 
+      "M (Red dwarf) Star", 
+      "CN Star", 
+      "Neutron Star", 
+      "L (Brown dwarf) Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "G (White-Yellow) Star", 
+      "M (Red giant) Star", 
+      null
+    ], 
+    "regions": [
+      "Galactic Centre", 
+      "Ryker's Hope", 
+      "Trojan Belt", 
+      "Odin's Hold", 
+      "Inner Scutum-Centaurus Arm", 
+      "Norma Arm", 
+      "Norma Expanse", 
+      "Empyrean Straits"
+    ], 
+    "reward": 1514500, 
+    "solidComposition": [
+      "Ice", 
+      "Metal", 
+      "Rock"
+    ], 
+    "systemBodyTypes": [], 
+    "volcanism": [
+      "Metallic Magma", 
+      "No volcanism", 
+      "Minor Rocky Magma", 
+      "Major Silicate Vapour Geysers", 
+      "Major Rocky Magma", 
+      "Major Metallic Magma", 
+      "Rocky Magma"
+    ]
+  }, 
+  "2100504": {
+    "atmosComposition": [], 
+    "atmosphereType": [
+      "No atmosphere", 
+      "Thin Sulphur dioxide"
+    ], 
+    "bodies": [
+      "High metal content world", 
+      "Rocky body"
+    ], 
+    "count": 1174, 
+    "fdevname": "$Codex_Ent_TubeABCD_03_Name;", 
+    "histograms": {
+      "atmos_types": {
+        "No atmosphere": 1129, 
+        "Thin Sulphur dioxide": 3
+      }, 
+      "body_types": {
+        "High metal content world": 152, 
+        "Rocky body": 980
+      }, 
+      "distance": [
+        {
+          "max": 39075.18298375, 
+          "min": 8.907581, 
+          "value": 1056
+        }, 
+        {
+          "max": 78141.45838649999, 
+          "min": 39075.18298375, 
+          "value": 29
+        }, 
+        {
+          "max": 117207.73378924999, 
+          "min": 78141.4583865, 
+          "value": 12
+        }, 
+        {
+          "max": 156274.009192, 
+          "min": 117207.73378924999, 
+          "value": 6
+        }, 
+        {
+          "max": 195340.28459475, 
+          "min": 156274.009192, 
+          "value": 4
+        }, 
+        {
+          "max": 234406.5599975, 
+          "min": 195340.28459475, 
+          "value": 5
+        }, 
+        {
+          "max": 273472.83540025, 
+          "min": 234406.55999749998, 
+          "value": 6
+        }, 
+        {
+          "max": 312539.110803, 
+          "min": 273472.83540025, 
+          "value": 2
+        }, 
+        {
+          "max": 351605.38620575, 
+          "min": 312539.110803, 
+          "value": 8
+        }, 
+        {}, 
+        {
+          "max": 429737.93701125, 
+          "min": 390671.6616085, 
+          "value": 3
+        }, 
+        {
+          "max": 468804.212414, 
+          "min": 429737.93701125, 
+          "value": 1
+        }
+      ], 
+      "gravity": [
+        {
+          "max": 0.3277824513102882, 
+          "min": 0.0423239522789844, 
+          "value": 1029
+        }, 
+        {
+          "max": 0.6132409503415921, 
+          "min": 0.3277824513102882, 
+          "value": 11
+        }, 
+        {
+          "max": 0.8986994493728959, 
+          "min": 0.6132409503415921, 
+          "value": 3
+        }, 
+        {
+          "max": 1.1841579484041997, 
+          "min": 0.8986994493728959, 
+          "value": 40
+        }, 
+        {
+          "max": 1.4696164474355036, 
+          "min": 1.1841579484041997, 
+          "value": 12
+        }, 
+        {
+          "max": 1.7550749464668074, 
+          "min": 1.4696164474355036, 
+          "value": 5
+        }, 
+        {
+          "max": 2.040533445498111, 
+          "min": 1.7550749464668074, 
+          "value": 12
+        }, 
+        {
+          "max": 2.325991944529415, 
+          "min": 2.040533445498111, 
+          "value": 12
+        }, 
+        {
+          "max": 2.6114504435607184, 
+          "min": 2.325991944529415, 
+          "value": 4
+        }, 
+        {
+          "max": 2.896908942592022, 
+          "min": 2.6114504435607184, 
+          "value": 3
+        }, 
+        {}, 
+        {
+          "max": 3.46782594065463, 
+          "min": 3.1823674416233265, 
+          "value": 1
+        }
+      ], 
+      "local_stars": {
+        "A (Blue-White) Star": 179, 
+        "B (Blue-White) Star": 26, 
+        "Black Hole": 1, 
+        "CN Star": 1, 
+        "F (White) Star": 296, 
+        "G (White-Yellow) Star": 90, 
+        "Herbig Ae/Be Star": 2, 
+        "K (Yellow-Orange giant) Star": 2, 
+        "K (Yellow-Orange) Star": 138, 
+        "L (Brown dwarf) Star": 90, 
+        "M (Red dwarf) Star": 151, 
+        "M (Red giant) Star": 1, 
+        "MS-type Star": 3, 
+        "Neutron Star": 47, 
+        "T (Brown dwarf) Star": 20, 
+        "T Tauri Star": 1, 
+        "Y (Brown dwarf) Star": 73, 
+        "null": 11
+      }, 
+      "materials": {
+        "Antimony": 217, 
+        "Arsenic": 244, 
+        "Cadmium": 480, 
+        "Carbon": 1132, 
+        "Chromium": 661, 
+        "Germanium": 479, 
+        "Iron": 1132, 
+        "Manganese": 647, 
+        "Mercury": 270, 
+        "Molybdenum": 382, 
+        "Nickel": 1132, 
+        "Niobium": 409, 
+        "Phosphorus": 1132, 
+        "Polonium": 90, 
+        "Ruthenium": 210, 
+        "Selenium": 246, 
+        "Sulphur": 1132, 
+        "Technetium": 132, 
+        "Tellurium": 276, 
+        "Tin": 385, 
+        "Tungsten": 338, 
+        "Vanadium": 447, 
+        "Yttrium": 207, 
+        "Zinc": 448, 
+        "Zirconium": 224
+      }, 
+      "pressure": [
+        {
+          "max": 0.00467936197878115, 
+          "min": 0.0, 
+          "value": 1129
+        }, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {
+          "max": 0.05147298176659265, 
+          "min": 0.0467936197878115, 
+          "value": 1
+        }, 
+        {
+          "max": 0.0561523437453738, 
+          "min": 0.05147298176659265, 
+          "value": 1
+        }
+      ], 
+      "primary_stars": {
+        "A (Blue-White) Star": 232, 
+        "B (Blue-White) Star": 40, 
+        "Black Hole": 3, 
+        "CN Star": 2, 
+        "F (White) Star": 338, 
+        "G (White-Yellow super giant) Star": 1, 
+        "G (White-Yellow) Star": 125, 
+        "Herbig Ae/Be Star": 2, 
+        "K (Yellow-Orange giant) Star": 4, 
+        "K (Yellow-Orange) Star": 269, 
+        "L (Brown dwarf) Star": 2, 
+        "M (Red dwarf) Star": 71, 
+        "M (Red giant) Star": 1, 
+        "MS-type Star": 4, 
+        "Neutron Star": 66, 
+        "White Dwarf (DA) Star": 1, 
+        "White Dwarf (DAB) Star": 1, 
+        "White Dwarf (DC) Star": 1, 
+        "null": 11
+      }, 
+      "system_bodies": {
+        "A (Blue-White) Star": 252, 
+        "Ammonia world": 45, 
+        "B (Blue-White) Star": 41, 
+        "Black Hole": 4, 
+        "CN Star": 2, 
+        "Class I gas giant": 413, 
+        "Class II gas giant": 321, 
+        "Class III gas giant": 780, 
+        "Class IV gas giant": 259, 
+        "Class V gas giant": 7, 
+        "Earth-like world": 21, 
+        "F (White) Star": 370, 
+        "G (White-Yellow super giant) Star": 1, 
+        "G (White-Yellow) Star": 168, 
+        "Gas giant with ammonia-based life": 131, 
+        "Gas giant with water-based life": 322, 
+        "Helium-rich gas giant": 1, 
+        "Herbig Ae/Be Star": 2, 
+        "High metal content world": 933, 
+        "Icy body": 720, 
+        "K (Yellow-Orange giant) Star": 4, 
+        "K (Yellow-Orange) Star": 411, 
+        "L (Brown dwarf) Star": 160, 
+        "M (Red dwarf) Star": 382, 
+        "M (Red giant) Star": 4, 
+        "MS-type Star": 4, 
+        "Metal-rich body": 260, 
+        "Neutron Star": 66, 
+        "Rocky Ice world": 146, 
+        "Rocky body": 1131, 
+        "T (Brown dwarf) Star": 95, 
+        "T Tauri Star": 5, 
+        "Water giant": 63, 
+        "Water world": 183, 
+        "White Dwarf (DA) Star": 1, 
+        "White Dwarf (DAB) Star": 1, 
+        "White Dwarf (DC) Star": 1, 
+        "Y (Brown dwarf) Star": 262, 
+        "null": 799
+      }, 
+      "temperature": [
+        {
+          "max": 224.99439241666667, 
+          "min": 200.03302, 
+          "value": 257
+        }, 
+        {
+          "max": 249.95576483333335, 
+          "min": 224.99439241666667, 
+          "value": 208
+        }, 
+        {
+          "max": 274.91713725, 
+          "min": 249.95576483333332, 
+          "value": 16
+        }, 
+        {
+          "max": 299.8785096666667, 
+          "min": 274.91713725, 
+          "value": 97
+        }, 
+        {
+          "max": 324.83988208333335, 
+          "min": 299.8785096666667, 
+          "value": 80
+        }, 
+        {
+          "max": 349.8012545, 
+          "min": 324.83988208333335, 
+          "value": 76
+        }, 
+        {
+          "max": 374.7626269166667, 
+          "min": 349.8012545, 
+          "value": 80
+        }, 
+        {
+          "max": 399.7239993333333, 
+          "min": 374.76262691666665, 
+          "value": 60
+        }, 
+        {
+          "max": 424.68537175, 
+          "min": 399.7239993333333, 
+          "value": 46
+        }, 
+        {
+          "max": 449.6467441666667, 
+          "min": 424.68537175, 
+          "value": 53
+        }, 
+        {
+          "max": 474.6081165833333, 
+          "min": 449.6467441666666, 
+          "value": 83
+        }, 
+        {
+          "max": 499.569489, 
+          "min": 474.6081165833333, 
+          "value": 76
+        }
+      ], 
+      "volcanic_body_types": {
+        "High metal content world - Major Rocky Magma": 80, 
+        "High metal content world - Major Silicate Vapour Geysers": 63, 
+        "High metal content world - Minor Rocky Magma": 4, 
+        "High metal content world - Rocky Magma": 5, 
+        "Rocky body - Major Metallic Magma": 16, 
+        "Rocky body - Major Silicate Vapour Geysers": 956, 
+        "Rocky body - Minor Rocky Magma": 5, 
+        "Rocky body - No volcanism": 3
+      }
+    }, 
+    "hud_category": "Biology", 
+    "id": "$Codex_Ent_TubeABCD_03_Name;", 
+    "localStars": [
+      "T Tauri Star", 
+      "Herbig Ae/Be Star", 
+      "B (Blue-White) Star", 
+      "K (Yellow-Orange) Star", 
+      "T (Brown dwarf) Star", 
+      "K (Yellow-Orange giant) Star", 
+      "G (White-Yellow) Star", 
+      "Y (Brown dwarf) Star", 
+      "Black Hole", 
+      "M (Red dwarf) Star", 
+      "MS-type Star", 
+      "Neutron Star", 
+      "CN Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "L (Brown dwarf) Star", 
+      "M (Red giant) Star", 
+      null
+    ], 
+    "materials": [
+      "Carbon", 
+      "Iron", 
+      "Sulphur", 
+      "Nickel", 
+      "Phosphorus"
+    ], 
+    "maxd": 468804.212414, 
+    "maxg": 3.46782594065463, 
+    "maxp": 0.0561523437453738, 
+    "maxt": 499.569489, 
+    "mind": 8.907581, 
+    "ming": 0.0423239522789844, 
+    "minp": 4.09504663212435e-05, 
+    "mint": 200.03302, 
+    "name": "Caeruleum Sinuous Tubers", 
+    "platform": null, 
+    "primaryStars": [
+      "White Dwarf (DA) Star", 
+      "Black Hole", 
+      "G (White-Yellow) Star", 
+      "Herbig Ae/Be Star", 
+      "K (Yellow-Orange giant) Star", 
+      "M (Red giant) Star", 
+      null, 
+      "K (Yellow-Orange) Star", 
+      "White Dwarf (DAB) Star", 
+      "M (Red dwarf) Star", 
+      "MS-type Star", 
+      "F (White) Star", 
+      "L (Brown dwarf) Star", 
+      "A (Blue-White) Star", 
+      "B (Blue-White) Star", 
+      "White Dwarf (DC) Star", 
+      "G (White-Yellow super giant) Star", 
+      "Neutron Star", 
+      "CN Star"
+    ], 
+    "regions": [
+      "Galactic Centre", 
+      "Trojan Belt", 
+      "Odin's Hold", 
+      "Inner Scutum-Centaurus Arm", 
+      "Ryker's Hope", 
+      "Norma Arm", 
+      "Inner Orion-Perseus Conflux", 
+      "Empyrean Straits"
+    ], 
+    "reward": 1514500, 
+    "solidComposition": [
+      "Ice", 
+      "Metal", 
+      "Rock"
+    ], 
+    "systemBodyTypes": [], 
+    "volcanism": [
+      "No volcanism", 
+      "Minor Rocky Magma", 
+      "Major Silicate Vapour Geysers", 
+      "Major Rocky Magma", 
+      "Major Metallic Magma", 
+      "Rocky Magma"
+    ]
+  }, 
+  "2100505": {
+    "atmosComposition": [], 
+    "atmosphereType": [
+      "Thin Carbon dioxide", 
+      "No atmosphere", 
+      "Thin Sulphur dioxide"
+    ], 
+    "bodies": [
+      "High metal content world", 
+      "Rocky body"
+    ], 
+    "count": 287, 
+    "fdevname": "$Codex_Ent_TubeEFGH_Name;", 
+    "histograms": {
+      "atmos_types": {
+        "No atmosphere": 274, 
+        "Thin Carbon dioxide": 2, 
+        "Thin Sulphur dioxide": 3
+      }, 
+      "body_types": {
+        "High metal content world": 132, 
+        "Rocky body": 147
+      }, 
+      "distance": [
+        {
+          "max": 27808.3303945, 
+          "min": 4.443121, 
+          "value": 252
+        }, 
+        {
+          "max": 55612.217668, 
+          "min": 27808.3303945, 
+          "value": 6
+        }, 
+        {
+          "max": 83416.1049415, 
+          "min": 55612.217668, 
+          "value": 9
+        }, 
+        {
+          "max": 111219.992215, 
+          "min": 83416.1049415, 
+          "value": 4
+        }, 
+        {
+          "max": 139023.8794885, 
+          "min": 111219.992215, 
+          "value": 2
+        }, 
+        {}, 
+        {
+          "max": 194631.6540355, 
+          "min": 166827.76676199998, 
+          "value": 1
+        }, 
+        {
+          "max": 222435.541309, 
+          "min": 194631.6540355, 
+          "value": 2
+        }, 
+        {}, 
+        {}, 
+        {}, 
+        {
+          "max": 333651.090403, 
+          "min": 305847.20312950003, 
+          "value": 3
+        }
+      ], 
+      "gravity": [
+        {
+          "max": 0.284135693892118, 
+          "min": 0.0443443458753951, 
+          "value": 198
+        }, 
+        {
+          "max": 0.5239270419088409, 
+          "min": 0.284135693892118, 
+          "value": 25
+        }, 
+        {
+          "max": 0.7637183899255637, 
+          "min": 0.5239270419088409, 
+          "value": 4
+        }, 
+        {
+          "max": 1.0035097379422866, 
+          "min": 0.7637183899255637, 
+          "value": 9
+        }, 
+        {
+          "max": 1.2433010859590095, 
+          "min": 1.0035097379422866, 
+          "value": 11
+        }, 
+        {
+          "max": 1.4830924339757325, 
+          "min": 1.2433010859590097, 
+          "value": 2
+        }, 
+        {
+          "max": 1.7228837819924554, 
+          "min": 1.4830924339757325, 
+          "value": 19
+        }, 
+        {
+          "max": 1.9626751300091783, 
+          "min": 1.7228837819924554, 
+          "value": 6
+        }, 
+        {
+          "max": 2.2024664780259013, 
+          "min": 1.9626751300091783, 
+          "value": 2
+        }, 
+        {}, 
+        {
+          "max": 2.682049174059347, 
+          "min": 2.442257826042624, 
+          "value": 1
+        }, 
+        {
+          "max": 2.92184052207607, 
+          "min": 2.682049174059347, 
+          "value": 2
+        }
+      ], 
+      "local_stars": {
+        "A (Blue-White) Star": 65, 
+        "B (Blue-White) Star": 7, 
+        "F (White) Star": 47, 
+        "G (White-Yellow) Star": 24, 
+        "K (Yellow-Orange) Star": 23, 
+        "L (Brown dwarf) Star": 33, 
+        "M (Red dwarf) Star": 35, 
+        "Neutron Star": 4, 
+        "T (Brown dwarf) Star": 19, 
+        "Y (Brown dwarf) Star": 22
+      }, 
+      "materials": {
+        "Antimony": 54, 
+        "Arsenic": 54, 
+        "Cadmium": 115, 
+        "Carbon": 279, 
+        "Chromium": 165, 
+        "Germanium": 110, 
+        "Iron": 279, 
+        "Manganese": 161, 
+        "Mercury": 78, 
+        "Molybdenum": 93, 
+        "Nickel": 279, 
+        "Niobium": 99, 
+        "Phosphorus": 279, 
+        "Polonium": 24, 
+        "Ruthenium": 52, 
+        "Selenium": 61, 
+        "Sulphur": 279, 
+        "Technetium": 31, 
+        "Tellurium": 54, 
+        "Tin": 101, 
+        "Tungsten": 72, 
+        "Vanadium": 117, 
+        "Yttrium": 64, 
+        "Zinc": 112, 
+        "Zirconium": 57
+      }, 
+      "pressure": [
+        {
+          "max": 0.0009730145398470251, 
+          "min": 0.0, 
+          "value": 273
+        }, 
+        {
+          "max": 0.0019460290796940501, 
+          "min": 0.0009730145398470251, 
+          "value": 1
+        }, 
+        {}, 
+        {
+          "max": 0.0038920581593881003, 
+          "min": 0.002919043619541075, 
+          "value": 1
+        }, 
+        {}, 
+        {
+          "max": 0.00583808723908215, 
+          "min": 0.004865072699235125, 
+          "value": 1
+        }, 
+        {}, 
+        {
+          "max": 0.0077841163187762005, 
+          "min": 0.0068111017789291755, 
+          "value": 1
+        }, 
+        {}, 
+        {}, 
+        {}, 
+        {
+          "max": 0.0116761744781643, 
+          "min": 0.010703159938317275, 
+          "value": 1
+        }
+      ], 
+      "primary_stars": {
+        "A (Blue-White) Star": 74, 
+        "B (Blue-White) Star": 15, 
+        "F (White) Star": 58, 
+        "G (White-Yellow) Star": 31, 
+        "K (Yellow-Orange) Star": 35, 
+        "L (Brown dwarf) Star": 3, 
+        "M (Red dwarf) Star": 60, 
+        "Neutron Star": 11
+      }, 
+      "system_bodies": {
+        "A (Blue-White) Star": 77, 
+        "Ammonia world": 4, 
+        "B (Blue-White) Star": 15, 
+        "Class I gas giant": 103, 
+        "Class II gas giant": 84, 
+        "Class III gas giant": 150, 
+        "Class IV gas giant": 54, 
+        "Earth-like world": 10, 
+        "F (White) Star": 68, 
+        "G (White-Yellow) Star": 38, 
+        "Gas giant with ammonia-based life": 25, 
+        "Gas giant with water-based life": 86, 
+        "Helium-rich gas giant": 10, 
+        "High metal content world": 247, 
+        "Icy body": 186, 
+        "K (Yellow-Orange) Star": 62, 
+        "L (Brown dwarf) Star": 66, 
+        "M (Red dwarf) Star": 108, 
+        "Metal-rich body": 66, 
+        "Neutron Star": 11, 
+        "Rocky Ice world": 40, 
+        "Rocky body": 227, 
+        "T (Brown dwarf) Star": 45, 
+        "Water giant": 8, 
+        "Water world": 42, 
+        "Y (Brown dwarf) Star": 82, 
+        "null": 196
+      }, 
+      "temperature": [
+        {
+          "max": 225.51490108333334, 
+          "min": 200.685165, 
+          "value": 34
+        }, 
+        {
+          "max": 250.34463716666667, 
+          "min": 225.51490108333334, 
+          "value": 43
+        }, 
+        {
+          "max": 275.17437325000003, 
+          "min": 250.34463716666667, 
+          "value": 6
+        }, 
+        {
+          "max": 300.00410933333336, 
+          "min": 275.17437325000003, 
+          "value": 22
+        }, 
+        {
+          "max": 324.83384541666663, 
+          "min": 300.0041093333333, 
+          "value": 25
+        }, 
+        {
+          "max": 349.6635815, 
+          "min": 324.8338454166667, 
+          "value": 10
+        }, 
+        {
+          "max": 374.4933175833333, 
+          "min": 349.66358149999996, 
+          "value": 18
+        }, 
+        {
+          "max": 399.3230536666667, 
+          "min": 374.49331758333335, 
+          "value": 18
+        }, 
+        {
+          "max": 424.15278974999995, 
+          "min": 399.3230536666666, 
+          "value": 9
+        }, 
+        {
+          "max": 448.98252583333334, 
+          "min": 424.15278975, 
+          "value": 30
+        }, 
+        {
+          "max": 473.8122619166666, 
+          "min": 448.9825258333333, 
+          "value": 31
+        }, 
+        {
+          "max": 498.641998, 
+          "min": 473.81226191666667, 
+          "value": 33
+        }
+      ], 
+      "volcanic_body_types": {
+        "High metal content world - Major Rocky Magma": 8, 
+        "High metal content world - Major Silicate Vapour Geysers": 6, 
+        "High metal content world - Metallic Magma": 63, 
+        "High metal content world - Minor Metallic Magma": 5, 
+        "High metal content world - Minor Silicate Vapour Geysers": 1, 
+        "High metal content world - Rocky Magma": 49, 
+        "Rocky body - Major Metallic Magma": 4, 
+        "Rocky body - Major Silicate Vapour Geysers": 108, 
+        "Rocky body - Metallic Magma": 15, 
+        "Rocky body - Minor Metallic Magma": 10, 
+        "Rocky body - Minor Rocky Magma": 2, 
+        "Rocky body - Minor Silicate Vapour Geysers": 5, 
+        "Rocky body - No volcanism": 3
+      }
+    }, 
+    "hud_category": "Biology", 
+    "id": "$Codex_Ent_TubeEFGH_Name;", 
+    "localStars": [
+      "K (Yellow-Orange) Star", 
+      "B (Blue-White) Star", 
+      "T (Brown dwarf) Star", 
+      "G (White-Yellow) Star", 
+      "Y (Brown dwarf) Star", 
+      "M (Red dwarf) Star", 
+      "Neutron Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "L (Brown dwarf) Star"
+    ], 
+    "materials": [
+      "Carbon", 
+      "Iron", 
+      "Sulphur", 
+      "Nickel", 
+      "Phosphorus"
+    ], 
+    "maxd": 333651.090403, 
+    "maxg": 2.92184052207607, 
+    "maxp": 0.0116761744781643, 
+    "maxt": 498.641998, 
+    "mind": 4.443121, 
+    "ming": 0.0443443458753951, 
+    "minp": 0.000477050402171231, 
+    "mint": 200.685165, 
+    "name": "Blatteum Sinuous Tubers", 
+    "platform": null, 
+    "primaryStars": [
+      "K (Yellow-Orange) Star", 
+      "B (Blue-White) Star", 
+      "M (Red dwarf) Star", 
+      "Neutron Star", 
+      "L (Brown dwarf) Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "G (White-Yellow) Star"
+    ], 
+    "regions": [
+      "Inner Orion Spur", 
+      "Izanami", 
+      "Ryker's Hope", 
+      "Odin's Hold", 
+      "Arcadian Stream", 
+      "Inner Scutum-Centaurus Arm", 
+      "Hawking's Gap", 
+      "Norma Expanse"
+    ], 
+    "reward": 1514500, 
+    "solidComposition": [
+      "Ice", 
+      "Metal", 
+      "Rock"
+    ], 
+    "systemBodyTypes": [], 
+    "volcanism": [
+      "Metallic Magma", 
+      "Major Silicate Vapour Geysers", 
+      "No volcanism", 
+      "Minor Metallic Magma", 
+      "Minor Rocky Magma", 
+      "Minor Silicate Vapour Geysers", 
+      "Rocky Magma", 
+      "Major Rocky Magma", 
+      "Major Metallic Magma"
+    ]
+  }, 
+  "2100506": {
+    "atmosComposition": [], 
+    "atmosphereType": [
+      "No atmosphere"
+    ], 
+    "bodies": [
+      "High metal content world", 
+      "Rocky body"
+    ], 
+    "count": 364, 
+    "fdevname": "$Codex_Ent_TubeEFGH_01_Name;", 
+    "histograms": {
+      "atmos_types": {
+        "No atmosphere": 360
+      }, 
+      "body_types": {
+        "High metal content world": 29, 
+        "Rocky body": 331
+      }, 
+      "distance": [
+        {
+          "max": 39514.63670225, 
+          "min": 10.237303, 
+          "value": 342
+        }, 
+        {
+          "max": 79019.0361015, 
+          "min": 39514.63670225, 
+          "value": 7
+        }, 
+        {
+          "max": 118523.43550075, 
+          "min": 79019.0361015, 
+          "value": 2
+        }, 
+        {
+          "max": 158027.8349, 
+          "min": 118523.43550075, 
+          "value": 3
+        }, 
+        {
+          "max": 197532.23429924998, 
+          "min": 158027.8349, 
+          "value": 2
+        }, 
+        {
+          "max": 237036.63369849997, 
+          "min": 197532.23429924998, 
+          "value": 1
+        }, 
+        {
+          "max": 276541.03309775, 
+          "min": 237036.6336985, 
+          "value": 1
+        }, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {
+          "max": 474063.0300939999, 
+          "min": 434558.63069474994, 
+          "value": 1
+        }
+      ], 
+      "gravity": [
+        {
+          "max": 0.23897504333639202, 
+          "min": 0.0367364127663913, 
+          "value": 335
+        }, 
+        {
+          "max": 0.44121367390639277, 
+          "min": 0.23897504333639202, 
+          "value": 11
+        }, 
+        {
+          "max": 0.6434523044763935, 
+          "min": 0.4412136739063927, 
+          "value": 2
+        }, 
+        {
+          "max": 0.8456909350463941, 
+          "min": 0.6434523044763935, 
+          "value": 2
+        }, 
+        {
+          "max": 1.047929565616395, 
+          "min": 0.8456909350463941, 
+          "value": 2
+        }, 
+        {}, 
+        {}, 
+        {
+          "max": 1.6546454573263971, 
+          "min": 1.4524068267563963, 
+          "value": 6
+        }, 
+        {
+          "max": 1.856884087896398, 
+          "min": 1.6546454573263971, 
+          "value": 1
+        }, 
+        {}, 
+        {}, 
+        {}
+      ], 
+      "local_stars": {
+        "A (Blue-White) Star": 109, 
+        "B (Blue-White) Star": 15, 
+        "F (White) Star": 76, 
+        "G (White-Yellow) Star": 27, 
+        "K (Yellow-Orange) Star": 21, 
+        "L (Brown dwarf) Star": 23, 
+        "M (Red dwarf) Star": 32, 
+        "Neutron Star": 10, 
+        "T (Brown dwarf) Star": 14, 
+        "T Tauri Star": 1, 
+        "Y (Brown dwarf) Star": 31, 
+        "null": 1
+      }, 
+      "materials": {
+        "Antimony": 68, 
+        "Arsenic": 82, 
+        "Cadmium": 138, 
+        "Carbon": 360, 
+        "Chromium": 222, 
+        "Germanium": 147, 
+        "Iron": 360, 
+        "Manganese": 207, 
+        "Mercury": 95, 
+        "Molybdenum": 124, 
+        "Nickel": 360, 
+        "Niobium": 141, 
+        "Phosphorus": 360, 
+        "Polonium": 19, 
+        "Ruthenium": 74, 
+        "Selenium": 84, 
+        "Sulphur": 360, 
+        "Technetium": 37, 
+        "Tellurium": 93, 
+        "Tin": 109, 
+        "Tungsten": 113, 
+        "Vanadium": 126, 
+        "Yttrium": 69, 
+        "Zinc": 140, 
+        "Zirconium": 72
+      }, 
+      "pressure": [], 
+      "primary_stars": {
+        "A (Blue-White) Star": 130, 
+        "B (Blue-White) Star": 22, 
+        "F (White) Star": 94, 
+        "G (White-Yellow) Star": 30, 
+        "K (Yellow-Orange) Star": 29, 
+        "L (Brown dwarf) Star": 1, 
+        "M (Red dwarf) Star": 38, 
+        "Neutron Star": 19, 
+        "null": 1
+      }, 
+      "system_bodies": {
+        "A (Blue-White) Star": 134, 
+        "Ammonia world": 5, 
+        "B (Blue-White) Star": 22, 
+        "Class I gas giant": 123, 
+        "Class II gas giant": 103, 
+        "Class III gas giant": 266, 
+        "Class IV gas giant": 105, 
+        "Class V gas giant": 2, 
+        "Earth-like world": 6, 
+        "F (White) Star": 105, 
+        "G (White-Yellow) Star": 45, 
+        "Gas giant with ammonia-based life": 32, 
+        "Gas giant with water-based life": 126, 
+        "Helium-rich gas giant": 10, 
+        "High metal content world": 287, 
+        "Icy body": 176, 
+        "K (Yellow-Orange) Star": 76, 
+        "L (Brown dwarf) Star": 47, 
+        "M (Red dwarf) Star": 89, 
+        "Metal-rich body": 102, 
+        "Neutron Star": 19, 
+        "Rocky Ice world": 45, 
+        "Rocky body": 350, 
+        "T (Brown dwarf) Star": 35, 
+        "T Tauri Star": 2, 
+        "Water giant": 24, 
+        "Water world": 47, 
+        "Y (Brown dwarf) Star": 124, 
+        "null": 273
+      }, 
+      "temperature": [
+        {
+          "max": 225.87551466666665, 
+          "min": 201.01152, 
+          "value": 82
+        }, 
+        {
+          "max": 250.7395093333333, 
+          "min": 225.87551466666665, 
+          "value": 67
+        }, 
+        {
+          "max": 275.603504, 
+          "min": 250.73950933333333, 
+          "value": 5
+        }, 
+        {
+          "max": 300.46749866666664, 
+          "min": 275.603504, 
+          "value": 52
+        }, 
+        {
+          "max": 325.3314933333333, 
+          "min": 300.46749866666664, 
+          "value": 34
+        }, 
+        {
+          "max": 350.195488, 
+          "min": 325.33149333333336, 
+          "value": 18
+        }, 
+        {
+          "max": 375.0594826666666, 
+          "min": 350.19548799999995, 
+          "value": 22
+        }, 
+        {
+          "max": 399.9234773333333, 
+          "min": 375.05948266666667, 
+          "value": 20
+        }, 
+        {
+          "max": 424.787472, 
+          "min": 399.9234773333333, 
+          "value": 14
+        }, 
+        {
+          "max": 449.65146666666664, 
+          "min": 424.787472, 
+          "value": 13
+        }, 
+        {
+          "max": 474.51546133333335, 
+          "min": 449.6514666666667, 
+          "value": 14
+        }, 
+        {
+          "max": 499.37945599999995, 
+          "min": 474.5154613333333, 
+          "value": 18
+        }
+      ], 
+      "volcanic_body_types": {
+        "High metal content world - Major Rocky Magma": 3, 
+        "High metal content world - Major Silicate Vapour Geysers": 1, 
+        "High metal content world - Metallic Magma": 14, 
+        "High metal content world - No volcanism": 1, 
+        "High metal content world - Rocky Magma": 10, 
+        "Rocky body - Major Metallic Magma": 7, 
+        "Rocky body - Major Silicate Vapour Geysers": 322, 
+        "Rocky body - No volcanism": 2
+      }
+    }, 
+    "hud_category": "Biology", 
+    "id": "$Codex_Ent_TubeEFGH_01_Name;", 
+    "localStars": [
+      "T Tauri Star", 
+      "K (Yellow-Orange) Star", 
+      "B (Blue-White) Star", 
+      "T (Brown dwarf) Star", 
+      "Y (Brown dwarf) Star", 
+      "M (Red dwarf) Star", 
+      "Neutron Star", 
+      "L (Brown dwarf) Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "G (White-Yellow) Star", 
+      null
+    ], 
+    "materials": [
+      "Carbon", 
+      "Iron", 
+      "Sulphur", 
+      "Nickel", 
+      "Phosphorus"
+    ], 
+    "maxd": 474063.030094, 
+    "maxg": 2.4635999796064, 
+    "maxp": null, 
+    "maxt": 499.379456, 
+    "mind": 10.237303, 
+    "ming": 0.0367364127663913, 
+    "minp": null, 
+    "mint": 201.01152, 
+    "name": "Lindigoticum Sinuous Tubers", 
+    "platform": null, 
+    "primaryStars": [
+      "K (Yellow-Orange) Star", 
+      "B (Blue-White) Star", 
+      "M (Red dwarf) Star", 
+      "Neutron Star", 
+      "L (Brown dwarf) Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "G (White-Yellow) Star", 
+      null
+    ], 
+    "regions": [
+      "Izanami", 
+      "Inner Orion Spur", 
+      "Ryker's Hope", 
+      "Odin's Hold", 
+      "Arcadian Stream", 
+      "Inner Scutum-Centaurus Arm", 
+      "Hawking's Gap", 
+      "Norma Expanse"
+    ], 
+    "reward": 1514500, 
+    "solidComposition": [
+      "Ice", 
+      "Metal", 
+      "Rock"
+    ], 
+    "systemBodyTypes": [], 
+    "volcanism": [
+      "Metallic Magma", 
+      "No volcanism", 
+      "Major Silicate Vapour Geysers", 
+      "Major Rocky Magma", 
+      "Major Metallic Magma", 
+      "Rocky Magma"
+    ]
+  }, 
+  "2100507": {
+    "atmosComposition": [], 
+    "atmosphereType": [
+      "Thin Carbon dioxide", 
+      "No atmosphere"
+    ], 
+    "bodies": [
+      "High metal content world", 
+      "Rocky body"
+    ], 
+    "count": 141, 
+    "fdevname": "$Codex_Ent_TubeEFGH_02_Name;", 
+    "histograms": {
+      "atmos_types": {
+        "No atmosphere": 131, 
+        "Thin Carbon dioxide": 5
+      }, 
+      "body_types": {
+        "High metal content world": 61, 
+        "Rocky body": 75
+      }, 
+      "distance": [
+        {
+          "max": 16596.300908833335, 
+          "min": 10.292176, 
+          "value": 122
+        }, 
+        {
+          "max": 33182.30964166667, 
+          "min": 16596.300908833335, 
+          "value": 3
+        }, 
+        {
+          "max": 49768.31837450001, 
+          "min": 33182.309641666674, 
+          "value": 2
+        }, 
+        {
+          "max": 66354.32710733335, 
+          "min": 49768.31837450001, 
+          "value": 2
+        }, 
+        {
+          "max": 82940.33584016668, 
+          "min": 66354.32710733335, 
+          "value": 1
+        }, 
+        {}, 
+        {}, 
+        {
+          "max": 132698.3620386667, 
+          "min": 116112.35330583336, 
+          "value": 1
+        }, 
+        {}, 
+        {}, 
+        {
+          "max": 182456.38823716668, 
+          "min": 165870.37950433334, 
+          "value": 2
+        }, 
+        {
+          "max": 199042.39697000003, 
+          "min": 182456.38823716668, 
+          "value": 3
+        }
+      ], 
+      "gravity": [
+        {
+          "max": 0.27346083579755937, 
+          "min": 0.0450815743856429, 
+          "value": 93
+        }, 
+        {
+          "max": 0.5018400972094759, 
+          "min": 0.27346083579755937, 
+          "value": 9
+        }, 
+        {}, 
+        {
+          "max": 0.9585986200333086, 
+          "min": 0.7302193586213922, 
+          "value": 1
+        }, 
+        {
+          "max": 1.186977881445225, 
+          "min": 0.9585986200333086, 
+          "value": 9
+        }, 
+        {
+          "max": 1.4153571428571416, 
+          "min": 1.1869778814452252, 
+          "value": 4
+        }, 
+        {
+          "max": 1.643736404269058, 
+          "min": 1.4153571428571416, 
+          "value": 7
+        }, 
+        {
+          "max": 1.8721156656809745, 
+          "min": 1.643736404269058, 
+          "value": 6
+        }, 
+        {
+          "max": 2.1004949270928908, 
+          "min": 1.8721156656809745, 
+          "value": 1
+        }, 
+        {
+          "max": 2.328874188504807, 
+          "min": 2.1004949270928908, 
+          "value": 3
+        }, 
+        {
+          "max": 2.5572534499167237, 
+          "min": 2.328874188504807, 
+          "value": 2
+        }, 
+        {
+          "max": 2.78563271132864, 
+          "min": 2.5572534499167237, 
+          "value": 1
+        }
+      ], 
+      "local_stars": {
+        "A (Blue-White) Star": 33, 
+        "B (Blue-White) Star": 2, 
+        "F (White) Star": 31, 
+        "G (White-Yellow) Star": 11, 
+        "K (Yellow-Orange) Star": 11, 
+        "L (Brown dwarf) Star": 14, 
+        "M (Red dwarf) Star": 16, 
+        "T (Brown dwarf) Star": 5, 
+        "Y (Brown dwarf) Star": 13
+      }, 
+      "materials": {
+        "Antimony": 30, 
+        "Arsenic": 32, 
+        "Cadmium": 56, 
+        "Carbon": 136, 
+        "Chromium": 82, 
+        "Germanium": 48, 
+        "Iron": 136, 
+        "Manganese": 82, 
+        "Mercury": 41, 
+        "Molybdenum": 35, 
+        "Nickel": 136, 
+        "Niobium": 54, 
+        "Phosphorus": 136, 
+        "Polonium": 6, 
+        "Ruthenium": 31, 
+        "Selenium": 32, 
+        "Sulphur": 136, 
+        "Technetium": 13, 
+        "Tellurium": 28, 
+        "Tin": 43, 
+        "Tungsten": 43, 
+        "Vanadium": 55, 
+        "Yttrium": 28, 
+        "Zinc": 47, 
+        "Zirconium": 30
+      }, 
+      "pressure": [
+        {
+          "max": 0.0005724863237108317, 
+          "min": 0.0, 
+          "value": 130
+        }, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {
+          "max": 0.0051523769133974846, 
+          "min": 0.004579890589686653, 
+          "value": 1
+        }, 
+        {}, 
+        {
+          "max": 0.006297349560819149, 
+          "min": 0.005724863237108317, 
+          "value": 1
+        }, 
+        {
+          "max": 0.00686983588452998, 
+          "min": 0.006297349560819149, 
+          "value": 3
+        }
+      ], 
+      "primary_stars": {
+        "A (Blue-White) Star": 36, 
+        "B (Blue-White) Star": 5, 
+        "F (White) Star": 43, 
+        "G (White-Yellow) Star": 16, 
+        "K (Yellow-Orange) Star": 19, 
+        "L (Brown dwarf) Star": 1, 
+        "M (Red dwarf) Star": 16, 
+        "Neutron Star": 4, 
+        "null": 1
+      }, 
+      "system_bodies": {
+        "A (Blue-White) Star": 37, 
+        "B (Blue-White) Star": 5, 
+        "Class I gas giant": 62, 
+        "Class II gas giant": 38, 
+        "Class III gas giant": 69, 
+        "Class IV gas giant": 22, 
+        "Earth-like world": 7, 
+        "F (White) Star": 46, 
+        "G (White-Yellow) Star": 18, 
+        "Gas giant with ammonia-based life": 20, 
+        "Gas giant with water-based life": 36, 
+        "Helium-rich gas giant": 7, 
+        "High metal content world": 122, 
+        "Icy body": 98, 
+        "K (Yellow-Orange) Star": 36, 
+        "L (Brown dwarf) Star": 24, 
+        "M (Red dwarf) Star": 47, 
+        "Metal-rich body": 29, 
+        "Neutron Star": 4, 
+        "Rocky Ice world": 18, 
+        "Rocky body": 120, 
+        "T (Brown dwarf) Star": 12, 
+        "Water giant": 5, 
+        "Water world": 14, 
+        "Y (Brown dwarf) Star": 36, 
+        "null": 90
+      }, 
+      "temperature": [
+        {
+          "max": 227.68726241666667, 
+          "min": 203.056473, 
+          "value": 22
+        }, 
+        {
+          "max": 252.31805183333333, 
+          "min": 227.68726241666667, 
+          "value": 25
+        }, 
+        {
+          "max": 276.94884125000004, 
+          "min": 252.31805183333336, 
+          "value": 3
+        }, 
+        {
+          "max": 301.5796306666667, 
+          "min": 276.94884125, 
+          "value": 11
+        }, 
+        {
+          "max": 326.21042008333336, 
+          "min": 301.5796306666667, 
+          "value": 7
+        }, 
+        {
+          "max": 350.84120950000005, 
+          "min": 326.21042008333336, 
+          "value": 7
+        }, 
+        {
+          "max": 375.4719989166667, 
+          "min": 350.8412095, 
+          "value": 7
+        }, 
+        {
+          "max": 400.1027883333334, 
+          "min": 375.47199891666673, 
+          "value": 5
+        }, 
+        {
+          "max": 424.73357775000005, 
+          "min": 400.10278833333336, 
+          "value": 5
+        }, 
+        {
+          "max": 449.3643671666667, 
+          "min": 424.73357775, 
+          "value": 12
+        }, 
+        {
+          "max": 473.9951565833334, 
+          "min": 449.36436716666674, 
+          "value": 14
+        }, 
+        {
+          "max": 498.62594600000006, 
+          "min": 473.99515658333337, 
+          "value": 18
+        }
+      ], 
+      "volcanic_body_types": {
+        "High metal content world - Major Rocky Magma": 18, 
+        "High metal content world - Major Silicate Vapour Geysers": 18, 
+        "High metal content world - Metallic Magma": 13, 
+        "High metal content world - Minor Metallic Magma": 1, 
+        "High metal content world - Rocky Magma": 11, 
+        "Rocky body - Major Metallic Magma": 3, 
+        "Rocky body - Major Silicate Vapour Geysers": 70, 
+        "Rocky body - No volcanism": 2
+      }
+    }, 
+    "hud_category": "Biology", 
+    "id": "$Codex_Ent_TubeEFGH_02_Name;", 
+    "localStars": [
+      "K (Yellow-Orange) Star", 
+      "B (Blue-White) Star", 
+      "T (Brown dwarf) Star", 
+      "Y (Brown dwarf) Star", 
+      "M (Red dwarf) Star", 
+      "L (Brown dwarf) Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "G (White-Yellow) Star"
+    ], 
+    "materials": [
+      "Carbon", 
+      "Iron", 
+      "Sulphur", 
+      "Nickel", 
+      "Phosphorus"
+    ], 
+    "maxd": 199042.39697, 
+    "maxg": 2.78563271132864, 
+    "maxp": 0.00686983588452998, 
+    "maxt": 498.625946, 
+    "mind": 10.292176, 
+    "ming": 0.0450815743856429, 
+    "minp": 0.000339566523562793, 
+    "mint": 203.056473, 
+    "name": "Violaceum Sinuous Tubers", 
+    "platform": null, 
+    "primaryStars": [
+      "K (Yellow-Orange) Star", 
+      "B (Blue-White) Star", 
+      "M (Red dwarf) Star", 
+      "Neutron Star", 
+      "L (Brown dwarf) Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "G (White-Yellow) Star", 
+      null
+    ], 
+    "regions": [
+      "Norma Arm", 
+      "Inner Orion Spur", 
+      "Izanami", 
+      "Ryker's Hope", 
+      "Odin's Hold", 
+      "Arcadian Stream", 
+      "Inner Scutum-Centaurus Arm", 
+      "Hawking's Gap", 
+      "Norma Expanse", 
+      "Empyrean Straits"
+    ], 
+    "reward": 1514500, 
+    "solidComposition": [
+      "Ice", 
+      "Metal", 
+      "Rock"
+    ], 
+    "systemBodyTypes": [], 
+    "volcanism": [
+      "Metallic Magma", 
+      "No volcanism", 
+      "Minor Metallic Magma", 
+      "Major Silicate Vapour Geysers", 
+      "Major Rocky Magma", 
+      "Major Metallic Magma", 
+      "Rocky Magma"
+    ]
+  }, 
+  "2100508": {
+    "atmosComposition": [], 
+    "atmosphereType": [
+      "Thin Carbon dioxide", 
+      "No atmosphere", 
+      "Thin Sulphur dioxide"
+    ], 
+    "bodies": [
+      "High metal content world", 
+      "Rocky body"
+    ], 
+    "count": 152, 
+    "fdevname": "$Codex_Ent_TubeEFGH_03_Name;", 
+    "histograms": {
+      "atmos_types": {
+        "No atmosphere": 144, 
+        "Thin Carbon dioxide": 1, 
+        "Thin Sulphur dioxide": 1
+      }, 
+      "body_types": {
+        "High metal content world": 37, 
+        "Rocky body": 109
+      }, 
+      "distance": [
+        {
+          "max": 16620.606604166667, 
+          "min": 36.80748, 
+          "value": 136
+        }, 
+        {
+          "max": 33204.40572833334, 
+          "min": 16620.606604166667, 
+          "value": 7
+        }, 
+        {
+          "max": 49788.20485250001, 
+          "min": 33204.40572833334, 
+          "value": 1
+        }, 
+        {}, 
+        {
+          "max": 82955.80310083335, 
+          "min": 66372.00397666667, 
+          "value": 1
+        }, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {
+          "max": 199042.39697, 
+          "min": 182458.59784583334, 
+          "value": 1
+        }
+      ], 
+      "gravity": [
+        {
+          "max": 0.27674599775670444, 
+          "min": 0.0437576221066585, 
+          "value": 123
+        }, 
+        {
+          "max": 0.5097343734067504, 
+          "min": 0.27674599775670444, 
+          "value": 3
+        }, 
+        {}, 
+        {
+          "max": 0.9757111247068423, 
+          "min": 0.7427227490567964, 
+          "value": 2
+        }, 
+        {
+          "max": 1.2086995003568883, 
+          "min": 0.9757111247068423, 
+          "value": 8
+        }, 
+        {}, 
+        {
+          "max": 1.6746762516569802, 
+          "min": 1.4416878760069343, 
+          "value": 5
+        }, 
+        {
+          "max": 1.9076646273070261, 
+          "min": 1.6746762516569802, 
+          "value": 3
+        }, 
+        {
+          "max": 2.1406530029570723, 
+          "min": 1.9076646273070261, 
+          "value": 1
+        }, 
+        {}, 
+        {}, 
+        {
+          "max": 2.83961812990721, 
+          "min": 2.606629754257164, 
+          "value": 1
+        }
+      ], 
+      "local_stars": {
+        "A (Blue-White) Star": 36, 
+        "B (Blue-White) Star": 10, 
+        "F (White) Star": 33, 
+        "G (White-Yellow) Star": 15, 
+        "K (Yellow-Orange) Star": 9, 
+        "L (Brown dwarf) Star": 9, 
+        "M (Red dwarf) Star": 8, 
+        "Neutron Star": 3, 
+        "T (Brown dwarf) Star": 5, 
+        "Y (Brown dwarf) Star": 18
+      }, 
+      "materials": {
+        "Antimony": 27, 
+        "Arsenic": 31, 
+        "Cadmium": 71, 
+        "Carbon": 146, 
+        "Chromium": 83, 
+        "Germanium": 63, 
+        "Iron": 146, 
+        "Manganese": 84, 
+        "Mercury": 31, 
+        "Molybdenum": 36, 
+        "Nickel": 146, 
+        "Niobium": 56, 
+        "Phosphorus": 146, 
+        "Polonium": 15, 
+        "Ruthenium": 38, 
+        "Selenium": 36, 
+        "Sulphur": 146, 
+        "Technetium": 18, 
+        "Tellurium": 24, 
+        "Tin": 51, 
+        "Tungsten": 47, 
+        "Vanadium": 57, 
+        "Yttrium": 24, 
+        "Zinc": 59, 
+        "Zirconium": 25
+      }, 
+      "pressure": [
+        {
+          "max": 0.0005644061304383583, 
+          "min": 0.0, 
+          "value": 143
+        }, 
+        {}, 
+        {}, 
+        {
+          "max": 0.002257624521753433, 
+          "min": 0.0016932183913150748, 
+          "value": 1
+        }, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {}, 
+        {}
+      ], 
+      "primary_stars": {
+        "A (Blue-White) Star": 42, 
+        "B (Blue-White) Star": 17, 
+        "F (White) Star": 42, 
+        "G (White-Yellow) Star": 16, 
+        "K (Yellow-Orange) Star": 12, 
+        "L (Brown dwarf) Star": 1, 
+        "M (Red dwarf) Star": 14, 
+        "Neutron Star": 8
+      }, 
+      "system_bodies": {
+        "A (Blue-White) Star": 47, 
+        "Ammonia world": 6, 
+        "B (Blue-White) Star": 17, 
+        "Class I gas giant": 49, 
+        "Class II gas giant": 51, 
+        "Class III gas giant": 101, 
+        "Class IV gas giant": 41, 
+        "Earth-like world": 4, 
+        "F (White) Star": 46, 
+        "G (White-Yellow) Star": 24, 
+        "Gas giant with ammonia-based life": 9, 
+        "Gas giant with water-based life": 43, 
+        "Helium-rich gas giant": 6, 
+        "High metal content world": 126, 
+        "Icy body": 85, 
+        "K (Yellow-Orange) Star": 28, 
+        "L (Brown dwarf) Star": 19, 
+        "M (Red dwarf) Star": 42, 
+        "Metal-rich body": 43, 
+        "Neutron Star": 8, 
+        "Rocky Ice world": 14, 
+        "Rocky body": 138, 
+        "T (Brown dwarf) Star": 17, 
+        "Water giant": 5, 
+        "Water world": 18, 
+        "Y (Brown dwarf) Star": 56, 
+        "null": 109
+      }, 
+      "temperature": [
+        {
+          "max": 225.74165299999999, 
+          "min": 200.93399, 
+          "value": 28
+        }, 
+        {
+          "max": 250.54931599999998, 
+          "min": 225.74165299999999, 
+          "value": 17
+        }, 
+        {
+          "max": 275.356979, 
+          "min": 250.549316, 
+          "value": 4
+        }, 
+        {
+          "max": 300.164642, 
+          "min": 275.356979, 
+          "value": 20
+        }, 
+        {
+          "max": 324.972305, 
+          "min": 300.164642, 
+          "value": 13
+        }, 
+        {
+          "max": 349.779968, 
+          "min": 324.972305, 
+          "value": 8
+        }, 
+        {
+          "max": 374.587631, 
+          "min": 349.779968, 
+          "value": 8
+        }, 
+        {
+          "max": 399.395294, 
+          "min": 374.587631, 
+          "value": 10
+        }, 
+        {
+          "max": 424.202957, 
+          "min": 399.39529400000004, 
+          "value": 4
+        }, 
+        {
+          "max": 449.01061999999996, 
+          "min": 424.20295699999997, 
+          "value": 10
+        }, 
+        {
+          "max": 473.818283, 
+          "min": 449.01062, 
+          "value": 11
+        }, 
+        {
+          "max": 498.625946, 
+          "min": 473.818283, 
+          "value": 13
+        }
+      ], 
+      "volcanic_body_types": {
+        "High metal content world - Major Rocky Magma": 14, 
+        "High metal content world - Major Silicate Vapour Geysers": 5, 
+        "High metal content world - Metallic Magma": 12, 
+        "High metal content world - Rocky Magma": 6, 
+        "Rocky body - Major Metallic Magma": 2, 
+        "Rocky body - Major Silicate Vapour Geysers": 107
+      }
+    }, 
+    "hud_category": "Biology", 
+    "id": "$Codex_Ent_TubeEFGH_03_Name;", 
+    "localStars": [
+      "K (Yellow-Orange) Star", 
+      "B (Blue-White) Star", 
+      "T (Brown dwarf) Star", 
+      "Y (Brown dwarf) Star", 
+      "M (Red dwarf) Star", 
+      "Neutron Star", 
+      "L (Brown dwarf) Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "G (White-Yellow) Star"
+    ], 
+    "materials": [
+      "Iron", 
+      "Carbon", 
+      "Sulphur", 
+      "Nickel", 
+      "Phosphorus"
+    ], 
+    "maxd": 199042.39697, 
+    "maxg": 2.83961812990721, 
+    "maxp": 0.0067728735652603, 
+    "maxt": 498.625946, 
+    "mind": 36.80748, 
+    "ming": 0.0437576221066585, 
+    "minp": 0.000331048221070812, 
+    "mint": 200.93399, 
+    "name": "Viride Sinuous Tubers", 
+    "platform": null, 
+    "primaryStars": [
+      "K (Yellow-Orange) Star", 
+      "B (Blue-White) Star", 
+      "M (Red dwarf) Star", 
+      "Neutron Star", 
+      "L (Brown dwarf) Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "G (White-Yellow) Star"
+    ], 
+    "regions": [
+      "Inner Orion Spur", 
+      "Izanami", 
+      "Ryker's Hope", 
+      "Odin's Hold", 
+      "Norma Expanse", 
+      "Inner Scutum-Centaurus Arm", 
+      "Hawking's Gap", 
+      "Inner Orion-Perseus Conflux"
+    ], 
+    "reward": 1514500, 
+    "solidComposition": [
+      "Ice", 
+      "Metal", 
+      "Rock"
+    ], 
+    "systemBodyTypes": [], 
+    "volcanism": [
+      "Metallic Magma", 
+      "Major Silicate Vapour Geysers", 
+      "Major Rocky Magma", 
+      "Major Metallic Magma", 
+      "Rocky Magma"
+    ]
+  }
+}
