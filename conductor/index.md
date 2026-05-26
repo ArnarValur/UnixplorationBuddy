@@ -18,3 +18,11 @@
 - [Relay](./relay.md)
 - [Tracks Registry](./tracks.md)
 - [Tracks Directory](./tracks/)
+
+---
+
+## Agent Rules
+
+| File                                          | Purpose                                      |
+|-----------------------------------------------|----------------------------------------------|
+| [agent-rules/](./agent-rules/)                | Book-sourced coding rules for AI agents      |
