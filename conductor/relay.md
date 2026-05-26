@@ -4,6 +4,16 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 01:42
+- **Session:** Phase 1 implementation — project bootstrap + journal ingestion
+- **Tracks touched:** `phase1_bodies_history_20260527`
+- **Status:** Phase 1 (bootstrap) and Phase 2 (journal ingestion) of track plan complete. 4 of 6 phases remaining.
+- **Decisions:** None (3 operational decisions recorded in pulse Session Memory)
+- **Next:** Phase 3 (body hierarchy naming convention parser + value calculation), Phase 4 (TUI polish), Phase 5 (trip persistence), Phase 6 (integration)
+- **Key commits:** `342e5c3` (bootstrap), `40dd102` (journal ingestion)
+- **Key files:** `src/journal.rs` (ingestion core), `src/main.rs` (wired up), `src/model/` (data types), `src/ui/mod.rs` (body table)
+- **Test status:** 5/5 passing, 0 compilation errors, cargo check clean
+
 ## 2026-05-27 00:21
 - **Session:** Domain grill — Rust/Ratatui pivot
 - **Tracks touched:** None (no tracks created yet)
