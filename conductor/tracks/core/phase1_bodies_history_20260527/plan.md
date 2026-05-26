@@ -8,24 +8,24 @@
 
 ## Phase 1: Project Bootstrap
 
-- [ ] Task: Initialize Rust project
-    - [ ] `cargo init` in repo root
-    - [ ] Add dependencies to `Cargo.toml`: `ratatui`, `crossterm`, `ed-journals`, `serde`, `serde_json`, `chrono`, `dirs`
-    - [ ] Verify `cargo check` passes
-    - [ ] Update `.gitignore` for Rust (`/target/`, etc.)
+- [x] Task: Initialize Rust project `342e5c3`
+    - [x] `cargo init` in repo root
+    - [x] Add dependencies to `Cargo.toml`: `ratatui`, `crossterm`, `ed-journals`, `serde`, `serde_json`, `chrono`, `dirs`
+    - [x] Verify `cargo check` passes
+    - [x] Update `.gitignore` for Rust (`/target/`, etc.)
 
-- [ ] Task: Define core data model
-    - [ ] `System` struct: name, system_address, body count (discovered/total), total value
-    - [ ] `Body` struct: body_id, name, body_type, atmosphere, distance_ls, scan_state, mass, terraformability, bio_signals, geo_signals, calculated_value, was_discovered, was_mapped
-    - [ ] `ScanState` enum: Unseen, Honked, FSSScanned, DSSMapped
-    - [ ] `BodyHierarchy` tree structure: parent→child relationships derived from naming convention
-    - [ ] `Trip` struct: systems_visited, bodies_scanned_fss, bodies_mapped_dss, first_discoveries, first_mappings, bio_detected, bio_analysed, total_value
+- [x] Task: Define core data model `342e5c3`
+    - [x] `System` struct: name, system_address, body count (discovered/total), total value
+    - [x] `Body` struct: body_id, name, body_type, atmosphere, distance_ls, scan_state, mass, terraformability, bio_signals, geo_signals, calculated_value, was_discovered, was_mapped
+    - [x] `ScanState` enum: Unseen, Honked, FSSScanned, DSSMapped
+    - [x] `BodyHierarchy` tree structure: parent→child relationships derived from naming convention
+    - [x] `Trip` struct: systems_visited, bodies_scanned_fss, bodies_mapped_dss, first_discoveries, first_mappings, bio_detected, bio_analysed, total_value
 
-- [ ] Task: Set up application skeleton
-    - [ ] Main loop: terminal init → event loop → cleanup
-    - [ ] `App` struct holding System, Bodies, Trip, active tab
-    - [ ] Basic Ratatui setup with crossterm backend
-    - [ ] Graceful exit on `q` / `Ctrl+C`
+- [x] Task: Set up application skeleton `342e5c3`
+    - [x] Main loop: terminal init → event loop → cleanup
+    - [x] `App` struct holding System, Bodies, Trip, active tab
+    - [x] Basic Ratatui setup with crossterm backend
+    - [x] Graceful exit on `q` / `Ctrl+C`
 
 ---
 
