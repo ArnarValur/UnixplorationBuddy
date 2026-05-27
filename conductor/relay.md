@@ -4,6 +4,13 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 18:11
+- **Session:** Implemented automatic TUI tab transitions switching to Route tab on FSD jump start and returning to Bodies tab upon system arrival.
+- **Tracks touched:** `phase4_tab_transitions_20260527`
+- **Status:** Phase 4 fully completed, compiled, and verified. 93/93 unit tests are green. StartJump (Hyperspace) live-events switch the focus to Tab::Route, and FSDJump live-events switch the focus back to Tab::Bodies. Protected from replay interference during startup.
+- **Decisions:** None (operational -> Pulse)
+- **Next:** Refine exobiology panel layout and detailed telemetry displays based on live session feedback.
+
 ## 2026-05-27 18:05
 - **Session:** Implemented primary star subclass and luminosity parsing, rendering detailed tree-list subtypes in the Stellar Codex.
 - **Tracks touched:** `phase3_stellar_codex_20260527`

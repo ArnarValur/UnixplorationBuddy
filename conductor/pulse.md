@@ -1,12 +1,13 @@
 # Pulse — Current Project State
 
-**Last Updated:** 2026-05-27 18:05
-**Session Focus:** Implemented primary star subclass and luminosity parsing, rendering detailed tree-list subtypes in the Stellar Codex.
+**Last Updated:** 2026-05-27 18:11
+**Session Focus:** Implemented automatic TUI tab transitions switching to Route tab on FSD jump start and returning to Bodies tab upon system arrival.
 
 ## 🚀 Active Tracks
 _None._
 
 ## ✅ Recently Completed
+- **Automatic Tab Transitions (2026-05-27):** Implemented automatic TUI tab switching to the Route tab when starting a live `Hyperspace` jump (if a route is plotted), and automatically returning to the Bodies tab when arriving in the destination system, protected against replay mode.
 - **Stellar Codex Hierarchy (2026-05-27):** Parsed specific star types (`{StarType}{Subclass} {Luminosity}` like `F9 VAB` or `K5 VA`) on star `Scan` events, and rendered them using a beautiful, premium tree-guide structure (`  ├─ ` / `  └─ `) under their main class inside the Stellar Codex TUI tab, summing base visits automatically.
 - **Sandboxed Flatpak Watcher Fix (2026-05-27):** Replaced inotify-based LiveLogDirReader with a highly robust filesystem-polling log tailer, fully resolving TUI lockups inside sandboxed Flatpak container environments on Linux.
 - **Hybrid Exobiology Predictor Fallback (2026-05-27):** Implemented SAA genus extraction and a relaxed matching fallback (matching strictly on genus, atmosphere, and planet class) to prevent blank exobiology panels when strict Canonn boundaries fail.
@@ -19,6 +20,8 @@ _None._
 _None._
 
 ## 🧠 Session Memory
+- *2026-05-27* — Ingested StartJump event matching the Hyperspace struct variant to automate tab navigation. _(operational)_
+- *2026-05-27* — Handled live-mode protection inside StartJump and FSDJump to ensure tab transitions only occur during live sessions. _(operational)_
 - *2026-05-27* — Grouped and summed primary star types by their base non-digit class letters, sorting base classes and subtypes descending by visits. _(operational)_
 - *2026-05-27* — Formatted star subtypes using subclass numbers and capitalized luminosity codes from scan events to match in-game Star Types perfectly. _(operational)_
 - *2026-05-27* — Normalized 'sulphur' and 'sulfur' atmosphere spelling to prevent database matching failures on sulfur-dioxide planets. _(operational)_
@@ -31,5 +34,5 @@ _None._
 - **2026-05-27 (Phase 2 Grill):** Exobiology predictions will match FSS `Scan` physical parameters against Canonn distribution boundaries, only compiling and checking if FSS discovery scan detects bio signals > 0 to keep the display clean. _(operational)_
 
 ## 📋 Next Session Suggestions
-- **Automatic Tab Transitions:** Implement automatic TUI tab switching to the Route tab when the ship begins an FSD jump (detecting `StartJump` / `FSDTarget` events), and automatically hop back to the Bodies tab when arrival/landing in the destination system is complete.
 - **Further Exobiology Panel Tweaks:** Refine exobiology panel layout and detailed telemetry displays based on live session feedback.
+- **Audio Notification Cue:** Play a subtle sound cue or terminal beep upon automatic tab switches to audibly notify the commander when tab focus transitions.
