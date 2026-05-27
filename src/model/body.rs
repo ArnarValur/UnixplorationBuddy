@@ -4,6 +4,7 @@ use ed_journals::galaxy::{PlanetClass, StarClass};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ScanState {
     Unseen,
+    #[allow(dead_code)]
     Honked,
     FSSScanned,
     DSSMapped,
@@ -47,6 +48,7 @@ impl Default for BodyType {
 #[derive(Debug, Clone)]
 pub struct Body {
     pub body_id: u32,
+    #[allow(dead_code)]
     pub name: String,
     /// Display name — just the suffix, e.g. "A 1 a".
     pub short_name: String,

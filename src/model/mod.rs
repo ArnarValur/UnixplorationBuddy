@@ -10,7 +10,7 @@ pub mod biology;
 
 pub use body::{Body, BodyType, ScanState};
 pub use hierarchy::BodyHierarchy;
-pub use navigation::{Destination, NavRoute, RouteEntry, Status};
+pub use navigation::{NavRoute, Status};
 pub use system::System;
 pub use trip::Trip;
 

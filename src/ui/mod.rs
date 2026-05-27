@@ -10,7 +10,7 @@ use ratatui::widgets::{Block, Borders, Clear, Paragraph, Row, Scrollbar, Scrollb
 use ratatui::Frame;
 
 use crate::app::{App, Tab, CodexTab};
-use crate::model::{Body, BodyType, ScanState};
+use crate::model::{BodyType, ScanState};
 use crate::model::biology::predictor;
 
 // ── Color palette ────────────────────────────────────────────────
