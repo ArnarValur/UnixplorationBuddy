@@ -276,6 +276,26 @@ fn format_credits(value: u64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::{Body, BodyType, ScanState, System};
+    use ratatui::backend::TestBackend;
+    use ratatui::Terminal;
+
+    /// Render the full UI to a TestBackend and return the buffer content as a string.
+    fn render_to_string(app: &App, width: u16, height: u16) -> String {
+        let backend = TestBackend::new(width, height);
+        let mut terminal = Terminal::new(backend).unwrap();
+        terminal.draw(|frame| draw(frame, app)).unwrap();
+        let buf = terminal.backend().buffer().clone();
+        // Collect all cells row by row into a single string
+        let mut output = String::new();
+        for y in 0..buf.area.height {
+            for x in 0..buf.area.width {
+                output.push_str(buf[(x, y)].symbol());
+            }
+            output.push('\n');
+        }
+        output
+    }
 
     #[test]
     fn format_credits_works() {
@@ -284,5 +304,97 @@ mod tests {
         assert_eq!(format_credits(1000), "1,000");
         assert_eq!(format_credits(1234567), "1,234,567");
         assert_eq!(format_credits(10_000_000), "10,000,000");
+    }
+
+    #[test]
+    fn header_renders_system_name_and_body_count() {
+        let mut app = App::new();
+        app.system = System::new("Sagittarius A*".into(), 123);
+        app.system.body_count_discovered = 5;
+        app.system.body_count_total = 10;
+
+        let output = render_to_string(&app, 80, 10);
+        assert!(
+            output.contains("Sagittarius A*"),
+            "Header should contain system name.\nOutput:\n{output}"
+        );
+        assert!(
+            output.contains("5 of 10 bodies"),
+            "Header should show body count.\nOutput:\n{output}"
+        );
+    }
+
+    #[test]
+    fn empty_bodies_shows_placeholder() {
+        let app = App::new();
+        let output = render_to_string(&app, 80, 10);
+        assert!(
+            output.contains("No bodies discovered yet"),
+            "Should show placeholder when no bodies.\nOutput:\n{output}"
+        );
+    }
+
+    #[test]
+    fn history_tab_renders_trip_stats() {
+        let mut app = App::new();
+        app.active_tab = Tab::History;
+        app.trip.systems_visited = 42;
+        app.trip.bodies_scanned_fss = 17;
+
+        let output = render_to_string(&app, 80, 15);
+        assert!(
+            output.contains("Systems Visited"),
+            "History should show stat labels.\nOutput:\n{output}"
+        );
+        assert!(
+            output.contains("42"),
+            "History should show trip counter values.\nOutput:\n{output}"
+        );
+        assert!(
+            output.contains("17"),
+            "History should show FSS scan count.\nOutput:\n{output}"
+        );
+    }
+
+    #[test]
+    fn bodies_tab_renders_body_rows() {
+        let mut app = App::new();
+        app.system = System::new("Test System".into(), 1);
+
+        let mut star = Body::new(0, "Test System".into());
+        star.short_name = "Test System".into();
+        star.body_type = BodyType::Star;
+        star.scan_state = ScanState::FSSScanned;
+        star.distance_ls = Some(0.0);
+        app.bodies.insert(0, star);
+
+        let mut planet = Body::new(1, "Test System 1".into());
+        planet.short_name = "1".into();
+        planet.body_type = BodyType::Planet;
+        planet.scan_state = ScanState::DSSMapped;
+        planet.distance_ls = Some(123.4);
+        planet.parent_id = Some(0);
+        app.bodies.insert(1, planet);
+
+        app.rebuild_display_order();
+
+        let output = render_to_string(&app, 100, 12);
+        assert!(
+            output.contains("Star"),
+            "Should show Star body type.\nOutput:\n{output}"
+        );
+        assert!(
+            output.contains("Planet"),
+            "Should show Planet body type.\nOutput:\n{output}"
+        );
+        // Check scan state icons
+        assert!(
+            output.contains("●"), // FSSScanned icon
+            "Should show FSS scan icon.\nOutput:\n{output}"
+        );
+        assert!(
+            output.contains("★"), // DSSMapped icon
+            "Should show DSS mapped icon.\nOutput:\n{output}"
+        );
     }
 }

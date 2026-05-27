@@ -69,7 +69,7 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
             while let Ok(update) = rx.try_recv() {
                 match update {
                     JournalUpdate::Event(event) => {
-                        journal::process_event(&mut app, &event);
+                        journal::process_event(&mut app, &event, true);
                         app.rebuild_display_order();
                     }
                     JournalUpdate::Error(e) => {
