@@ -7,8 +7,8 @@
 
 ## Phase 2: Core Data Types & Ingestion
 - [x] Expand `Body` model with `gravity`, `temperature`, and `landable` fields. (c861e3e)
-- [ ] Implement `Status.json` parsing in the live journal watcher.
-- [ ] Implement `NavRoute.json` monitoring and parsing.
+- [x] Implement `Status.json` parsing in the live journal watcher. (e440f13)
+- [x] Implement `NavRoute.json` monitoring and parsing. (e440f13)
 - [ ] Add `ScanOrganic` ingestion for exobiology completed analyses.
 
 ## Phase 3: Background EDSM Thread & Cache
