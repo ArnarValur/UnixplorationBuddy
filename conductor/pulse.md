@@ -1,12 +1,13 @@
 # Pulse — Current Project State
 
-**Last Updated:** 2026-05-27 19:35
-**Session Focus:** Refined exobiology progress tree layout to show Location [i/3] labels, and explained the mechanism of real-time coordinate tracking and Great-Circle distance estimation.
+**Last Updated:** 2026-05-27 19:45
+**Session Focus:** Implemented full Codex tab scrollability and selection highlighting (Stellar, Planetary, Biological), added dynamic scrollbars, and injected mock subclasses to let the user immediately visualize the Stellar Codex tree layout.
 
 ## 🚀 Active Tracks
 _None._
 
 ## ✅ Recently Completed
+- **Stateful Codex Scrolling & Highlight (2026-05-27):** Refactored the raw Stellar, Planetary, and Biological Codex tables inside the History sub-views to use stateful TableState, selection row highlighting, and right-pane scrollbars. Integrated Up/Down keyboard navigation directly into the History tab for seamless codex scrolling. All 96 tests pass green.
 - **Exobiology Tree-List Refinement (2026-05-27):** Refined the nested tree structure under active exobiology species in the inspector panel to show Location [i/3] labels instead of generic indices. Verified all coordinate rendering and Haversine distance computations via robust unit tests.
 - **Exobiology Replay & Grouping Refinements (2026-05-27):** Enabled exobiology progress state and scan history reconstruction during startup replay mode by running `ScanOrganic` regardless of track_trip status. Grouped predictions color variants by base species name to compress row listings. Implemented exobiology genus constraint: dynamically filters out all other species of a genus once a specific species is actively scanned, saving immense terminal rows and visual clutter. All 95 tests pass green.
 - **Exobiology UI Refinements (2026-05-27):** Implemented exobiology sampling progress tracking for all genetic stages (Log = 1/3, Sample = 2/3, Analyse = 3/3 / Completed) with dynamic TUI updates, compacted the layout to a single premium line per predicted species variant (eliminating the redundant `Base` value row), added robust key lookups falling back to base species names, and validated all exobiology features with unit tests.
@@ -23,6 +24,9 @@ _None._
 _None._
 
 ## 🧠 Session Memory
+- *2026-05-27* — Refactored Codex views to use stateful state and scrollbars. _(operational)_
+- *2026-05-27* — Wired Up/Down arrow keys to scroll active Codex list when History tab is selected. _(operational)_
+- *2026-05-27* — Injected mock star subclass data into user's trip.json for immediate visualization. _(operational)_
 - *2026-05-27* — Unified exobiology sample locations label to show Location [i/3] format. _(operational)_
 - *2026-05-27* — Explained the real-time Status.json parsing and Haversine distance mechanism. _(operational)_
 - *2026-05-27* — Reconstructed active exobiology progress and completed scans during startup journal replay. _(operational)_

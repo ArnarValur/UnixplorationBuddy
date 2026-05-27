@@ -4,6 +4,13 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 19:45
+- **Session:** Implemented full Codex tab scrollability and selection highlighting (Stellar, Planetary, Biological), added dynamic scrollbars, and injected mock subclasses to let the user immediately visualize the Stellar Codex tree layout.
+- **Tracks touched:** None
+- **Status:** Complete! Keyboard navigation (Up/Down arrows) maps directly to Codex table rows when viewing the History tab. Selection highlighter and premium vertical scrollbars are rendered dynamically for all three Codex tables. Mock star subclass data was injected into the user's local `trip.json` for instant verification. All 96 tests pass green.
+- **Decisions:** None (operational -> Pulse)
+- **Next:** Focus on any additional codex telemetry enrichments or user requests.
+
 ## 2026-05-27 19:35
 - **Session:** Refined the exobiology tree-list layout under in-progress species in the inspector panel to show nested Location [i/3] rows, and explained the mechanism of real-time coordinate tracking and Haversine distance calculations.
 - **Tracks touched:** None

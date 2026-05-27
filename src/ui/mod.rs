@@ -809,6 +809,7 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
             let header = Row::new(vec!["Primary Star Class", "Visits"])
                 .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
 
+            let total_rows = rows.len();
             let widths = [Constraint::Length(30), Constraint::Min(10)];
             let table = Table::new(rows, widths)
                 .header(header)
@@ -818,8 +819,25 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                         .title(tab_title("Stellar Codex", Tab::History, app.active_tab))
                         .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
                 )
+                .row_highlight_style(Style::default().bg(HIGHLIGHT_BG))
                 .style(Style::default().bg(BG_DARK));
-            frame.render_widget(table, content_area);
+
+            let mut state = TableState::default().with_selected(Some(app.selected_codex_index));
+            frame.render_stateful_widget(table, content_area, &mut state);
+
+            if total_rows > (content_area.height as usize).saturating_sub(4) {
+                let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                    .begin_symbol(None)
+                    .end_symbol(None)
+                    .track_symbol(Some("│"))
+                    .thumb_symbol("█");
+                let mut scrollbar_state = ScrollbarState::new(total_rows).position(app.selected_codex_index);
+                frame.render_stateful_widget(
+                    scrollbar,
+                    content_area.inner(ratatui::layout::Margin { vertical: 1, horizontal: 0 }),
+                    &mut scrollbar_state,
+                );
+            }
         }
         CodexTab::Planetary => {
             let mut entries: Vec<(&String, &u32)> = trip.planetary_codex.iter().collect();
@@ -834,6 +852,7 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
             let header = Row::new(vec!["Planet Class", "Scans"])
                 .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
 
+            let total_rows = rows.len();
             let widths = [Constraint::Length(45), Constraint::Min(10)];
             let table = Table::new(rows, widths)
                 .header(header)
@@ -843,8 +862,25 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                         .title(tab_title("Planetary Codex", Tab::History, app.active_tab))
                         .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
                 )
+                .row_highlight_style(Style::default().bg(HIGHLIGHT_BG))
                 .style(Style::default().bg(BG_DARK));
-            frame.render_widget(table, content_area);
+
+            let mut state = TableState::default().with_selected(Some(app.selected_codex_index));
+            frame.render_stateful_widget(table, content_area, &mut state);
+
+            if total_rows > (content_area.height as usize).saturating_sub(4) {
+                let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                    .begin_symbol(None)
+                    .end_symbol(None)
+                    .track_symbol(Some("│"))
+                    .thumb_symbol("█");
+                let mut scrollbar_state = ScrollbarState::new(total_rows).position(app.selected_codex_index);
+                frame.render_stateful_widget(
+                    scrollbar,
+                    content_area.inner(ratatui::layout::Margin { vertical: 1, horizontal: 0 }),
+                    &mut scrollbar_state,
+                );
+            }
         }
         CodexTab::Biological => {
             let mut entries: Vec<(&String, &u32)> = trip.biological_codex.iter().collect();
@@ -859,6 +895,7 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
             let header = Row::new(vec!["Species Name", "Analyses Completed"])
                 .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
 
+            let total_rows = rows.len();
             let widths = [Constraint::Length(45), Constraint::Min(10)];
             let table = Table::new(rows, widths)
                 .header(header)
@@ -868,8 +905,25 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                         .title(tab_title("Biological Codex", Tab::History, app.active_tab))
                         .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
                 )
+                .row_highlight_style(Style::default().bg(HIGHLIGHT_BG))
                 .style(Style::default().bg(BG_DARK));
-            frame.render_widget(table, content_area);
+
+            let mut state = TableState::default().with_selected(Some(app.selected_codex_index));
+            frame.render_stateful_widget(table, content_area, &mut state);
+
+            if total_rows > (content_area.height as usize).saturating_sub(4) {
+                let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                    .begin_symbol(None)
+                    .end_symbol(None)
+                    .track_symbol(Some("│"))
+                    .thumb_symbol("█");
+                let mut scrollbar_state = ScrollbarState::new(total_rows).position(app.selected_codex_index);
+                frame.render_stateful_widget(
+                    scrollbar,
+                    content_area.inner(ratatui::layout::Margin { vertical: 1, horizontal: 0 }),
+                    &mut scrollbar_state,
+                );
+            }
         }
     }
 }

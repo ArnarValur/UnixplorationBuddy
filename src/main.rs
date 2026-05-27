@@ -201,8 +201,20 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                             KeyCode::Char('1') => app.active_tab = app::Tab::Bodies,
                             KeyCode::Char('2') => app.active_tab = app::Tab::History,
                             KeyCode::Char('3') => app.active_tab = app::Tab::Route,
-                            KeyCode::Up => app.select_previous_body(),
-                            KeyCode::Down => app.select_next_body(),
+                            KeyCode::Up => {
+                                if app.active_tab == app::Tab::History {
+                                    app.select_previous_codex_row();
+                                } else {
+                                    app.select_previous_body();
+                                }
+                            }
+                            KeyCode::Down => {
+                                if app.active_tab == app::Tab::History {
+                                    app.select_next_codex_row();
+                                } else {
+                                    app.select_next_body();
+                                }
+                            }
                             KeyCode::Left | KeyCode::Char('a') | KeyCode::Char('A') if app.active_tab == app::Tab::History => {
                                 app.prev_codex_tab();
                             }

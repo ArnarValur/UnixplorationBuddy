@@ -93,6 +93,8 @@ pub struct App {
     pub edsm_cache: HashMap<String, EdsmSystemData>,
     /// Active sub-tab in Trip tab.
     pub active_codex_tab: CodexTab,
+    /// Selected row index in the active codex tab.
+    pub selected_codex_index: usize,
     /// Modular columns visibility toggles.
     pub column_settings: ColumnSettings,
     /// Whether the Settings overlay is currently visible.
@@ -124,6 +126,7 @@ impl App {
             plotted_route: None,
             edsm_cache: HashMap::new(),
             active_codex_tab: CodexTab::default(),
+            selected_codex_index: 0,
             column_settings: ColumnSettings::default(),
             show_settings: false,
             show_inspector: false,
@@ -149,6 +152,7 @@ impl App {
 
     /// Cycle to the next codex sub-tab in the History view.
     pub fn next_codex_tab(&mut self) {
+        self.selected_codex_index = 0;
         self.active_codex_tab = match self.active_codex_tab {
             CodexTab::Overview => CodexTab::Stellar,
             CodexTab::Stellar => CodexTab::Planetary,
@@ -159,12 +163,69 @@ impl App {
 
     /// Cycle to the previous codex sub-tab in the History view.
     pub fn prev_codex_tab(&mut self) {
+        self.selected_codex_index = 0;
         self.active_codex_tab = match self.active_codex_tab {
             CodexTab::Overview => CodexTab::Biological,
             CodexTab::Stellar => CodexTab::Overview,
             CodexTab::Planetary => CodexTab::Stellar,
             CodexTab::Biological => CodexTab::Planetary,
         };
+    }
+
+    /// Calculate the maximum number of rows in the active codex tab.
+    pub fn max_codex_rows(&self) -> usize {
+        match self.active_codex_tab {
+            CodexTab::Overview => 0,
+            CodexTab::Stellar => {
+                let mut groups: HashMap<String, (u32, Vec<String>)> = HashMap::new();
+                for subtype in self.trip.stellar_codex.keys() {
+                    let mut main_class = String::new();
+                    for c in subtype.chars() {
+                        if c.is_ascii_digit() || c == ' ' {
+                            break;
+                        }
+                        main_class.push(c);
+                    }
+                    if main_class.is_empty() {
+                        main_class = subtype.clone();
+                    }
+                    let entry = groups.entry(main_class).or_insert((0, Vec::new()));
+                    entry.1.push(subtype.clone());
+                }
+                
+                let mut count = 0;
+                for (main_class, (_, subtypes)) in groups {
+                    count += 1; // main class row
+                    let has_redundant_single_child = subtypes.len() == 1 && subtypes[0] == main_class;
+                    if !has_redundant_single_child {
+                        count += subtypes.len();
+                    }
+                }
+                count
+            }
+            CodexTab::Planetary => self.trip.planetary_codex.len(),
+            CodexTab::Biological => self.trip.biological_codex.len(),
+        }
+    }
+
+    /// Move selection down in the active codex.
+    pub fn select_next_codex_row(&mut self) {
+        let max_rows = self.max_codex_rows();
+        if max_rows > 0 {
+            self.selected_codex_index = (self.selected_codex_index + 1) % max_rows;
+        }
+    }
+
+    /// Move selection up in the active codex.
+    pub fn select_previous_codex_row(&mut self) {
+        let max_rows = self.max_codex_rows();
+        if max_rows > 0 {
+            self.selected_codex_index = if self.selected_codex_index == 0 {
+                max_rows - 1
+            } else {
+                self.selected_codex_index - 1
+            };
+        }
     }
 
     /// Move selection down in the body list.
@@ -234,5 +295,30 @@ mod tests {
 
         app.prev_codex_tab();
         assert_eq!(app.active_codex_tab, CodexTab::Planetary);
+    }
+
+    #[test]
+    fn test_codex_row_selection() {
+        let mut app = App::new();
+        app.active_codex_tab = CodexTab::Stellar;
+        assert_eq!(app.max_codex_rows(), 0);
+
+        // Populate mock stellar codex
+        app.trip.stellar_codex.insert("F9 VAB".to_string(), 10);
+        app.trip.stellar_codex.insert("F1 VA".to_string(), 5);
+        app.trip.stellar_codex.insert("K".to_string(), 3);
+
+        // F group has main F + 2 subtypes = 3 rows.
+        // K group has main K (redundant single child) = 1 row.
+        // Total rows = 4.
+        assert_eq!(app.max_codex_rows(), 4);
+
+        assert_eq!(app.selected_codex_index, 0);
+        app.select_next_codex_row();
+        assert_eq!(app.selected_codex_index, 1);
+        app.select_previous_codex_row();
+        assert_eq!(app.selected_codex_index, 0);
+        app.select_previous_codex_row();
+        assert_eq!(app.selected_codex_index, 3);
     }
 }
