@@ -435,6 +435,14 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
             }
         }
 
+        LogEventContent::ScanOrganic(e) => {
+            if track_trip {
+                if matches!(e.scan_type, ed_journals::logs::scan_organic_event::ScanOrganicEventScanType::Analyse) {
+                    app.trip.bio_analysed += 1;
+                }
+            }
+        }
+
         // All other events — ignored for Phase 1
         _ => {}
     }
@@ -1065,5 +1073,21 @@ mod tests {
 
         process_event(&mut app, &parse_event(SCAN_MOON_JSON), false);
         assert_eq!(app.system.body_count_discovered, 3);
+    }
+
+    #[test]
+    fn scanorganic_analyse_increments_trip_bio_analysed_only_when_live() {
+        let mut app = App::new();
+        
+        let scan_organic_json = r#"{ "timestamp":"2026-05-26T16:00:00Z", "event":"ScanOrganic", "ScanType":"Analyse", "Genus":"$Codex_Ent_Bacterial_Genus_Name;", "Genus_Localised":"Bacterial Colonies", "Species":"$Codex_Ent_Bacterial_01_Name;", "Species_Localised":"Bacterial Species 1", "Variant":null, "SystemAddress":4997497796, "Body":61 }"#;
+        let event = parse_event(scan_organic_json);
+
+        // Replay mode: should NOT increment trip bio_analysed
+        process_event(&mut app, &event, false);
+        assert_eq!(app.trip.bio_analysed, 0);
+
+        // Live mode: SHOULD increment trip bio_analysed
+        process_event(&mut app, &event, true);
+        assert_eq!(app.trip.bio_analysed, 1);
     }
 }
