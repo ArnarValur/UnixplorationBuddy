@@ -4,6 +4,13 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 14:06
+- **Session:** Domain Refinement Grill — Phase 2 Navigation & Exobiology Specs
+- **Tracks touched:** None (spec/design phase)
+- **Status:** Domain Glossary, PRD, and 2 ADRs successfully updated and committed.
+- **Decisions:** ADR-0004 (Asynchronous EDSM via ureq), ADR-0005 (Offline Exobiology Prediction Engine)
+- **Next:** Create Phase 2 implementation track (`/new-track`) and begin execution.
+
 ## 2026-05-27 13:01
 - **Session:** Live verification & Bug Fix — FSS hierarchy fix, TUI testing, telemetry monitor script
 - **Tracks touched:** `phase1_bodies_history_20260527`
