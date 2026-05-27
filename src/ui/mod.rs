@@ -9,8 +9,9 @@ use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Clear, Paragraph, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table, TableState};
 use ratatui::Frame;
 
-use crate::app::{App, Tab};
-use crate::model::{BodyType, ScanState};
+use crate::app::{App, Tab, CodexTab};
+use crate::model::{Body, BodyType, ScanState};
+use crate::model::biology::predictor;
 
 // ── Color palette ────────────────────────────────────────────────
 /// Elite Dangerous signature orange.
@@ -57,9 +58,15 @@ pub fn draw(frame: &mut Frame, app: &App) {
     match app.active_tab {
         Tab::Bodies => draw_bodies(frame, app, chunks[1]),
         Tab::History => draw_history(frame, app, chunks[1]),
+        Tab::Route => draw_route(frame, app, chunks[1]),
     }
 
     draw_status_bar(frame, app, chunks[2]);
+
+    // Settings overlay
+    if app.show_settings {
+        draw_settings_overlay(frame, app);
+    }
 
     // Help overlay (rendered last to be on top)
     if app.show_help {
@@ -131,14 +138,33 @@ fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
         return;
     }
 
+    // Split-Pane check
+    let show_inspect = area.width >= 110 || app.show_inspector;
+    let main_chunks = if show_inspect {
+        Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage(70),
+                Constraint::Percentage(30),
+            ])
+            .split(area)
+    } else {
+        Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(100)])
+            .split(area)
+    };
+
+    let table_area = main_chunks[0];
+
     // Build table rows from display order
     let rows: Vec<Row> = app
         .body_display_order
         .iter()
         .enumerate()
-        .map(|(i, (body_id, depth))| {
-            let body = app.bodies.get(body_id);
-            let indent = "  ".repeat(*depth as usize);
+        .map(|(i, &(body_id, depth))| {
+            let body = app.bodies.get(&body_id);
+            let indent = "  ".repeat(depth as usize);
 
             match body {
                 Some(b) => {
@@ -157,6 +183,15 @@ fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
                         .as_deref()
                         .unwrap_or("—")
                         .to_string();
+
+                    // Gravity
+                    let gravity_str = b.gravity.map(|g| format!("{:.2} G", g)).unwrap_or_else(|| "—".into());
+
+                    // Temp
+                    let temp_str = b.temperature.map(|t| format!("{:.0} K", t)).unwrap_or_else(|| "—".into());
+
+                    // EDSM discoverer
+                    let discoverer_str = if b.was_discovered { "CMDR" } else { "—" };
 
                     // Distance from arrival
                     let dist = b
@@ -199,10 +234,24 @@ fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
                         Style::default().fg(type_color)
                     };
 
-                    Row::new(vec![
-                        name, body_type_str, atmo, dist, scan, value, bio, geo, first,
-                    ])
-                    .style(row_style)
+                    let mut cells = vec![name, body_type_str];
+
+                    if app.column_settings.show_atmosphere {
+                        cells.push(atmo);
+                    }
+                    if app.column_settings.show_gravity {
+                        cells.push(gravity_str);
+                    }
+                    if app.column_settings.show_temperature {
+                        cells.push(temp_str);
+                    }
+                    if app.column_settings.show_discoverer {
+                        cells.push(discoverer_str.to_string());
+                    }
+
+                    cells.extend(vec![dist, scan, value, bio, geo, first]);
+
+                    Row::new(cells).style(row_style)
                 }
                 None => {
                     let style = if i == app.selected_body_index {
@@ -210,9 +259,23 @@ fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
                     } else {
                         Style::default().fg(ELITE_DIM)
                     };
-                    Row::new(vec![
-                        format!("{}?", indent),
-                        "?".into(),
+
+                    let mut cells = vec![format!("{}?", indent), "?".into()];
+
+                    if app.column_settings.show_atmosphere {
+                        cells.push("—".into());
+                    }
+                    if app.column_settings.show_gravity {
+                        cells.push("—".into());
+                    }
+                    if app.column_settings.show_temperature {
+                        cells.push("—".into());
+                    }
+                    if app.column_settings.show_discoverer {
+                        cells.push("—".into());
+                    }
+
+                    cells.extend(vec![
                         "—".into(),
                         "—".into(),
                         "○".into(),
@@ -220,34 +283,51 @@ fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
                         "—".into(),
                         "—".into(),
                         "".into(),
-                    ])
-                    .style(style)
+                    ]);
+
+                    Row::new(cells).style(style)
                 }
             }
         })
         .collect();
 
-    let header = Row::new(vec![
-        "Name", "Type", "Atmosphere", "Dist(Ls)", "Scan", "Value(cr)", "Bio", "Geo", "",
-    ])
-    .style(
-        Style::default()
-            .fg(ELITE_ORANGE)
-            .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
-    )
-    .bottom_margin(0);
+    let mut header_cells = vec!["Name", "Type"];
+    let mut widths = vec![Constraint::Min(16), Constraint::Length(8)];
 
-    let widths = [
-        Constraint::Min(18),       // Name — flexible
-        Constraint::Length(8),     // Type
-        Constraint::Length(14),    // Atmosphere
-        Constraint::Length(10),    // Distance
-        Constraint::Length(4),     // Scan icon
-        Constraint::Length(14),    // Value
-        Constraint::Length(4),     // Bio
-        Constraint::Length(4),     // Geo
-        Constraint::Length(3),     // First disc/map indicators
-    ];
+    if app.column_settings.show_atmosphere {
+        header_cells.push("Atmosphere");
+        widths.push(Constraint::Length(14));
+    }
+    if app.column_settings.show_gravity {
+        header_cells.push("Gravity");
+        widths.push(Constraint::Length(8));
+    }
+    if app.column_settings.show_temperature {
+        header_cells.push("Temp(K)");
+        widths.push(Constraint::Length(8));
+    }
+    if app.column_settings.show_discoverer {
+        header_cells.push("Discoverer");
+        widths.push(Constraint::Length(14));
+    }
+
+    header_cells.extend(vec!["Dist(Ls)", "Scan", "Value(cr)", "Bio", "Geo", ""]);
+    widths.extend(vec![
+        Constraint::Length(9),
+        Constraint::Length(4),
+        Constraint::Length(11),
+        Constraint::Length(4),
+        Constraint::Length(4),
+        Constraint::Length(5),
+    ]);
+
+    let header = Row::new(header_cells)
+        .style(
+            Style::default()
+                .fg(ELITE_ORANGE)
+                .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
+        )
+        .bottom_margin(0);
 
     let table = Table::new(rows, widths)
         .header(header)
@@ -262,10 +342,10 @@ fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
 
     // Use StatefulWidget for scrollable selection
     let mut table_state = TableState::default().with_selected(Some(app.selected_body_index));
-    frame.render_stateful_widget(table, area, &mut table_state);
+    frame.render_stateful_widget(table, table_area, &mut table_state);
 
     // Scrollbar for large systems
-    if app.body_display_order.len() > (area.height as usize).saturating_sub(4) {
+    if app.body_display_order.len() > (table_area.height as usize).saturating_sub(4) {
         let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
             .begin_symbol(None)
             .end_symbol(None)
@@ -277,62 +357,422 @@ fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
 
         frame.render_stateful_widget(
             scrollbar,
-            area.inner(ratatui::layout::Margin {
+            table_area.inner(ratatui::layout::Margin {
                 vertical: 1,
                 horizontal: 0,
             }),
             &mut scrollbar_state,
         );
     }
+
+    // Render inspector right pane
+    if show_inspect {
+        draw_inspector(frame, app, main_chunks[1]);
+    }
 }
 
-// ── History tab ──────────────────────────────────────────────────
+// ── Inspector panel ──────────────────────────────────────────────
 
-/// History tab — trip statistics overview with clean layout.
-fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
-    let trip = &app.trip;
+fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
+    if app.body_display_order.is_empty() {
+        return;
+    }
+    let (body_id, _) = app.body_display_order[app.selected_body_index];
+    let body = match app.bodies.get(&body_id) {
+        Some(b) => b,
+        None => return,
+    };
 
-    let stats = vec![
-        ("Systems Visited", trip.systems_visited.to_string(), ELITE_ORANGE),
-        ("Bodies Scanned (FSS)", trip.bodies_scanned_fss.to_string(), ELITE_ORANGE),
-        ("Bodies Mapped (DSS)", trip.bodies_mapped_dss.to_string(), ELITE_ORANGE),
-        ("First Discoveries", trip.first_discoveries.to_string(), COLOR_FIRST),
-        ("First Mappings", trip.first_mappings.to_string(), COLOR_FIRST),
-        ("Bio Signals Detected", trip.bio_detected.to_string(), COLOR_BIO),
-        ("Bio Analysed", trip.bio_analysed.to_string(), COLOR_BIO),
-        (
-            "Total Value",
-            format!("{} cr", format_credits(trip.total_value)),
-            if trip.total_value >= HIGH_VALUE_THRESHOLD {
-                COLOR_VALUE_HIGH
-            } else {
-                ELITE_ORANGE
-            },
-        ),
+    let binding = format_body_type(body.body_type);
+    let mut lines = vec![
+        Line::from(vec![
+            Span::styled("Class: ", Style::default().fg(ELITE_DIM)),
+            Span::styled(
+                body.planet_class.as_deref().unwrap_or(binding.as_str()),
+                Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)
+            ),
+        ]),
     ];
 
-    let rows: Vec<Row> = stats
-        .into_iter()
-        .map(|(label, value, color)| {
-            Row::new(vec![
-                Span::styled(format!("  {}", label), Style::default().fg(ELITE_DIM)),
-                Span::styled(value, Style::default().fg(color)),
-            ])
-        })
-        .collect();
+    if body.body_type == BodyType::Planet || body.body_type == BodyType::Moon {
+        lines.push(Line::from(vec![
+            Span::styled("Landable: ", Style::default().fg(ELITE_DIM)),
+            Span::styled(if body.landable { "YES 🚀" } else { "NO" }, Style::default().fg(if body.landable { COLOR_STAR } else { ELITE_DIM })),
+        ]));
+        
+        let gravity_text = body.gravity.map(|g| format!("{:.2} G", g)).unwrap_or_else(|| "—".into());
+        lines.push(Line::from(vec![
+            Span::styled("Gravity:  ", Style::default().fg(ELITE_DIM)),
+            Span::styled(gravity_text, Style::default().fg(ELITE_ORANGE)),
+        ]));
 
-    let widths = [Constraint::Length(25), Constraint::Min(15)];
+        let temp_text = body.temperature.map(|t| format!("{:.0} K ({:.0}°C)", t, t - 273.15)).unwrap_or_else(|| "—".into());
+        lines.push(Line::from(vec![
+            Span::styled("Temp:     ", Style::default().fg(ELITE_DIM)),
+            Span::styled(temp_text, Style::default().fg(ELITE_ORANGE)),
+        ]));
+
+        let atmo_text = body.atmosphere.as_deref().unwrap_or("None");
+        lines.push(Line::from(vec![
+            Span::styled("Atmo:     ", Style::default().fg(ELITE_DIM)),
+            Span::styled(atmo_text, Style::default().fg(ELITE_ORANGE)),
+        ]));
+    }
+
+    if let Some(cache) = app.edsm_cache.get(&app.system.name) {
+        lines.push(Line::from(""));
+        lines.push(Line::from(Span::styled("── EDSM TELEMETRY ──", Style::default().fg(ELITE_DIM))));
+        if let Some(ref cmdr) = cache.discoverer {
+            lines.push(Line::from(vec![
+                Span::styled("CMDR:     ", Style::default().fg(ELITE_DIM)),
+                Span::styled(cmdr, Style::default().fg(COLOR_STAR)),
+            ]));
+        }
+        lines.push(Line::from(vec![
+            Span::styled("Value:    ", Style::default().fg(ELITE_DIM)),
+            Span::styled(format!("{} cr", format_credits(cache.estimated_value_mapped)), Style::default().fg(COLOR_VALUE_HIGH)),
+        ]));
+    }
+
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled("── EXOBIOLOGY PREDICTIONS ──", Style::default().fg(ELITE_DIM))));
+    
+    if body.bio_signals > 0 && body.landable {
+        let primary_star = app.bodies.get(&0).and_then(|b| b.star_class_enum.as_ref());
+        let predictions = predictor::predict_species(body, primary_star);
+
+        if predictions.is_empty() {
+            lines.push(Line::from(" No matching species boundaries"));
+        } else {
+            lines.push(Line::from(format!(" Signals: {} detected", body.bio_signals)));
+            lines.push(Line::from(""));
+            let scan_key = format!("{}_{}", app.system.system_address, body.body_id);
+            let organic_scans = app.trip.organic_scans.get(&scan_key);
+
+            for variant in predictions {
+                let has_scanned = organic_scans.map(|s| s.contains(&variant.name.to_string()) || s.contains(&variant.genus.to_string())).unwrap_or(false);
+
+                if has_scanned {
+                    lines.push(Line::from(vec![
+                        Span::styled(format!(" R ▸ {} ", variant.name), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
+                        Span::styled("[Scanned]", Style::default().fg(COLOR_BIO)),
+                    ]));
+                } else {
+                    lines.push(Line::from(vec![
+                        Span::styled(format!(" ▸ {} ", variant.name), Style::default().fg(ELITE_ORANGE)),
+                    ]));
+                    lines.push(Line::from(vec![
+                        Span::styled(format!("   Base: {} cr", format_credits(variant.reward)), Style::default().fg(ELITE_DIM)),
+                    ]));
+                    lines.push(Line::from(vec![
+                        Span::styled(format!("   First: {} cr", format_credits(variant.reward * 5)), Style::default().fg(COLOR_FIRST)),
+                    ]));
+                }
+            }
+        }
+    } else if body.bio_signals > 0 {
+        lines.push(Line::from(" Not landable (exobiology locked)"));
+    } else {
+        lines.push(Line::from(" No bio signals reported"));
+    }
+
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(format!(" Telemetry: {} ", body.short_name))
+        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK));
+
+    let paragraph = Paragraph::new(lines)
+        .block(block)
+        .style(Style::default().bg(BG_DARK));
+
+    frame.render_widget(paragraph, area);
+}
+
+// ── Plotted NavRoute tab ─────────────────────────────────────────
+
+fn draw_route(frame: &mut Frame, app: &App, area: Rect) {
+    let route = match &app.plotted_route {
+        Some(r) if !r.route.is_empty() => r,
+        _ => {
+            let content = Paragraph::new(" No plotted navigation route\n Waypoints will sync in real-time when plotted in-game")
+                .style(Style::default().fg(ELITE_DIM).bg(BG_DARK))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(tab_title("Route", Tab::Route, app.active_tab))
+                        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
+                );
+            frame.render_widget(content, area);
+            return;
+        }
+    };
+
+    let rows: Vec<Row> = route.route.iter().enumerate().map(|(i, entry)| {
+        let scoopable = matches!(entry.star_class.chars().next(), Some('O') | Some('B') | Some('A') | Some('F') | Some('G') | Some('K') | Some('M'));
+        let scoop_str = if scoopable { "⛽" } else { "—" };
+
+        let cache = app.edsm_cache.get(&entry.star_system);
+        
+        let value_str = cache.map(|c| format_credits(c.estimated_value_mapped)).unwrap_or_else(|| "—".into());
+        let discoverer_str = cache.and_then(|c| c.discoverer.as_deref()).unwrap_or("—");
+
+        // Badges
+        let mut badges = String::new();
+        if let Some(c) = cache {
+            if c.valuable_bodies > 0 {
+                badges.push_str(&format!("💰x{} ", c.valuable_bodies));
+            }
+            if c.terraformable_bodies > 0 {
+                badges.push_str(&format!("🌍x{} ", c.terraformable_bodies));
+            }
+            if c.landable_bodies > 0 {
+                badges.push_str(&format!("🚀x{} ", c.landable_bodies));
+            }
+        }
+
+        let is_current = entry.star_system == app.system.name;
+        let style = if is_current {
+            Style::default().fg(COLOR_STAR).bg(HIGHLIGHT_BG)
+        } else {
+            Style::default().fg(ELITE_ORANGE)
+        };
+
+        Row::new(vec![
+            format!(" #{}", i + 1),
+            entry.star_system.clone(),
+            format!("{} {}", entry.star_class, scoop_str),
+            value_str,
+            discoverer_str.to_string(),
+            badges,
+        ])
+        .style(style)
+    }).collect();
+
+    let header = Row::new(vec![
+        " Jump", "Star System", "Star Class", "EDSM Value(cr)", "EDSM Discoverer", "Badges",
+    ])
+    .style(
+        Style::default()
+            .fg(ELITE_ORANGE)
+            .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
+    );
+
+    let widths = [
+        Constraint::Length(7),
+        Constraint::Min(18),
+        Constraint::Length(12),
+        Constraint::Length(15),
+        Constraint::Length(16),
+        Constraint::Min(20),
+    ];
 
     let table = Table::new(rows, widths)
+        .header(header)
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title(tab_title("History", Tab::History, app.active_tab))
+                .title(tab_title("Route Exploration", Tab::Route, app.active_tab))
                 .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
         )
         .style(Style::default().bg(BG_DARK));
 
     frame.render_widget(table, area);
+}
+
+// ── History / Trip Codex tab ─────────────────────────────────────
+
+fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(1), // Sub-tabs header
+            Constraint::Min(0),   // Codex view content
+        ])
+        .split(area);
+
+    // Draw Codex sub-tabs
+    let sub_tabs = Line::from(vec![
+        Span::styled(" Overview ", Style::default().fg(if app.active_codex_tab == CodexTab::Overview { COLOR_STAR } else { ELITE_DIM }).add_modifier(if app.active_codex_tab == CodexTab::Overview { Modifier::UNDERLINED | Modifier::BOLD } else { Modifier::empty() })),
+        Span::styled(" │ ", Style::default().fg(ELITE_DIM)),
+        Span::styled(" Stellar Codex ", Style::default().fg(if app.active_codex_tab == CodexTab::Stellar { COLOR_STAR } else { ELITE_DIM }).add_modifier(if app.active_codex_tab == CodexTab::Stellar { Modifier::UNDERLINED | Modifier::BOLD } else { Modifier::empty() })),
+        Span::styled(" │ ", Style::default().fg(ELITE_DIM)),
+        Span::styled(" Planetary Codex ", Style::default().fg(if app.active_codex_tab == CodexTab::Planetary { COLOR_STAR } else { ELITE_DIM }).add_modifier(if app.active_codex_tab == CodexTab::Planetary { Modifier::UNDERLINED | Modifier::BOLD } else { Modifier::empty() })),
+        Span::styled(" │ ", Style::default().fg(ELITE_DIM)),
+        Span::styled(" Biological Codex ", Style::default().fg(if app.active_codex_tab == CodexTab::Biological { COLOR_STAR } else { ELITE_DIM }).add_modifier(if app.active_codex_tab == CodexTab::Biological { Modifier::UNDERLINED | Modifier::BOLD } else { Modifier::empty() })),
+    ]);
+    frame.render_widget(Paragraph::new(sub_tabs).style(Style::default().bg(BG_DARK)), chunks[0]);
+
+    let content_area = chunks[1];
+    let trip = &app.trip;
+
+    match app.active_codex_tab {
+        CodexTab::Overview => {
+            let stats = vec![
+                ("Systems Visited", trip.systems_visited.to_string(), ELITE_ORANGE),
+                ("Bodies Scanned (FSS)", trip.bodies_scanned_fss.to_string(), ELITE_ORANGE),
+                ("Bodies Mapped (DSS)", trip.bodies_mapped_dss.to_string(), ELITE_ORANGE),
+                ("First Discoveries", trip.first_discoveries.to_string(), COLOR_FIRST),
+                ("First Mappings", trip.first_mappings.to_string(), COLOR_FIRST),
+                ("Bio Signals Detected", trip.bio_detected.to_string(), COLOR_BIO),
+                ("Bio Analysed", trip.bio_analysed.to_string(), COLOR_BIO),
+                (
+                    "Total Value",
+                    format!("{} cr", format_credits(trip.total_value)),
+                    if trip.total_value >= HIGH_VALUE_THRESHOLD {
+                        COLOR_VALUE_HIGH
+                    } else {
+                        ELITE_ORANGE
+                    },
+                ),
+            ];
+
+            let rows: Vec<Row> = stats
+                .into_iter()
+                .map(|(label, value, color)| {
+                    Row::new(vec![
+                        Span::styled(format!("  {}", label), Style::default().fg(ELITE_DIM)),
+                        Span::styled(value, Style::default().fg(color)),
+                    ])
+                })
+                .collect();
+
+            let widths = [Constraint::Length(25), Constraint::Min(15)];
+            let table = Table::new(rows, widths)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(tab_title("History", Tab::History, app.active_tab))
+                        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
+                )
+                .style(Style::default().bg(BG_DARK));
+            frame.render_widget(table, content_area);
+        }
+        CodexTab::Stellar => {
+            let mut entries: Vec<(&String, &u32)> = trip.stellar_codex.iter().collect();
+            entries.sort_by(|a, b| b.1.cmp(a.1));
+            let rows: Vec<Row> = entries.iter().map(|(star_class, count)| {
+                Row::new(vec![
+                    (*star_class).clone(),
+                    count.to_string(),
+                ]).style(Style::default().fg(COLOR_STAR))
+            }).collect();
+
+            let header = Row::new(vec!["Primary Star Class", "Visits"])
+                .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
+
+            let widths = [Constraint::Length(30), Constraint::Min(10)];
+            let table = Table::new(rows, widths)
+                .header(header)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(tab_title("Stellar Codex", Tab::History, app.active_tab))
+                        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
+                )
+                .style(Style::default().bg(BG_DARK));
+            frame.render_widget(table, content_area);
+        }
+        CodexTab::Planetary => {
+            let mut entries: Vec<(&String, &u32)> = trip.planetary_codex.iter().collect();
+            entries.sort_by(|a, b| b.1.cmp(a.1));
+            let rows: Vec<Row> = entries.iter().map(|(planet_class, count)| {
+                Row::new(vec![
+                    (*planet_class).clone(),
+                    count.to_string(),
+                ]).style(Style::default().fg(COLOR_PLANET))
+            }).collect();
+
+            let header = Row::new(vec!["Planet Class", "Scans"])
+                .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
+
+            let widths = [Constraint::Length(45), Constraint::Min(10)];
+            let table = Table::new(rows, widths)
+                .header(header)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(tab_title("Planetary Codex", Tab::History, app.active_tab))
+                        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
+                )
+                .style(Style::default().bg(BG_DARK));
+            frame.render_widget(table, content_area);
+        }
+        CodexTab::Biological => {
+            let mut entries: Vec<(&String, &u32)> = trip.biological_codex.iter().collect();
+            entries.sort_by(|a, b| b.1.cmp(a.1));
+            let rows: Vec<Row> = entries.iter().map(|(species, count)| {
+                Row::new(vec![
+                    (*species).clone(),
+                    count.to_string(),
+                ]).style(Style::default().fg(COLOR_BIO))
+            }).collect();
+
+            let header = Row::new(vec!["Species Name", "Analyses Completed"])
+                .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
+
+            let widths = [Constraint::Length(45), Constraint::Min(10)];
+            let table = Table::new(rows, widths)
+                .header(header)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(tab_title("Biological Codex", Tab::History, app.active_tab))
+                        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
+                )
+                .style(Style::default().bg(BG_DARK));
+            frame.render_widget(table, content_area);
+        }
+    }
+}
+
+// ── Column Settings Overlay ──────────────────────────────────────
+
+fn draw_settings_overlay(frame: &mut Frame, app: &App) {
+    let area = frame.area();
+    let width = 45u16.min(area.width.saturating_sub(4));
+    let height = 12u16.min(area.height.saturating_sub(4));
+    let x = (area.width.saturating_sub(width)) / 2;
+    let y = (area.height.saturating_sub(height)) / 2;
+    let popup = Rect::new(x, y, width, height);
+
+    let check = |enabled: bool| if enabled { "[x]" } else { "[ ]" };
+
+    let lines = vec![
+        Line::from(""),
+        Line::from(vec![
+            Span::styled(format!("  {} Atmosphere  ", check(app.column_settings.show_atmosphere)), Style::default().fg(ELITE_ORANGE)),
+            Span::styled("(Key: a)", Style::default().fg(ELITE_DIM)),
+        ]),
+        Line::from(vec![
+            Span::styled(format!("  {} Gravity     ", check(app.column_settings.show_gravity)), Style::default().fg(ELITE_ORANGE)),
+            Span::styled("(Key: g)", Style::default().fg(ELITE_DIM)),
+        ]),
+        Line::from(vec![
+            Span::styled(format!("  {} Temp(K)     ", check(app.column_settings.show_temperature)), Style::default().fg(ELITE_ORANGE)),
+            Span::styled("(Key: t)", Style::default().fg(ELITE_DIM)),
+        ]),
+        Line::from(vec![
+            Span::styled(format!("  {} Discoverer  ", check(app.column_settings.show_discoverer)), Style::default().fg(ELITE_ORANGE)),
+            Span::styled("(Key: d)", Style::default().fg(ELITE_DIM)),
+        ]),
+        Line::from(""),
+        Line::from(Span::styled(
+            "   a/g/t/d: Toggle │ s/Esc/Enter: Close",
+            Style::default().fg(ELITE_DIM),
+        )),
+    ];
+
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(" Column Settings ")
+        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK));
+
+    let settings = Paragraph::new(lines)
+        .block(block)
+        .style(Style::default().bg(BG_DARK));
+
+    frame.render_widget(Clear, popup);
+    frame.render_widget(settings, popup);
 }
 
 // ── Status bar ───────────────────────────────────────────────────
@@ -343,8 +783,9 @@ fn draw_status_bar(frame: &mut Frame, app: &App, area: Rect) {
         msg.clone()
     } else {
         match app.active_tab {
-            Tab::Bodies => "q: quit │ Tab/1/2: switch │ ↑↓: navigate │ ?: help".to_string(),
-            Tab::History => "q: quit │ Tab/1/2: switch │ Ctrl+R: reset trip │ ?: help".to_string(),
+            Tab::Bodies => "q: quit │ Tab/1/2/3: switch │ ↑↓: navigate │ s: settings │ i: toggle inspector │ ?: help".to_string(),
+            Tab::History => "q: quit │ Tab/1/2/3: switch │ ←→/h/l: sub-tabs │ Ctrl+R: reset trip │ ?: help".to_string(),
+            Tab::Route => "q: quit │ Tab/1/2/3: switch │ ?: help".to_string(),
         }
     };
 
@@ -362,7 +803,7 @@ fn draw_status_bar(frame: &mut Frame, app: &App, area: Rect) {
 fn draw_help_overlay(frame: &mut Frame) {
     let area = frame.area();
     let help_width = 48u16.min(area.width.saturating_sub(4));
-    let help_height = 14u16.min(area.height.saturating_sub(4));
+    let help_height = 15u16.min(area.height.saturating_sub(4));
     let x = (area.width.saturating_sub(help_width)) / 2;
     let y = (area.height.saturating_sub(help_height)) / 2;
     let popup = Rect::new(x, y, help_width, help_height);
@@ -370,23 +811,35 @@ fn draw_help_overlay(frame: &mut Frame) {
     let lines = vec![
         Line::from(""),
         Line::from(vec![
-            Span::styled("  q / Esc    ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
+            Span::styled("  q / Esc      ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
             Span::styled("Quit", Style::default().fg(ELITE_DIM)),
         ]),
         Line::from(vec![
-            Span::styled("  Tab / 1 2  ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
-            Span::styled("Switch tab", Style::default().fg(ELITE_DIM)),
+            Span::styled("  Tab / 1 2 3  ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
+            Span::styled("Switch view tab", Style::default().fg(ELITE_DIM)),
         ]),
         Line::from(vec![
-            Span::styled("  ↑ / ↓      ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
+            Span::styled("  ↑ / ↓        ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
             Span::styled("Navigate bodies", Style::default().fg(ELITE_DIM)),
         ]),
         Line::from(vec![
-            Span::styled("  Ctrl+R     ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
+            Span::styled("  h / l / ← →  ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
+            Span::styled("Switch Codex sub-tab", Style::default().fg(ELITE_DIM)),
+        ]),
+        Line::from(vec![
+            Span::styled("  s            ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
+            Span::styled("Toggle Column Settings", Style::default().fg(ELITE_DIM)),
+        ]),
+        Line::from(vec![
+            Span::styled("  i            ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
+            Span::styled("Toggle Inspector overlay", Style::default().fg(ELITE_DIM)),
+        ]),
+        Line::from(vec![
+            Span::styled("  Ctrl+R       ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
             Span::styled("Reset trip stats", Style::default().fg(ELITE_DIM)),
         ]),
         Line::from(vec![
-            Span::styled("  ?          ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
+            Span::styled("  ?            ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
             Span::styled("Toggle this help", Style::default().fg(ELITE_DIM)),
         ]),
         Line::from(""),
@@ -423,6 +876,7 @@ fn tab_title(name: &str, tab: Tab, active: Tab) -> String {
     let num = match tab {
         Tab::Bodies => "1",
         Tab::History => "2",
+        Tab::Route => "3",
     };
     if tab == active {
         format!(" ▸ [{}] {} ", num, name)
@@ -597,7 +1051,7 @@ mod tests {
 
         app.rebuild_display_order();
 
-        let output = render_to_string(&app, 100, 12);
+        let output = render_to_string(&app, 120, 12);
         assert!(
             output.contains("Star"),
             "Should show Star body type.\nOutput:\n{output}"
@@ -606,7 +1060,6 @@ mod tests {
             output.contains("Planet"),
             "Should show Planet body type.\nOutput:\n{output}"
         );
-        // Check scan state icons
         assert!(
             output.contains("●"), // FSSScanned icon
             "Should show FSS scan icon.\nOutput:\n{output}"

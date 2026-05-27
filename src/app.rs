@@ -9,12 +9,60 @@ use crate::model::{Body, BodyHierarchy, System, Trip, NavRoute};
 pub enum Tab {
     Bodies,
     History,
+    Route,
 }
 
 impl Default for Tab {
     fn default() -> Self {
         Tab::Bodies
     }
+}
+
+/// Which sub-tab in the Trip view is active.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CodexTab {
+    Overview,
+    Stellar,
+    Planetary,
+    Biological,
+}
+
+impl Default for CodexTab {
+    fn default() -> Self {
+        CodexTab::Overview
+    }
+}
+
+/// Dynamic column rendering settings toggled via the settings overlay.
+#[derive(Debug, Clone)]
+pub struct ColumnSettings {
+    pub show_atmosphere: bool,
+    pub show_gravity: bool,
+    pub show_temperature: bool,
+    pub show_discoverer: bool,
+}
+
+impl Default for ColumnSettings {
+    fn default() -> Self {
+        Self {
+            show_atmosphere: true,
+            show_gravity: true,
+            show_temperature: true,
+            show_discoverer: true,
+        }
+    }
+}
+
+/// Cached system exploration data fetched from the EDSM API.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, Default)]
+pub struct EdsmSystemData {
+    pub name: String,
+    pub estimated_value: u64,
+    pub estimated_value_mapped: u64,
+    pub discoverer: Option<String>,
+    pub valuable_bodies: usize,
+    pub terraformable_bodies: usize,
+    pub landable_bodies: usize,
 }
 
 /// Top-level application state.
@@ -41,6 +89,16 @@ pub struct App {
     pub targeted_body_id: Option<u32>,
     /// Plotted route waypoints from NavRoute.json.
     pub plotted_route: Option<NavRoute>,
+    /// EDSM systems data cache.
+    pub edsm_cache: HashMap<String, EdsmSystemData>,
+    /// Active sub-tab in Trip tab.
+    pub active_codex_tab: CodexTab,
+    /// Modular columns visibility toggles.
+    pub column_settings: ColumnSettings,
+    /// Whether the Settings overlay is currently visible.
+    pub show_settings: bool,
+    /// Force display Right Pane Inspector even on small viewports.
+    pub show_inspector: bool,
 }
 
 impl App {
@@ -58,6 +116,11 @@ impl App {
             show_help: false,
             targeted_body_id: None,
             plotted_route: None,
+            edsm_cache: HashMap::new(),
+            active_codex_tab: CodexTab::default(),
+            column_settings: ColumnSettings::default(),
+            show_settings: false,
+            show_inspector: false,
         }
     }
 
@@ -70,7 +133,8 @@ impl App {
     pub fn next_tab(&mut self) {
         self.active_tab = match self.active_tab {
             Tab::Bodies => Tab::History,
-            Tab::History => Tab::Bodies,
+            Tab::History => Tab::Route,
+            Tab::Route => Tab::Bodies,
         };
     }
 

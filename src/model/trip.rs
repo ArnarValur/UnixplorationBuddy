@@ -12,6 +12,15 @@ pub struct Trip {
     pub bio_detected: u32,
     pub bio_analysed: u32,
     pub total_value: u64,
+    #[serde(default)]
+    pub stellar_codex: std::collections::HashMap<String, u32>,
+    #[serde(default)]
+    pub planetary_codex: std::collections::HashMap<String, u32>,
+    #[serde(default)]
+    pub biological_codex: std::collections::HashMap<String, u32>,
+    /// Maps "systemAddress_bodyId" to a list of successfully analysed species names on that body.
+    #[serde(default)]
+    pub organic_scans: std::collections::HashMap<String, Vec<String>>,
 }
 
 impl Trip {

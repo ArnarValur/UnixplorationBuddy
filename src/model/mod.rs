@@ -5,6 +5,8 @@ pub mod navigation;
 pub mod system;
 pub mod trip;
 pub mod valuation;
+pub mod biology;
+
 
 pub use body::{Body, BodyType, ScanState};
 pub use hierarchy::BodyHierarchy;

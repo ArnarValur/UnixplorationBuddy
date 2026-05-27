@@ -14,7 +14,9 @@ use std::time::Duration;
 use ed_journals::logs::blocking::LiveLogDirReader;
 use ed_journals::logs::{LogDir, LogEvent, LogEventContent};
 
-use crate::app::App;
+use serde::Deserialize;
+
+use crate::app::{App, EdsmSystemData};
 use crate::model::naming::parse_body_name;
 use crate::model::valuation::{calculate_planet_value, calculate_star_value};
 use crate::model::{Body, BodyType, ScanState, System, Status, NavRoute};
@@ -99,16 +101,144 @@ pub enum JournalUpdate {
     StatusUpdate(Status),
     /// A plotted navigation route update was parsed from NavRoute.json.
     NavRouteUpdate(NavRoute),
+    /// Streamed EDSM system details for plotted routes.
+    EdsmPayload(EdsmSystemData),
     /// The watcher encountered an error.
     Error(String),
 }
 
+#[derive(Deserialize, Debug)]
+#[allow(non_snake_case)]
+struct EdsmValBody {
+    #[allow(dead_code)]
+    pub bodyId: Option<u32>,
+    #[allow(dead_code)]
+    pub bodyName: Option<String>,
+    #[allow(dead_code)]
+    pub distance: Option<u32>,
+    #[allow(dead_code)]
+    pub valueMax: Option<u64>,
+}
+
+#[derive(Deserialize, Debug)]
+#[allow(non_snake_case)]
+struct EdsmEstimatedValue {
+    pub name: Option<String>,
+    pub estimatedValue: Option<u64>,
+    pub estimatedValueMapped: Option<u64>,
+    pub valuableBodies: Option<Vec<EdsmValBody>>,
+}
+
+#[derive(Deserialize, Debug)]
+struct EdsmDiscovery {
+    pub commander: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+#[allow(non_snake_case)]
+struct EdsmBody {
+    pub isLandable: Option<bool>,
+    pub terraformingState: Option<String>,
+    pub discovery: Option<EdsmDiscovery>,
+    pub isMainStar: Option<bool>,
+    pub distanceToArrival: Option<f64>,
+}
+
+#[derive(Deserialize, Debug)]
+#[allow(non_snake_case)]
+struct EdsmBodiesResponse {
+    pub bodies: Option<Vec<EdsmBody>>,
+}
+
+fn percent_encode(s: &str) -> String {
+    let mut encoded = String::new();
+    for c in s.chars() {
+        match c {
+            ' ' => encoded.push_str("%20"),
+            '+' => encoded.push_str("%2B"),
+            '/' => encoded.push_str("%2F"),
+            '?' => encoded.push_str("%3F"),
+            '=' => encoded.push_str("%3D"),
+            '&' => encoded.push_str("%26"),
+            '#' => encoded.push_str("%23"),
+            '%' => encoded.push_str("%25"),
+            _ => encoded.push(c),
+        }
+    }
+    encoded
+}
+
+fn fetch_edsm_system_data(system_name: &str) -> Result<Option<EdsmSystemData>, String> {
+    let encoded = percent_encode(system_name);
+    let val_url = format!("https://www.edsm.net/api-system-v1/estimated-value?systemName={}", encoded);
+    
+    let mut val_res = ureq::get(&val_url)
+        .call()
+        .map_err(|e| format!("Estimated-value API failed: {e}"))?;
+        
+    let val_data: EdsmEstimatedValue = val_res
+        .body_mut()
+        .read_json()
+        .map_err(|e| format!("Failed to parse estimated-value JSON: {e}"))?;
+        
+    if val_data.name.is_none() {
+        return Ok(None);
+    }
+    
+    let bodies_url = format!("https://www.edsm.net/api-system-v1/bodies?systemName={}", encoded);
+    let mut bodies_res = ureq::get(&bodies_url)
+        .call()
+        .map_err(|e| format!("Bodies API failed: {e}"))?;
+        
+    let bodies_data: EdsmBodiesResponse = bodies_res
+        .body_mut()
+        .read_json()
+        .map_err(|e| format!("Failed to parse bodies JSON: {e}"))?;
+        
+    let mut discoverer = None;
+    let mut landable_bodies = 0;
+    let mut terraformable_bodies = 0;
+    
+    if let Some(bodies) = bodies_data.bodies {
+        for body in bodies {
+            if body.isLandable == Some(true) {
+                landable_bodies += 1;
+            }
+            if let Some(ref t_state) = body.terraformingState {
+                if t_state != "Not terraformable" && !t_state.is_empty() {
+                    terraformable_bodies += 1;
+                }
+            }
+            if body.isMainStar == Some(true) || body.distanceToArrival == Some(0.0) {
+                if let Some(ref disc) = body.discovery {
+                    if let Some(ref cmdr) = disc.commander {
+                        discoverer = Some(cmdr.clone());
+                    }
+                }
+            }
+        }
+    }
+    
+    let valuable_bodies = val_data.valuableBodies.map(|v| v.len()).unwrap_or(0);
+    
+    Ok(Some(EdsmSystemData {
+        name: system_name.to_string(),
+        estimated_value: val_data.estimatedValue.unwrap_or(0),
+        estimated_value_mapped: val_data.estimatedValueMapped.unwrap_or(0),
+        discoverer,
+        valuable_bodies,
+        terraformable_bodies,
+        landable_bodies,
+    }))
+}
+
 /// Spawn background threads that watch the journal directory for new events and status/route updates.
-/// Returns a receiver channel that the main loop can poll.
+/// Returns the receiver channel for updates and the sender channel for EDSM enrichment queries.
 pub fn start_live_watcher(
     journal_dir: PathBuf,
-) -> Result<mpsc::Receiver<JournalUpdate>, String> {
+) -> Result<(mpsc::Receiver<JournalUpdate>, mpsc::Sender<String>), String> {
     let (tx, rx) = mpsc::channel();
+    let (edsm_tx, edsm_rx) = mpsc::channel::<String>();
 
     // Spawn journal watcher thread
     let tx_journal = tx.clone();
@@ -130,7 +260,6 @@ pub fn start_live_watcher(
                 match entry_result {
                     Ok(event) => {
                         if tx_journal.send(JournalUpdate::Event(event)).is_err() {
-                            // Main thread dropped the receiver — exit quietly.
                             break;
                         }
                     }
@@ -152,7 +281,46 @@ pub fn start_live_watcher(
         })
         .map_err(|e| format!("Failed to spawn status/nav watcher thread: {e}"))?;
 
-    Ok(rx)
+    // Spawn EDSM worker thread
+    let tx_edsm = tx.clone();
+    thread::Builder::new()
+        .name("edsm-worker".into())
+        .spawn(move || {
+            let mut local_cache = std::collections::HashSet::new();
+
+            while let Ok(system_name) = edsm_rx.recv() {
+                if local_cache.contains(&system_name) {
+                    continue;
+                }
+
+                // Sequential throttling
+                thread::sleep(Duration::from_millis(200));
+
+                match fetch_edsm_system_data(&system_name) {
+                    Ok(Some(data)) => {
+                        local_cache.insert(system_name.clone());
+                        if tx_edsm.send(JournalUpdate::EdsmPayload(data)).is_err() {
+                            break;
+                        }
+                    }
+                    Ok(None) => {
+                        // System not found on EDSM
+                        local_cache.insert(system_name.clone());
+                        let data = EdsmSystemData {
+                            name: system_name.clone(),
+                            ..Default::default()
+                        };
+                        let _ = tx_edsm.send(JournalUpdate::EdsmPayload(data));
+                    }
+                    Err(e) => {
+                        eprintln!("Warning: EDSM fetch failed for {system_name}: {e}");
+                    }
+                }
+            }
+        })
+        .map_err(|e| format!("Failed to spawn EDSM worker thread: {e}"))?;
+
+    Ok((rx, edsm_tx))
 }
 
 /// Periodically poll Status.json and NavRoute.json for changes.
@@ -259,6 +427,7 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
         // --- Body scan (FSS detailed or auto scan) ---
         LogEventContent::Scan(e) => {
             let body_id = u32::from(e.body_id);
+            let is_new_body = !app.bodies.contains_key(&body_id);
 
             let body = app.bodies.entry(body_id).or_insert_with(|| {
                 let mut b = Body::new(body_id, e.body_name.clone());
@@ -298,6 +467,11 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     body.star_class_enum = Some(star.star_type.clone());
                     body.temperature = Some(star.surface_temperature as f64);
 
+                    if track_trip && is_new_body && body_id == 0 {
+                        let star_class_str = format!("{}", star.star_type);
+                        *app.trip.stellar_codex.entry(star_class_str).or_insert(0) += 1;
+                    }
+
                     let first_disc = !body.was_discovered;
                     let value = calculate_star_value(
                         &star.star_type,
@@ -325,6 +499,11 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     body.gravity = Some(planet.surface_gravity.0 as f64);
                     body.temperature = Some(planet.surface_temperature as f64);
                     body.landable = planet.landable;
+
+                    if track_trip && is_new_body {
+                        let planet_class_str = format!("{}", planet.planet_class);
+                        *app.trip.planetary_codex.entry(planet_class_str).or_insert(0) += 1;
+                    }
 
                     let first_disc = !body.was_discovered;
                     let first_map = !body.was_mapped;
@@ -439,6 +618,21 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
             if track_trip {
                 if matches!(e.scan_type, ed_journals::logs::scan_organic_event::ScanOrganicEventScanType::Analyse) {
                     app.trip.bio_analysed += 1;
+
+                    // Increment biological codex count
+                    let species_name = e.species_localized.clone().unwrap_or_else(|| format!("{:?}", e.species));
+                    *app.trip.biological_codex.entry(species_name.clone()).or_insert(0) += 1;
+
+                    // Add to completed organic scans map
+                    let key = format!("{}_{}", e.system_address, e.body);
+                    let genus_name = e.genus_localized.clone().unwrap_or_else(|| format!("{:?}", e.genus));
+                    let scans = app.trip.organic_scans.entry(key).or_default();
+                    if !scans.contains(&genus_name.to_string()) {
+                        scans.push(genus_name.to_string());
+                    }
+                    if !scans.contains(&species_name.to_string()) {
+                        scans.push(species_name.to_string());
+                    }
                 }
             }
         }

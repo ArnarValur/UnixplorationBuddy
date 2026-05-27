@@ -105,13 +105,18 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
     }
 
     // Start live journal watcher
-    let journal_rx = match journal::start_live_watcher(journal_dir.to_path_buf()) {
-        Ok(rx) => Some(rx),
+    let (journal_rx, edsm_tx) = match journal::start_live_watcher(journal_dir.to_path_buf()) {
+        Ok((rx, tx)) => (Some(rx), Some(tx)),
         Err(e) => {
             app.status_message = Some(format!("Warning: live watcher failed: {e}"));
-            None
+            (None, None)
         }
     };
+
+    // Queue initial EDSM queries on startup
+    if let Some(ref tx) = edsm_tx {
+        queue_edsm_requests(&app, tx);
+    }
 
     loop {
         terminal.draw(|frame| ui::draw(frame, &app))?;
@@ -124,6 +129,9 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                     JournalUpdate::Event(event) => {
                         journal::process_event(&mut app, &event, true);
                         state_changed = true;
+                        if let Some(ref tx) = edsm_tx {
+                            queue_edsm_requests(&app, tx);
+                        }
                     }
                     JournalUpdate::StatusUpdate(status) => {
                         if let Some(ref dest) = status.destination {
@@ -139,6 +147,12 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                     }
                     JournalUpdate::NavRouteUpdate(nav_route) => {
                         app.plotted_route = Some(nav_route);
+                        if let Some(ref tx) = edsm_tx {
+                            queue_edsm_requests(&app, tx);
+                        }
+                    }
+                    JournalUpdate::EdsmPayload(data) => {
+                        app.edsm_cache.insert(data.name.clone(), data);
                     }
                     JournalUpdate::Error(e) => {
                         app.status_message = Some(format!("Journal error: {e}"));
@@ -178,6 +192,7 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                             KeyCode::Tab => app.next_tab(),
                             KeyCode::Char('1') => app.active_tab = app::Tab::Bodies,
                             KeyCode::Char('2') => app.active_tab = app::Tab::History,
+                            KeyCode::Char('3') => app.active_tab = app::Tab::Route,
                             KeyCode::Up => app.select_previous_body(),
                             KeyCode::Down => app.select_next_body(),
                             KeyCode::Char('?') => app.show_help = true,
@@ -224,4 +239,18 @@ fn parse_journal_path(args: &[String]) -> Option<&str> {
         }
     }
     None
+}
+
+/// Queue EDSM queries for the current system and waypoints on the plotted route.
+fn queue_edsm_requests(app: &App, edsm_tx: &std::sync::mpsc::Sender<String>) {
+    if !app.system.name.is_empty() && !app.edsm_cache.contains_key(&app.system.name) {
+        let _ = edsm_tx.send(app.system.name.clone());
+    }
+    if let Some(ref route) = app.plotted_route {
+        for entry in &route.route {
+            if !app.edsm_cache.contains_key(&entry.star_system) {
+                let _ = edsm_tx.send(entry.star_system.clone());
+            }
+        }
+    }
 }
