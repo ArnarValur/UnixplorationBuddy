@@ -3,7 +3,7 @@
 ## Phase 1: Research & Setup
 - [x] Add `ureq` to `Cargo.toml`.
 - [x] Set up `Status.json` and `NavRoute.json` file watchers.
-- [ ] Implement build-time exobiology parser to generate `src/model/biology/dataset.rs` from `conductor/canonn-data/`.
+- [x] Implement build-time exobiology parser to generate `src/model/biology/dataset.rs` from `conductor/canonn-data/`.
 
 ## Phase 2: Core Data Types & Ingestion
 - [ ] Expand `Body` model with `gravity`, `temperature`, and `landable` fields.
