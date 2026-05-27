@@ -1,12 +1,13 @@
 # Pulse — Current Project State
 
-**Last Updated:** 2026-05-27 18:25
-**Session Focus:** Refined the exobiology predicted species list in the TUI right-pane inspector to dynamically track multi-stage genetic sampling progress, optimized the layout by collapsing predictions to a single premium line (eliminating the separate `Base:` row), and designed real-time exobiology coordinate tracking.
+**Last Updated:** 2026-05-27 18:30
+**Session Focus:** Enabled session exobiology reconstruction during startup replay mode, implemented species variant grouping by color options, and integrated genus exobiology constraints to automatically filter out other species once a scan is initiated.
 
 ## 🚀 Active Tracks
 _None._
 
 ## ✅ Recently Completed
+- **Exobiology Replay & Grouping Refinements (2026-05-27):** Enabled exobiology progress state and scan history reconstruction during startup replay mode by running `ScanOrganic` regardless of track_trip status. Grouped predictions color variants by base species name to compress row listings. Implemented exobiology genus constraint: dynamically filters out all other species of a genus once a specific species is actively scanned, saving immense terminal rows and visual clutter. All 95 tests pass green.
 - **Exobiology UI Refinements (2026-05-27):** Implemented exobiology sampling progress tracking for all genetic stages (Log = 1/3, Sample = 2/3, Analyse = 3/3 / Completed) with dynamic TUI updates, compacted the layout to a single premium line per predicted species variant (eliminating the redundant `Base` value row), added robust key lookups falling back to base species names, and validated all exobiology features with unit tests.
 - **Automatic Tab Transitions (2026-05-27):** Implemented automatic TUI tab switching to the Route tab when starting a live `Hyperspace` jump (if a route is plotted), and automatically returning to the Bodies tab when arriving in the destination system, protected against replay mode.
 - **Stellar Codex Hierarchy (2026-05-27):** Parsed specific star types (`{StarType}{Subclass} {Luminosity}` like `F9 VAB` or `K5 VA`) on star `Scan` events, and rendered them using a beautiful, premium tree-guide structure (`  ├─ ` / `  └─ `) under their main class inside the Stellar Codex TUI tab, summing base visits automatically.
@@ -21,6 +22,9 @@ _None._
 _None._
 
 ## 🧠 Session Memory
+- *2026-05-27* — Reconstructed active exobiology progress and completed scans during startup journal replay. _(operational)_
+- *2026-05-27* — Grouped predicted exobiology color variants in TUI right-pane to condense rows. _(operational)_
+- *2026-05-27* — Filtered out redundant species of the same genus once a specific species is actively scanned, honoring Elite Dangerous exobiology rules. _(operational)_
 - *2026-05-27* — Indexed exobiology organic progress under specific variant localized names in addition to species and genus names. _(operational)_
 - *2026-05-27* — Resolved exobiology predictions panel key mismatch by implementing a base species name fallback lookup. _(operational)_
 - *2026-05-27* — Compacted exobiology predictions UI layout in the inspector to a single premium line (name and first discovery value) to save 50% vertical space. _(operational)_

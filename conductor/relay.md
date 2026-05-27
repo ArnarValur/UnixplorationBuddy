@@ -4,10 +4,10 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
-## 2026-05-27 18:25
-- **Session:** Refined the exobiology predicted species list in the TUI right-pane inspector to dynamically track multi-stage genetic sampling progress, optimized the layout by collapsing predictions to a single premium line (eliminating the separate `Base:` row), and designed real-time exobiology coordinate tracking.
+## 2026-05-27 18:30
+- **Session:** Enabled exobiology progress state and scan history reconstruction during startup replay mode. Grouped exobiology color variants in TUI right-pane to collapse row listings, and implemented exobiology genus filtering: dynamically removes all other species of a genus once a specific species is actively scanned, saving massive rows and clutter.
 - **Tracks touched:** None
-- **Status:** Dynamic exobiology updates fully completed, compiled, and verified. 95/95 unit tests are green. Sampling progress (Log = 1/3, Sample = 2/3, Completed) renders in real-time under a robust species name fallback. Predicted species are collapsed to a single line showing variant name and first discovery reward.
+- **Status:** Complete! Replay exobiology states and completed scans fully reconstructed from journals on startup. Predicted species collapsed into 5 species-grouped lines with color slashes. Other bacterial species disappear once active scanning starts. 95/95 tests green.
 - **Decisions:** None (operational -> Pulse)
 - **Next:** Implement Phase 6 exobiology coordinate tracking by reading Latitude and Longitude from Status.json.
 

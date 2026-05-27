@@ -688,42 +688,48 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
         }
 
         LogEventContent::ScanOrganic(e) => {
-            if track_trip {
-                let species_name = e.species_localized.clone().unwrap_or_else(|| format!("{:?}", e.species));
-                let genus_name = e.genus_localized.clone().unwrap_or_else(|| format!("{:?}", e.genus));
+            let species_name = e.species_localized.clone().unwrap_or_else(|| format!("{:?}", e.species));
+            let genus_name = e.genus_localized.clone().unwrap_or_else(|| format!("{:?}", e.genus));
 
-                let progress_val = match &e.scan_type {
-                    ed_journals::logs::scan_organic_event::ScanOrganicEventScanType::Log => 1,
-                    ed_journals::logs::scan_organic_event::ScanOrganicEventScanType::Sample => 2,
-                    ed_journals::logs::scan_organic_event::ScanOrganicEventScanType::Analyse => 3,
-                };
+            let progress_val = match &e.scan_type {
+                ed_journals::logs::scan_organic_event::ScanOrganicEventScanType::Log => 1,
+                ed_journals::logs::scan_organic_event::ScanOrganicEventScanType::Sample => 2,
+                ed_journals::logs::scan_organic_event::ScanOrganicEventScanType::Analyse => 3,
+            };
 
-                let progress_key = format!("{}_{}_{}", e.system_address, e.body, species_name);
-                app.trip.organic_progress.insert(progress_key, progress_val);
+            let progress_key = format!("{}_{}_{}", e.system_address, e.body, species_name);
+            app.trip.organic_progress.insert(progress_key, progress_val);
 
-                let progress_key_genus = format!("{}_{}_{}", e.system_address, e.body, genus_name);
-                app.trip.organic_progress.insert(progress_key_genus, progress_val);
+            let progress_key_genus = format!("{}_{}_{}", e.system_address, e.body, genus_name);
+            app.trip.organic_progress.insert(progress_key_genus, progress_val);
 
-                if let Some(variant_name) = &e.variant_localized {
-                    let progress_key_variant = format!("{}_{}_{}", e.system_address, e.body, variant_name);
-                    app.trip.organic_progress.insert(progress_key_variant, progress_val);
+            if let Some(variant_name) = &e.variant_localized {
+                let progress_key_variant = format!("{}_{}_{}", e.system_address, e.body, variant_name);
+                app.trip.organic_progress.insert(progress_key_variant, progress_val);
+            }
+
+            if matches!(e.scan_type, ed_journals::logs::scan_organic_event::ScanOrganicEventScanType::Analyse) {
+                let key = format!("{}_{}", e.system_address, e.body);
+                let scans = app.trip.organic_scans.entry(key).or_default();
+                if !scans.contains(&genus_name.to_string()) {
+                    scans.push(genus_name.to_string());
                 }
+                if !scans.contains(&species_name.to_string()) {
+                    scans.push(species_name.to_string());
+                }
+                if let Some(variant_name) = &e.variant_localized {
+                    if !scans.contains(&variant_name.to_string()) {
+                        scans.push(variant_name.to_string());
+                    }
+                }
+            }
 
+            if track_trip {
                 if matches!(e.scan_type, ed_journals::logs::scan_organic_event::ScanOrganicEventScanType::Analyse) {
                     app.trip.bio_analysed += 1;
 
                     // Increment biological codex count
                     *app.trip.biological_codex.entry(species_name.clone()).or_insert(0) += 1;
-
-                    // Add to completed organic scans map
-                    let key = format!("{}_{}", e.system_address, e.body);
-                    let scans = app.trip.organic_scans.entry(key).or_default();
-                    if !scans.contains(&genus_name.to_string()) {
-                        scans.push(genus_name.to_string());
-                    }
-                    if !scans.contains(&species_name.to_string()) {
-                        scans.push(species_name.to_string());
-                    }
                 }
             }
         }

@@ -449,32 +449,100 @@ fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
             let scan_key = format!("{}_{}", app.system.system_address, body.body_id);
             let organic_scans = app.trip.organic_scans.get(&scan_key);
 
+            struct GroupedPrediction {
+                base_name: String,
+                genus: String,
+                reward: u64,
+                variants: Vec<String>,
+                active_variant: Option<String>,
+                active_progress: u8,
+                active_scanned: bool,
+            }
+
+            let mut grouped: Vec<GroupedPrediction> = Vec::new();
+
             for variant in predictions {
-                let has_scanned = organic_scans.map(|s| s.contains(&variant.name.to_string()) || s.contains(&variant.genus.to_string())).unwrap_or(false);
+                let parts: Vec<&str> = variant.name.split(" - ").collect();
+                let base_name = parts[0].to_string();
+                let color = parts.get(1).map(|s| s.to_string()).unwrap_or_default();
 
-                let progress_key = format!("{}_{}_{}", app.system.system_address, body.body_id, variant.name);
-                let mut progress_val = app.trip.organic_progress.get(&progress_key).cloned().unwrap_or(0);
-                if progress_val == 0 {
-                    if let Some(species_base) = variant.name.split(" - ").next() {
-                        let species_key = format!("{}_{}_{}", app.system.system_address, body.body_id, species_base);
-                        progress_val = app.trip.organic_progress.get(&species_key).cloned().unwrap_or(0);
+                let progress_key_full = format!("{}_{}_{}", app.system.system_address, body.body_id, variant.name);
+                let progress_val_full = app.trip.organic_progress.get(&progress_key_full).cloned().unwrap_or(0);
+
+                let progress_key_base = format!("{}_{}_{}", app.system.system_address, body.body_id, base_name);
+                let progress_val_base = app.trip.organic_progress.get(&progress_key_base).cloned().unwrap_or(0);
+
+                let progress_val = std::cmp::max(progress_val_full, progress_val_base);
+
+                let has_scanned = organic_scans.map(|s| {
+                    s.contains(&variant.name.to_string()) || s.contains(&base_name)
+                }).unwrap_or(false);
+
+                if let Some(g) = grouped.iter_mut().find(|g| g.base_name == base_name) {
+                    if !color.is_empty() && !g.variants.contains(&color) {
+                        g.variants.push(color);
                     }
+                    if progress_val > g.active_progress {
+                        g.active_progress = progress_val;
+                        g.active_variant = Some(variant.name.to_string());
+                    }
+                    if has_scanned {
+                        g.active_scanned = true;
+                        g.active_variant = Some(variant.name.to_string());
+                    }
+                } else {
+                    grouped.push(GroupedPrediction {
+                        base_name: base_name.clone(),
+                        genus: variant.genus.to_string(),
+                        reward: variant.reward,
+                        variants: if color.is_empty() { vec![] } else { vec![color] },
+                        active_variant: if progress_val > 0 || has_scanned { Some(variant.name.to_string()) } else { None },
+                        active_progress: progress_val,
+                        active_scanned: has_scanned,
+                    });
                 }
+            }
 
-                if has_scanned || progress_val == 3 {
+            // Exobiology rule: A planet can never have more than one species of the same Genus.
+            // If the player has active progress or has scanned any species of a genus, filter out all other species of that genus.
+            let active_genuses: Vec<String> = grouped.iter()
+                .filter(|g| g.active_progress > 0 || g.active_scanned)
+                .map(|g| g.genus.clone())
+                .collect();
+
+            if !active_genuses.is_empty() {
+                grouped.retain(|g| {
+                    if active_genuses.contains(&g.genus) {
+                        g.active_progress > 0 || g.active_scanned
+                    } else {
+                        true
+                    }
+                });
+            }
+
+            // Sort grouped predictions descending by reward
+            grouped.sort_by(|a, b| b.reward.cmp(&a.reward));
+
+            for g in grouped {
+                if g.active_scanned || g.active_progress == 3 {
                     lines.push(Line::from(vec![
-                        Span::styled(format!(" R ▸ {} ", variant.name), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
+                        Span::styled(format!(" R ▸ {} ", g.active_variant.as_deref().unwrap_or(&g.base_name)), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
                         Span::styled("[Completed]", Style::default().fg(COLOR_BIO)),
                     ]));
-                } else if progress_val > 0 {
+                } else if g.active_progress > 0 {
                     lines.push(Line::from(vec![
-                        Span::styled(format!(" R ▸ {} ", variant.name), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
-                        Span::styled(format!("[Scanned {}/3]", progress_val), Style::default().fg(COLOR_FIRST).add_modifier(Modifier::BOLD)),
+                        Span::styled(format!(" R ▸ {} ", g.active_variant.as_deref().unwrap_or(&g.base_name)), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
+                        Span::styled(format!("[Scanned {}/3]", g.active_progress), Style::default().fg(COLOR_FIRST).add_modifier(Modifier::BOLD)),
                     ]));
                 } else {
+                    let variants_str = if g.variants.is_empty() {
+                        "".to_string()
+                    } else {
+                        format!(" ({})", g.variants.join("/"))
+                    };
                     lines.push(Line::from(vec![
-                        Span::styled(format!(" ▸ {} ", variant.name), Style::default().fg(ELITE_ORANGE)),
-                        Span::styled(format!(": {} cr (First)", format_credits(variant.reward * 5)), Style::default().fg(COLOR_FIRST)),
+                        Span::styled(format!(" ▸ {}{} ", g.base_name, variants_str), Style::default().fg(ELITE_ORANGE)),
+                        Span::styled(format!(": {} cr (First)", format_credits(g.reward * 5)), Style::default().fg(COLOR_FIRST)),
                     ]));
                 }
             }
