@@ -16,7 +16,12 @@ All tracks organized by domain. Each track links to its dedicated folder.
 
 _None._
 
+
 ## Completed Tracks
+
+- [x] **Phase 3 — Stellar Codex Hierarchy**
+  - *Type:* feature | *Domain:* core | *Status:* completed
+  - *Link:* [tracks/core/phase3_stellar_codex_20260527/](./tracks/core/phase3_stellar_codex_20260527/)
 
 - [x] **Phase 2 — Navigation & Exobiology**
   - *Type:* feature | *Domain:* core | *Status:* completed
