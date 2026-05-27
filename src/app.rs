@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use crate::model::{Body, BodyHierarchy, System, Trip};
+use crate::model::{Body, BodyHierarchy, System, Trip, NavRoute};
 
 /// Which tab is currently active in the TUI.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,6 +37,10 @@ pub struct App {
     pub status_message: Option<String>,
     /// Whether the help overlay is currently visible.
     pub show_help: bool,
+    /// Current targeted body ID from Status.json (Target Sync).
+    pub targeted_body_id: Option<u32>,
+    /// Plotted route waypoints from NavRoute.json.
+    pub plotted_route: Option<NavRoute>,
 }
 
 impl App {
@@ -52,6 +56,8 @@ impl App {
             body_display_order: Vec::new(),
             status_message: None,
             show_help: false,
+            targeted_body_id: None,
+            plotted_route: None,
         }
     }
 
@@ -91,6 +97,14 @@ impl App {
         let bodies: Vec<Body> = self.bodies.values().cloned().collect();
         let hierarchy = BodyHierarchy::build(&bodies);
         self.body_display_order = hierarchy.display_order();
+
+        // Target Sync: Auto-focus the targeted body if it exists in the hierarchy
+        if let Some(body_id) = self.targeted_body_id {
+            if let Some(pos) = self.body_display_order.iter().position(|&(id, _)| id == body_id) {
+                self.selected_body_index = pos;
+                return;
+            }
+        }
 
         // Clamp selection to valid range.
         if self.body_display_order.is_empty() {

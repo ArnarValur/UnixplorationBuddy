@@ -9,6 +9,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::thread;
+use std::time::Duration;
 
 use ed_journals::logs::blocking::LiveLogDirReader;
 use ed_journals::logs::{LogDir, LogEvent, LogEventContent};
@@ -16,7 +17,7 @@ use ed_journals::logs::{LogDir, LogEvent, LogEventContent};
 use crate::app::App;
 use crate::model::naming::parse_body_name;
 use crate::model::valuation::{calculate_planet_value, calculate_star_value};
-use crate::model::{Body, BodyType, ScanState, System};
+use crate::model::{Body, BodyType, ScanState, System, Status, NavRoute};
 
 /// Discover the journal directory, preferring an explicit path over the default.
 pub fn discover_journal_dir(explicit_path: Option<&str>) -> Result<PathBuf, String> {
@@ -94,24 +95,31 @@ pub fn replay_session(app: &mut App, journal_dir: &Path) -> Result<u32, String> 
 pub enum JournalUpdate {
     /// A new journal event was received.
     Event(LogEvent),
+    /// A real-time cockpit status update was parsed from Status.json.
+    StatusUpdate(Status),
+    /// A plotted navigation route update was parsed from NavRoute.json.
+    NavRouteUpdate(NavRoute),
     /// The watcher encountered an error.
     Error(String),
 }
 
-/// Spawn a background thread that watches the journal directory for new events.
+/// Spawn background threads that watch the journal directory for new events and status/route updates.
 /// Returns a receiver channel that the main loop can poll.
 pub fn start_live_watcher(
     journal_dir: PathBuf,
 ) -> Result<mpsc::Receiver<JournalUpdate>, String> {
     let (tx, rx) = mpsc::channel();
 
+    // Spawn journal watcher thread
+    let tx_journal = tx.clone();
+    let journal_dir_copy1 = journal_dir.clone();
     thread::Builder::new()
         .name("journal-watcher".into())
         .spawn(move || {
-            let reader = match LiveLogDirReader::open(&journal_dir) {
+            let reader = match LiveLogDirReader::open(&journal_dir_copy1) {
                 Ok(r) => r,
                 Err(e) => {
-                    let _ = tx.send(JournalUpdate::Error(format!(
+                    let _ = tx_journal.send(JournalUpdate::Error(format!(
                         "Failed to start journal watcher: {e}"
                     )));
                     return;
@@ -121,7 +129,7 @@ pub fn start_live_watcher(
             for entry_result in reader {
                 match entry_result {
                     Ok(event) => {
-                        if tx.send(JournalUpdate::Event(event)).is_err() {
+                        if tx_journal.send(JournalUpdate::Event(event)).is_err() {
                             // Main thread dropped the receiver — exit quietly.
                             break;
                         }
@@ -134,7 +142,78 @@ pub fn start_live_watcher(
         })
         .map_err(|e| format!("Failed to spawn journal watcher thread: {e}"))?;
 
+    // Spawn Status.json and NavRoute.json watcher thread
+    let tx_status_nav = tx.clone();
+    let journal_dir_copy2 = journal_dir.clone();
+    thread::Builder::new()
+        .name("status-nav-watcher".into())
+        .spawn(move || {
+            watch_status_and_nav_route(journal_dir_copy2, tx_status_nav);
+        })
+        .map_err(|e| format!("Failed to spawn status/nav watcher thread: {e}"))?;
+
     Ok(rx)
+}
+
+/// Periodically poll Status.json and NavRoute.json for changes.
+fn watch_status_and_nav_route(journal_dir: PathBuf, tx: mpsc::Sender<JournalUpdate>) {
+    let status_path = journal_dir.join("Status.json");
+    let nav_route_path = journal_dir.join("NavRoute.json");
+
+    let mut last_status_mtime = None;
+    let mut last_nav_route_mtime = None;
+
+    loop {
+        thread::sleep(Duration::from_millis(250));
+
+        // Check Status.json
+        if let Ok(metadata) = std::fs::metadata(&status_path) {
+            if let Ok(mtime) = metadata.modified() {
+                if last_status_mtime != Some(mtime) {
+                    last_status_mtime = Some(mtime);
+                    if let Ok(content) = std::fs::read_to_string(&status_path) {
+                        if !content.trim().is_empty() {
+                            match serde_json::from_str::<Status>(&content) {
+                                Ok(status) => {
+                                    if tx.send(JournalUpdate::StatusUpdate(status)).is_err() {
+                                        break; // Channel closed, exit thread
+                                    }
+                                }
+                                Err(e) => {
+                                    // Gracefully ignore half-written json
+                                    eprintln!("Warning: failed to parse Status.json: {e}");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check NavRoute.json
+        if let Ok(metadata) = std::fs::metadata(&nav_route_path) {
+            if let Ok(mtime) = metadata.modified() {
+                if last_nav_route_mtime != Some(mtime) {
+                    last_nav_route_mtime = Some(mtime);
+                    if let Ok(content) = std::fs::read_to_string(&nav_route_path) {
+                        if !content.trim().is_empty() {
+                            match serde_json::from_str::<NavRoute>(&content) {
+                                Ok(nav_route) => {
+                                    if tx.send(JournalUpdate::NavRouteUpdate(nav_route)).is_err() {
+                                        break; // Channel closed, exit thread
+                                    }
+                                }
+                                Err(e) => {
+                                    // Gracefully ignore half-written json
+                                    eprintln!("Warning: failed to parse NavRoute.json: {e}");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 /// Process a single journal event and update application state.

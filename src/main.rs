@@ -81,6 +81,29 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
         }
     }
 
+    // Bootstrap Status.json on startup
+    let status_path = journal_dir.join("Status.json");
+    if let Ok(content) = std::fs::read_to_string(&status_path) {
+        if let Ok(status) = serde_json::from_str::<model::Status>(&content) {
+            if let Some(ref dest) = status.destination {
+                if dest.system == app.system.name {
+                    app.targeted_body_id = Some(dest.body);
+                    if let Some(pos) = app.body_display_order.iter().position(|&(id, _)| id == dest.body) {
+                        app.selected_body_index = pos;
+                    }
+                }
+            }
+        }
+    }
+
+    // Bootstrap NavRoute.json on startup
+    let nav_route_path = journal_dir.join("NavRoute.json");
+    if let Ok(content) = std::fs::read_to_string(&nav_route_path) {
+        if let Ok(nav_route) = serde_json::from_str::<model::NavRoute>(&content) {
+            app.plotted_route = Some(nav_route);
+        }
+    }
+
     // Start live journal watcher
     let journal_rx = match journal::start_live_watcher(journal_dir.to_path_buf()) {
         Ok(rx) => Some(rx),
@@ -101,6 +124,21 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                     JournalUpdate::Event(event) => {
                         journal::process_event(&mut app, &event, true);
                         state_changed = true;
+                    }
+                    JournalUpdate::StatusUpdate(status) => {
+                        if let Some(ref dest) = status.destination {
+                            if dest.system == app.system.name {
+                                app.targeted_body_id = Some(dest.body);
+                                if let Some(pos) = app.body_display_order.iter().position(|&(id, _)| id == dest.body) {
+                                    app.selected_body_index = pos;
+                                }
+                            }
+                        } else {
+                            app.targeted_body_id = None;
+                        }
+                    }
+                    JournalUpdate::NavRouteUpdate(nav_route) => {
+                        app.plotted_route = Some(nav_route);
                     }
                     JournalUpdate::Error(e) => {
                         app.status_message = Some(format!("Journal error: {e}"));
