@@ -4,6 +4,20 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 11:52
+- **Session:** Phases 3–6 completion — efficiency tracking, TUI rendering overhaul, trip persistence, UX polish
+- **Tracks touched:** `phase1_bodies_history_20260527`
+- **Status:** Phases 1–5 complete. Phase 6 partially done (polish shipped, integration testing remains). **81/81 tests.** Untested against live journal.
+- **Decisions:** None (6 operational → Pulse)
+- **Next:** Live integration test (launch TUI + ED), terminal compat check, README.md
+- **Key commits:** `0004381` (Phase 3), `bf5dc44` (Phase 4), `abe9ac2` (Phase 5), `2d1272d` (Phase 6)
+- **New module:** `src/persistence.rs` — trip file I/O with debounced saves
+- **Test status:** 81/81 passing (journal: 28, naming: 19, valuation: 14, hierarchy: 3, UI: 12, persistence: 4, misc: 1)
+- **Uncommitted work:** None — all pushed to `origin/main`
+- **Note:** Binary ready to test: `cargo run --release -- --journal-path "<steam journal dir>"`
+
+---
+
 ## 2026-05-27 10:52
 - **Session:** Phase 3 — naming parser, value calculation, GitHub repo setup
 - **Tracks touched:** `phase1_bodies_history_20260527`

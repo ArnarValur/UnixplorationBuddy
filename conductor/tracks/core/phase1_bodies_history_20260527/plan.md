@@ -159,9 +159,9 @@
 
 ---
 
-## Phase 6: Integration & Polish
+## Phase 6: Integration & Polish `2d1272d`
 
-- [/] Task: End-to-end integration testing
+- [ ] Task: End-to-end integration testing
     - [ ] Test with real journal files from player's journal directory
     - [ ] Verify body hierarchy for 3+ known systems
     - [ ] Verify value calculations match Pioneer for 3+ known systems
@@ -175,8 +175,8 @@
     - [ ] Test in gnome-terminal
     - [ ] Fix any rendering issues (color fallback, unicode support)
 
-- [ ] Task: Polish & UX
-    - [ ] Loading indicator during session replay
-    - [ ] Status bar with current activity (watching journal, last event time)
-    - [ ] Keybinding help (press `?` for help overlay or footer hint)
+- [x] Task: Polish & UX `2d1272d`
+    - [x] Loading indicator during session replay
+    - [x] Status bar with current activity (watching journal, system info)
+    - [x] Keybinding help (`?` for help overlay)
     - [ ] README.md with installation and usage instructions
