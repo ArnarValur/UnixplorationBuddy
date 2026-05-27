@@ -58,12 +58,22 @@ pub struct Body {
     pub bio_signals: u32,
     pub geo_signals: u32,
     pub calculated_value: u64,
+    /// Credits from DSS mapping (0 if unmapped).
+    pub mapped_value: u64,
     /// Already discovered by another commander.
     pub was_discovered: bool,
     /// Already mapped by another commander.
     pub was_mapped: bool,
     /// Parent body_id for hierarchy.
     pub parent_id: Option<u32>,
+    /// Sortable key derived from body naming convention (see `model::naming`).
+    pub sort_key: String,
+    /// Raw planet class string from journal (e.g., "Earthlike body").
+    pub planet_class: Option<String>,
+    /// Raw star type string from journal (e.g., "B", "N", "DA").
+    pub star_type: Option<String>,
+    /// Whether DSS mapping used optimal probes (efficiency bonus).
+    pub probes_efficient: bool,
 }
 
 impl Body {
@@ -83,9 +93,14 @@ impl Body {
             bio_signals: 0,
             geo_signals: 0,
             calculated_value: 0,
+            mapped_value: 0,
             was_discovered: false,
             was_mapped: false,
             parent_id: None,
+            sort_key: String::new(),
+            planet_class: None,
+            star_type: None,
+            probes_efficient: false,
         }
     }
 }

@@ -23,8 +23,11 @@ impl BodyHierarchy {
     ///
     /// 1. Root bodies have `parent_id == None`.
     /// 2. Children are recursively attached under their parent.
-    /// 3. Children are sorted by `body_id` at each level.
+    /// 3. Children are sorted by `sort_key` (naming convention order).
     pub fn build(bodies: &[Body]) -> Self {
+        // Index bodies by id for sort_key lookup.
+        let body_map: HashMap<u32, &Body> = bodies.iter().map(|b| (b.body_id, b)).collect();
+
         // Group children by parent_id.
         let mut children_of: HashMap<u32, Vec<u32>> = HashMap::new();
         let mut root_ids: Vec<u32> = Vec::new();
@@ -36,11 +39,19 @@ impl BodyHierarchy {
             }
         }
 
-        root_ids.sort();
+        root_ids.sort_by(|a, b| {
+            let ak = body_map.get(a).map(|b| b.sort_key.as_str()).unwrap_or("");
+            let bk = body_map.get(b).map(|b| b.sort_key.as_str()).unwrap_or("");
+            ak.cmp(bk)
+        });
 
-        // Sort each parent's children by body_id.
+        // Sort each parent's children by sort_key.
         for ids in children_of.values_mut() {
-            ids.sort();
+            ids.sort_by(|a, b| {
+                let ak = body_map.get(a).map(|b| b.sort_key.as_str()).unwrap_or("");
+                let bk = body_map.get(b).map(|b| b.sort_key.as_str()).unwrap_or("");
+                ak.cmp(bk)
+            });
         }
 
         let roots = root_ids
@@ -93,6 +104,15 @@ impl BodyHierarchy {
 mod tests {
     use super::*;
     use crate::model::body::Body;
+    use crate::model::naming::parse_body_name;
+
+    /// Create a body with sort_key derived from the naming parser.
+    fn body_with_name(id: u32, short_name: &str) -> Body {
+        let mut b = Body::new(id, short_name.into());
+        b.short_name = short_name.into();
+        b.sort_key = parse_body_name(short_name).sort_key;
+        b
+    }
 
     #[test]
     fn empty_bodies_produces_empty_hierarchy() {
@@ -103,9 +123,9 @@ mod tests {
     #[test]
     fn flat_bodies_are_all_roots() {
         let bodies = vec![
-            Body::new(2, "B".into()),
-            Body::new(1, "A".into()),
-            Body::new(3, "C".into()),
+            body_with_name(2, "B"),
+            body_with_name(1, "A"),
+            body_with_name(3, "C"),
         ];
         let order = BodyHierarchy::build(&bodies).display_order();
         assert_eq!(order, vec![(1, 0), (2, 0), (3, 0)]);
@@ -113,13 +133,13 @@ mod tests {
 
     #[test]
     fn parent_child_depth_first() {
-        let mut star = Body::new(0, "Star".into());
+        let mut star = body_with_name(0, "");
         star.parent_id = None;
 
-        let mut planet = Body::new(1, "Planet".into());
+        let mut planet = body_with_name(1, "1");
         planet.parent_id = Some(0);
 
-        let mut moon = Body::new(2, "Moon".into());
+        let mut moon = body_with_name(2, "1 a");
         moon.parent_id = Some(1);
 
         let bodies = vec![moon, star, planet]; // intentionally unordered

@@ -14,6 +14,8 @@ use ed_journals::logs::blocking::LiveLogDirReader;
 use ed_journals::logs::{LogDir, LogEvent, LogEventContent};
 
 use crate::app::App;
+use crate::model::naming::parse_body_name;
+use crate::model::valuation::{calculate_planet_value, calculate_star_value};
 use crate::model::{Body, BodyType, ScanState, System};
 
 /// Discover the journal directory, preferring an explicit path over the default.
@@ -181,6 +183,9 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                 let mut b = Body::new(body_id, e.body_name.clone());
                 // Derive short name by stripping system name prefix
                 b.short_name = strip_system_prefix(&e.body_name, &app.system.name);
+                // Parse naming convention for hierarchy sort ordering
+                let pos = parse_body_name(&b.short_name);
+                b.sort_key = pos.sort_key;
                 b
             });
 
@@ -201,13 +206,22 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                 app.trip.first_discoveries += 1;
             }
 
-            // Determine body type and extract type-specific data
+            // Determine body type, extract data, and calculate exploration value
             match &e.kind {
                 ed_journals::logs::scan_event::ScanEventKind::Star(star) => {
                     body.body_type = BodyType::Star;
                     body.mass = Some(star.stellar_mass as f64);
                     body.atmosphere = None;
                     body.terraformable = false;
+                    body.star_type = Some(format!("{}", star.star_type));
+
+                    let first_disc = !body.was_discovered;
+                    let value = calculate_star_value(
+                        &star.star_type,
+                        star.stellar_mass as f64,
+                        first_disc,
+                    );
+                    body.calculated_value = value.fss_value;
                 }
                 ed_journals::logs::scan_event::ScanEventKind::Planet(planet) => {
                     // Determine if this is a planet or moon from parents
@@ -223,6 +237,20 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                         ed_journals::galaxy::TerraformState::Terraformable
                             | ed_journals::galaxy::TerraformState::Terraforming
                     );
+                    body.planet_class = Some(format!("{}", planet.planet_class));
+
+                    let first_disc = !body.was_discovered;
+                    let first_map = !body.was_mapped;
+                    let value = calculate_planet_value(
+                        &planet.planet_class,
+                        planet.mass_em as f64,
+                        body.terraformable,
+                        first_disc,
+                        first_map,
+                        false, // efficiency unknown until DSS
+                    );
+                    body.calculated_value = value.fss_value;
+                    body.mapped_value = value.mapped_value;
                 }
                 ed_journals::logs::scan_event::ScanEventKind::BeltCluster(_) => {
                     body.body_type = BodyType::BeltCluster;
