@@ -86,7 +86,7 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
     if let Ok(content) = std::fs::read_to_string(&status_path) {
         if let Ok(status) = serde_json::from_str::<model::Status>(&content) {
             if let Some(ref dest) = status.destination {
-                if dest.system == app.system.name {
+                if dest.system == app.system.system_address {
                     app.targeted_body_id = Some(dest.body);
                     if let Some(pos) = app.body_display_order.iter().position(|&(id, _)| id == dest.body) {
                         app.selected_body_index = pos;
@@ -135,7 +135,7 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                     }
                     JournalUpdate::StatusUpdate(status) => {
                         if let Some(ref dest) = status.destination {
-                            if dest.system == app.system.name {
+                            if dest.system == app.system.system_address {
                                 app.targeted_body_id = Some(dest.body);
                                 if let Some(pos) = app.body_display_order.iter().position(|&(id, _)| id == dest.body) {
                                     app.selected_body_index = pos;

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Destination {
     #[serde(rename = "System")]
-    pub system: String,
+    pub system: u64,
     #[serde(rename = "Body")]
     pub body: u32,
     #[serde(rename = "Name")]
