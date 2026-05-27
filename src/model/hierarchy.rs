@@ -33,9 +33,14 @@ impl BodyHierarchy {
         let mut root_ids: Vec<u32> = Vec::new();
 
         for body in bodies {
-            match body.parent_id {
-                Some(pid) => children_of.entry(pid).or_default().push(body.body_id),
-                None => root_ids.push(body.body_id),
+            let has_parent_in_list = match body.parent_id {
+                Some(pid) => body_map.contains_key(&pid),
+                None => false,
+            };
+            if has_parent_in_list {
+                children_of.entry(body.parent_id.unwrap()).or_default().push(body.body_id);
+            } else {
+                root_ids.push(body.body_id);
             }
         }
 
@@ -145,5 +150,21 @@ mod tests {
         let bodies = vec![moon, star, planet]; // intentionally unordered
         let order = BodyHierarchy::build(&bodies).display_order();
         assert_eq!(order, vec![(0, 0), (1, 1), (2, 2)]);
+    }
+
+    #[test]
+    fn missing_parent_becomes_temporary_root() {
+        let mut star = body_with_name(0, "");
+        star.parent_id = None;
+
+        // Planet 1 is missing from the list!
+        let mut moon = body_with_name(2, "1 a");
+        moon.parent_id = Some(1); // Points to missing planet 1
+
+        let bodies = vec![moon, star];
+        let order = BodyHierarchy::build(&bodies).display_order();
+        
+        // Star is a root (depth 0). Moon has missing parent so it also becomes a temporary root (depth 0).
+        assert_eq!(order, vec![(0, 0), (2, 0)]);
     }
 }

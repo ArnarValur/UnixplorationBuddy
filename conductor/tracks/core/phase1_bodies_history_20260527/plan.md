@@ -88,7 +88,7 @@
     - [x] Test with real journal data (19 tests)
     - [x] Integrate: hierarchy sorts by sort_key instead of body_id
 
-- [/] Task: Own value calculation (Pioneer port, replaces ed-journals' incomplete version) `a1ffbcb`
+- [x] Task: Own value calculation (Pioneer port, replaces ed-journals' incomplete version) `a1ffbcb`
     - [x] Port Pioneer's body_calc.py formulas to Rust (src/model/valuation.rs)
     - [x] Star values: all star classes, mass scaling, first discovery
     - [x] Planet values: all planet classes, terraform bonus, mass scaling
@@ -161,22 +161,22 @@
 
 ## Phase 6: Integration & Polish `2d1272d`
 
-- [ ] Task: End-to-end integration testing
-    - [ ] Test with real journal files from player's journal directory
-    - [ ] Verify body hierarchy for 3+ known systems
-    - [ ] Verify value calculations match Pioneer for 3+ known systems
-    - [ ] Test tab switching, scrolling, keyboard navigation
-    - [ ] Test startup with no journal files (error handling)
-    - [ ] Test startup with corrupted trip file
+- [x] Task: End-to-end integration testing
+    - [x] Test with real journal files from player's journal directory
+    - [x] Verify body hierarchy for 3+ known systems
+    - [x] Verify value calculations match Pioneer for 3+ known systems
+    - [x] Test tab switching, scrolling, keyboard navigation
+    - [x] Test startup with no journal files (error handling)
+    - [x] Test startup with corrupted trip file
 
-- [ ] Task: Terminal compatibility verification
-    - [ ] Test in kitty
-    - [ ] Test in alacritty
-    - [ ] Test in gnome-terminal
-    - [ ] Fix any rendering issues (color fallback, unicode support)
+- [x] Task: Terminal compatibility verification
+    - [x] Test in kitty
+    - [x] Test in alacritty
+    - [x] Test in gnome-terminal
+    - [x] Fix any rendering issues (color fallback, unicode support)
 
 - [x] Task: Polish & UX `2d1272d`
     - [x] Loading indicator during session replay
     - [x] Status bar with current activity (watching journal, system info)
     - [x] Keybinding help (`?` for help overlay)
-    - [ ] README.md with installation and usage instructions
+    - [x] README.md with installation and usage instructions

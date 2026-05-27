@@ -4,6 +4,15 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 13:01
+- **Session:** Live verification & Bug Fix — FSS hierarchy fix, TUI testing, telemetry monitor script
+- **Tracks touched:** `phase1_bodies_history_20260527`
+- **Status:** Phase 1 Complete! 100% verified live against active Elite Dangerous FSS journal logs. TUI renders nested bodies flawlessly. 82/82 tests passing.
+- **Decisions:** None (2 operational → Pulse)
+- **Next:** Aesthetic refinement session to heavily polish styling, custom borders, themes, and layouts.
+- **Key changes:** Treated parent-less bodies as temporary roots in `BodyHierarchy::build()` to solve the out-of-order FSS scan bug. Created `scratch/journal_telemetry_monitor.py`. Complete Quick Start instructions added to `README.md`.
+- **Test status:** 82/82 passing (journal: 28, naming: 19, valuation: 14, hierarchy: 4, UI: 12, persistence: 4, misc: 1)
+
 ## 2026-05-27 11:52
 - **Session:** Phases 3–6 completion — efficiency tracking, TUI rendering overhaul, trip persistence, UX polish
 - **Tracks touched:** `phase1_bodies_history_20260527`
