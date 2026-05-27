@@ -6,7 +6,7 @@
 - [x] Implement build-time exobiology parser to generate `src/model/biology/dataset.rs` from `conductor/canonn-data/`.
 
 ## Phase 2: Core Data Types & Ingestion
-- [ ] Expand `Body` model with `gravity`, `temperature`, and `landable` fields.
+- [x] Expand `Body` model with `gravity`, `temperature`, and `landable` fields. (c861e3e)
 - [ ] Implement `Status.json` parsing in the live journal watcher.
 - [ ] Implement `NavRoute.json` monitoring and parsing.
 - [ ] Add `ScanOrganic` ingestion for exobiology completed analyses.
