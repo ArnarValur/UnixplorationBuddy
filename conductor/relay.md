@@ -4,6 +4,13 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 18:05
+- **Session:** Implemented primary star subclass and luminosity parsing, rendering detailed tree-list subtypes in the Stellar Codex.
+- **Tracks touched:** `phase3_stellar_codex_20260527`
+- **Status:** Phase 3 fully completed, compiled, and verified. 91/91 unit tests are green. Specific star subclass/luminosity are parsed on Scan events and rendered nested below their base classes using elegant tree guides (`  ├─ ` / `  └─ `).
+- **Decisions:** None (operational -> Pulse)
+- **Next:** Implement automatic tab transitions on FSD target jump and system arrival completion.
+
 ## 2026-05-27 17:41
 - **Session:** Solved Flatpak sandbox TUI watcher freeze and exobiology prediction discrepancies.
 - **Tracks touched:** None

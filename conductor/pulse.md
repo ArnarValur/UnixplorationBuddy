@@ -1,12 +1,13 @@
 # Pulse — Current Project State
 
-**Last Updated:** 2026-05-27 17:42
-**Session Focus:** Solved Flatpak sandbox TUI watcher freeze and implemented exobiology hybrid prediction fallback.
+**Last Updated:** 2026-05-27 18:05
+**Session Focus:** Implemented primary star subclass and luminosity parsing, rendering detailed tree-list subtypes in the Stellar Codex.
 
 ## 🚀 Active Tracks
 _None._
 
 ## ✅ Recently Completed
+- **Stellar Codex Hierarchy (2026-05-27):** Parsed specific star types (`{StarType}{Subclass} {Luminosity}` like `F9 VAB` or `K5 VA`) on star `Scan` events, and rendered them using a beautiful, premium tree-guide structure (`  ├─ ` / `  └─ `) under their main class inside the Stellar Codex TUI tab, summing base visits automatically.
 - **Sandboxed Flatpak Watcher Fix (2026-05-27):** Replaced inotify-based LiveLogDirReader with a highly robust filesystem-polling log tailer, fully resolving TUI lockups inside sandboxed Flatpak container environments on Linux.
 - **Hybrid Exobiology Predictor Fallback (2026-05-27):** Implemented SAA genus extraction and a relaxed matching fallback (matching strictly on genus, atmosphere, and planet class) to prevent blank exobiology panels when strict Canonn boundaries fail.
 - **Spelling Normalization Fix (2026-05-27):** Standardized atmosphere normalization to treat 'sulphur' and 'sulfur' interchangeably, fixing exobiology matching failures on sulfur-dioxide planets throughout the galaxy.
@@ -18,6 +19,8 @@ _None._
 _None._
 
 ## 🧠 Session Memory
+- *2026-05-27* — Grouped and summed primary star types by their base non-digit class letters, sorting base classes and subtypes descending by visits. _(operational)_
+- *2026-05-27* — Formatted star subtypes using subclass numbers and capitalized luminosity codes from scan events to match in-game Star Types perfectly. _(operational)_
 - *2026-05-27* — Normalized 'sulphur' and 'sulfur' atmosphere spelling to prevent database matching failures on sulfur-dioxide planets. _(operational)_
 - *2026-05-27* — Implemented hybrid exobiology prediction fallback using DSS/SAA genus extraction when strict boundaries fail. _(operational)_
 - *2026-05-27* — Switched from inotify LiveLogDirReader to a filesystem-polling watcher loop to bypass Flatpak sandbox boundaries. _(operational)_
