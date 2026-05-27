@@ -214,6 +214,7 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     body.atmosphere = None;
                     body.terraformable = false;
                     body.star_type = Some(format!("{}", star.star_type));
+                    body.star_class_enum = Some(star.star_type.clone());
 
                     let first_disc = !body.was_discovered;
                     let value = calculate_star_value(
@@ -238,6 +239,7 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                             | ed_journals::galaxy::TerraformState::Terraforming
                     );
                     body.planet_class = Some(format!("{}", planet.planet_class));
+                    body.planet_class_enum = Some(planet.planet_class.clone());
 
                     let first_disc = !body.was_discovered;
                     let first_map = !body.was_mapped;
@@ -262,6 +264,9 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
 
             // Update discovered count
             app.system.body_count_discovered = app.bodies.len() as u32;
+
+            // Recompute system total value
+            app.system.total_value = aggregate_system_value(&app.bodies);
         }
 
         // --- Body signals (bio/geo counts from FSS) ---
@@ -302,7 +307,29 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                         }
                     }
                 }
+
+                // Track probe efficiency and recalculate mapped value
+                let efficient = e.probes_used <= e.efficiency_target;
+                body.probes_efficient = efficient;
+
+                if let Some(ref pc) = body.planet_class_enum {
+                    let first_disc = !body.was_discovered;
+                    let first_map = !body.was_mapped;
+                    let mass = body.mass.unwrap_or(1.0);
+                    let value = calculate_planet_value(
+                        pc,
+                        mass,
+                        body.terraformable,
+                        first_disc,
+                        first_map,
+                        efficient,
+                    );
+                    body.mapped_value = value.mapped_value;
+                }
             }
+
+            // Recompute system total value
+            app.system.total_value = aggregate_system_value(&app.bodies);
         }
 
         // --- DSS surface signals (can provide updated bio/geo counts) ---
@@ -336,6 +363,18 @@ fn strip_system_prefix(body_name: &str, system_name: &str) -> String {
     } else {
         body_name.to_string()
     }
+}
+
+/// Aggregate total system value from all discovered bodies.
+/// Uses mapped_value for DSS'd bodies (higher payout), calculated_value (FSS) for others.
+fn aggregate_system_value(bodies: &std::collections::HashMap<u32, Body>) -> u64 {
+    bodies.values().map(|b| {
+        if b.scan_state >= ScanState::DSSMapped && b.mapped_value > 0 {
+            b.mapped_value
+        } else {
+            b.calculated_value
+        }
+    }).sum()
 }
 
 /// Check if any parent in the chain is a planet (which makes this body a moon).
@@ -395,6 +434,9 @@ mod tests {
     const FSSBODYSIGNALS_GEO_JSON: &str = r#"{ "timestamp":"2026-05-26T15:59:45Z", "event":"FSSBodySignals", "BodyName":"Prudgeou VD-B e1 5 c", "BodyID":27, "SystemAddress":4997497796, "Signals":[ { "Type":"$SAA_SignalType_Geological;", "Type_Localised":"Geological", "Count":3 } ] }"#;
 
     const SAASCANCOMPLETE_JSON: &str = r#"{ "timestamp":"2026-05-26T16:09:16Z", "event":"SAAScanComplete", "BodyName":"Prudgeou VD-B e1 1", "SystemAddress":4997497796, "BodyID":1, "ProbesUsed":6, "EfficiencyTarget":7 }"#;
+
+    /// Inefficient DSS: probes_used > efficiency_target
+    const SAASCANCOMPLETE_INEFFICIENT_JSON: &str = r#"{ "timestamp":"2026-05-26T16:10:00Z", "event":"SAAScanComplete", "BodyName":"Prudgeou VD-B e1 1", "SystemAddress":4997497796, "BodyID":1, "ProbesUsed":10, "EfficiencyTarget":7 }"#;
 
     const SAASIGNALSFOUND_JSON: &str = r#"{ "timestamp":"2026-05-26T16:09:16Z", "event":"SAASignalsFound", "BodyName":"Prudgeou VD-B e1 1", "SystemAddress":4997497796, "BodyID":1, "Signals":[ { "Type":"$SAA_SignalType_Geological;", "Type_Localised":"Geological", "Count":2 } ], "Genuses":[] }"#;
 
@@ -716,6 +758,146 @@ mod tests {
         let event = parse_event(SAASCANCOMPLETE_JSON);
         process_event(&mut app, &event, true);
         assert_eq!(app.trip.bodies_mapped_dss, 0);
+    }
+
+    #[test]
+    fn saascancomplete_sets_probes_efficient_when_optimal() {
+        let mut app = app_in_prudgeou();
+
+        // Scan first to populate planet_class_enum and mass
+        process_event(&mut app, &parse_event(SCAN_PLANET_JSON), false);
+
+        // DSS with probes_used=6 <= efficiency_target=7
+        let event = parse_event(SAASCANCOMPLETE_JSON);
+        // Insert body 1 for the SAAScanComplete event (body_id=1 in fixture)
+        let body_61 = app.bodies.get(&61).unwrap().clone();
+        let mut body_1 = body_61;
+        body_1.body_id = 1;
+        body_1.scan_state = ScanState::FSSScanned;
+        app.bodies.insert(1, body_1);
+
+        process_event(&mut app, &event, false);
+
+        let body = app.bodies.get(&1).unwrap();
+        assert!(body.probes_efficient, "probes_used(6) <= efficiency_target(7) should be efficient");
+        assert!(body.mapped_value > 0, "Mapped value should be recalculated");
+    }
+
+    #[test]
+    fn saascancomplete_inefficient_probes_no_bonus() {
+        let mut app = app_in_prudgeou();
+
+        // Scan to populate planet data
+        process_event(&mut app, &parse_event(SCAN_PLANET_JSON), false);
+
+        // Create body for DSS with same planet data
+        let body_61 = app.bodies.get(&61).unwrap().clone();
+        let mut body_eff = body_61.clone();
+        body_eff.body_id = 1;
+        body_eff.scan_state = ScanState::FSSScanned;
+        app.bodies.insert(1, body_eff);
+
+        // Efficient mapping
+        process_event(&mut app, &parse_event(SAASCANCOMPLETE_JSON), false);
+        let efficient_value = app.bodies.get(&1).unwrap().mapped_value;
+
+        // Reset for inefficient test
+        let mut body_ineff = body_61;
+        body_ineff.body_id = 1;
+        body_ineff.scan_state = ScanState::FSSScanned;
+        app.bodies.insert(1, body_ineff);
+
+        // Inefficient mapping (probes_used=10 > efficiency_target=7)
+        process_event(&mut app, &parse_event(SAASCANCOMPLETE_INEFFICIENT_JSON), false);
+        let body = app.bodies.get(&1).unwrap();
+        assert!(!body.probes_efficient, "probes_used(10) > efficiency_target(7) should be inefficient");
+        assert!(body.mapped_value < efficient_value,
+            "Inefficient mapping ({}) should be less than efficient ({})",
+            body.mapped_value, efficient_value);
+    }
+
+    #[test]
+    fn saascancomplete_recalculates_mapped_value_with_efficiency() {
+        use crate::model::valuation::calculate_planet_value;
+
+        let mut app = app_in_prudgeou();
+
+        // Scan the planet to get real data
+        process_event(&mut app, &parse_event(SCAN_PLANET_JSON), false);
+        let planet = app.bodies.get(&61).unwrap();
+        let pc = planet.planet_class_enum.clone().unwrap();
+        let mass = planet.mass.unwrap();
+        let tf = planet.terraformable;
+
+        // Calculate expected efficient value
+        let expected_eff = calculate_planet_value(&pc, mass, tf, true, true, true);
+
+        // Create body for DSS
+        let mut body = app.bodies.get(&61).unwrap().clone();
+        body.body_id = 1;
+        body.scan_state = ScanState::FSSScanned;
+        app.bodies.insert(1, body);
+
+        // Efficient DSS
+        process_event(&mut app, &parse_event(SAASCANCOMPLETE_JSON), false);
+        assert_eq!(app.bodies.get(&1).unwrap().mapped_value, expected_eff.mapped_value,
+            "Efficient mapped value should match valuation calculation");
+    }
+
+    // ---------------------------------------------------------------
+    // System value aggregation
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn system_total_value_aggregates_body_values() {
+        let mut app = app_in_prudgeou();
+
+        // Scan two bodies
+        process_event(&mut app, &parse_event(SCAN_STAR_JSON), false);
+        let star_value = app.bodies.get(&0).unwrap().calculated_value;
+
+        process_event(&mut app, &parse_event(SCAN_PLANET_JSON), false);
+        let planet_value = app.bodies.get(&61).unwrap().calculated_value;
+
+        assert_eq!(app.system.total_value, star_value + planet_value,
+            "System value should be sum of body values");
+        assert!(app.system.total_value > 0, "Total value should be non-zero");
+    }
+
+    #[test]
+    fn system_total_value_uses_mapped_value_for_dss_bodies() {
+        let mut app = app_in_prudgeou();
+
+        // Scan planet
+        process_event(&mut app, &parse_event(SCAN_PLANET_JSON), false);
+        let fss_only_total = app.system.total_value;
+
+        // DSS the planet (body_id 61 → need fixture with body_id 61)
+        // Use a direct body mutation to set up for DSS
+        let planet = app.bodies.get_mut(&61).unwrap();
+        planet.body_id = 61;
+
+        // Create SAAScanComplete for body 61
+        let dss_json = r#"{ "timestamp":"2026-05-26T16:09:16Z", "event":"SAAScanComplete", "BodyName":"Prudgeou VD-B e1 9", "SystemAddress":4997497796, "BodyID":61, "ProbesUsed":5, "EfficiencyTarget":7 }"#;
+        process_event(&mut app, &parse_event(dss_json), false);
+
+        let mapped_total = app.system.total_value;
+        assert!(mapped_total > fss_only_total,
+            "Total after DSS ({}) should exceed FSS-only ({})",
+            mapped_total, fss_only_total);
+    }
+
+    #[test]
+    fn system_total_value_resets_on_fsdjump() {
+        let mut app = app_in_prudgeou();
+
+        // Scan a body to have non-zero value
+        process_event(&mut app, &parse_event(SCAN_STAR_JSON), false);
+        assert!(app.system.total_value > 0);
+
+        // Jump to new system — resets
+        process_event(&mut app, &parse_event(FSDJUMP_JSON), false);
+        assert_eq!(app.system.total_value, 0, "System value should reset on jump");
     }
 
     // ---------------------------------------------------------------

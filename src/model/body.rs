@@ -1,3 +1,5 @@
+use ed_journals::galaxy::{PlanetClass, StarClass};
+
 /// Discovery progression of a body.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ScanState {
@@ -72,6 +74,10 @@ pub struct Body {
     pub planet_class: Option<String>,
     /// Raw star type string from journal (e.g., "B", "N", "DA").
     pub star_type: Option<String>,
+    /// Typed planet class for value recalculation (avoids Display format mismatch).
+    pub planet_class_enum: Option<PlanetClass>,
+    /// Typed star class for value recalculation.
+    pub star_class_enum: Option<StarClass>,
     /// Whether DSS mapping used optimal probes (efficiency bonus).
     pub probes_efficient: bool,
 }
@@ -100,6 +106,8 @@ impl Body {
             sort_key: String::new(),
             planet_class: None,
             star_type: None,
+            planet_class_enum: None,
+            star_class_enum: None,
             probes_efficient: false,
         }
     }
