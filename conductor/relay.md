@@ -4,6 +4,13 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 20:10
+- **Session:** Implemented automatic startup legacy stellar codex pruner to cleanly clear mock/generic data.
+- **Tracks touched:** None
+- **Status:** Complete! Pruner runs inside the persistence load layer, instantly stripping legacy generic rows on next start. Prevents debounced saves from overriding the database. All 96 tests green.
+- **Decisions:** None (operational -> Pulse)
+- **Next:** Continue exploring!
+
 ## 2026-05-27 19:45
 - **Session:** Implemented full Codex tab scrollability and selection highlighting (Stellar, Planetary, Biological), added dynamic scrollbars, and injected mock subclasses to let the user immediately visualize the Stellar Codex tree layout.
 - **Tracks touched:** None
