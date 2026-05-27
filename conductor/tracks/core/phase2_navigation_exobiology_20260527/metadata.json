@@ -1,0 +1,9 @@
+{
+  "track_id": "phase2_navigation_exobiology_20260527",
+  "type": "feature",
+  "status": "new",
+  "domain": "core",
+  "created_at": "2026-05-27T14:31:00Z",
+  "updated_at": "2026-05-27T14:31:00Z",
+  "description": "Exobiology prediction, navigation route sync with scoopable diagnostics, trip codex registries, and real-time target sync."
+}
