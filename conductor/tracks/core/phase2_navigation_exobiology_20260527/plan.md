@@ -9,7 +9,7 @@
 - [x] Expand `Body` model with `gravity`, `temperature`, and `landable` fields. (c861e3e)
 - [x] Implement `Status.json` parsing in the live journal watcher. (e440f13)
 - [x] Implement `NavRoute.json` monitoring and parsing. (e440f13)
-- [ ] Add `ScanOrganic` ingestion for exobiology completed analyses.
+- [x] Add `ScanOrganic` ingestion for exobiology completed analyses. (896657a)
 
 ## Phase 3: Background EDSM Thread & Cache
 - [ ] Implement background worker thread loop with crossbeam/mpsc message passing.
