@@ -186,6 +186,9 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
         if event::poll(Duration::from_millis(250))? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
+                    // Any key press clears transient status messages
+                    app.status_message = None;
+
                     // If help overlay is showing, any key dismisses it
                     if app.show_help {
                         app.show_help = false;
