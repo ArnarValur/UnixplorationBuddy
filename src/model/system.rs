@@ -7,6 +7,7 @@ pub struct System {
     pub body_count_discovered: u32,
     pub body_count_total: u32,
     pub total_value: u64,
+    pub primary_star_id: Option<u32>,
 }
 
 impl System {
@@ -16,7 +17,9 @@ impl System {
         Self {
             name,
             system_address,
+            primary_star_id: None,
             ..Default::default()
         }
     }
 }
+

@@ -467,11 +467,17 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
 
             let sys_name = e.system_info.star_system.clone();
             let sys_addr = e.system_info.system_address;
-            app.system = System::new(sys_name, sys_addr);
+            let mut sys = System::new(sys_name, sys_addr);
+            sys.primary_star_id = Some(u32::from(e.system_info.body_id));
+            app.system = sys;
             app.bodies.clear();
             app.body_display_order.clear();
             app.selected_body_index = 0;
             app.system.body_count_discovered = 0;
+
+            if track_trip {
+                app.status_message = Some(format!("Arrived in system: {}", app.system.name));
+            }
         }
 
         LogEventContent::Location(e) => {
@@ -479,7 +485,9 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
             let sys_name = e.location_info.star_system.clone();
             let sys_addr = e.location_info.system_address;
             if app.system.system_address != sys_addr {
-                app.system = System::new(sys_name, sys_addr);
+                let mut sys = System::new(sys_name, sys_addr);
+                sys.primary_star_id = Some(u32::from(e.location_info.body_id));
+                app.system = sys;
                 app.bodies.clear();
                 app.body_display_order.clear();
                 app.selected_body_index = 0;
@@ -505,6 +513,11 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                 body.scan_state = ScanState::FSSScanned;
                 if track_trip {
                     app.trip.bodies_scanned_fss += 1;
+                    app.status_message = Some(format!(
+                        "[SCAN] Discovered: {} ({})",
+                        body.short_name,
+                        if body.body_type == BodyType::Star { "Star" } else { "Planet" }
+                    ));
                 }
             }
 
@@ -528,7 +541,13 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     body.star_class_enum = Some(star.star_type.clone());
                     body.temperature = Some(star.surface_temperature as f64);
 
-                    if track_trip && is_new_body && body_id == 0 {
+                    let is_primary = if let Some(pid) = app.system.primary_star_id {
+                        body_id == pid
+                    } else {
+                        body_id == 0 || body.short_name.is_empty()
+                    };
+
+                    if track_trip && is_new_body && is_primary {
                         let star_type_str = format!("{}", star.star_type);
                         let sub = star.subclass;
                         let lum = format!("{}", star.luminosity).trim().to_uppercase();
@@ -639,6 +658,10 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                             app.trip.first_mappings += 1;
                         }
                     }
+                }
+
+                if track_trip {
+                    app.status_message = Some(format!("[DSS] Mapped: {}", body.short_name));
                 }
 
                 // Track probe efficiency and recalculate mapped value

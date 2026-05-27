@@ -1,13 +1,16 @@
 # Pulse — Current Project State
 
-**Last Updated:** 2026-05-27 20:10
-**Session Focus:** Implemented robust startup-level legacy flat star data auto-pruning to permanently resolve database overrides.
+**Last Updated:** 2026-05-27 21:23
+**Session Focus:** Resolved multi-star Stellar Codex and Exobiology index discrepancies via dynamic primary star tracking; added transient live TUI status notifications.
 
 ## 🚀 Active Tracks
 _None._
 
 ## ✅ Recently Completed
+- **Dynamic Primary Star Discovery (2026-05-27):** Overhauled `src/model/system.rs` and `src/journal.rs` to extract the arrival star's `body_id` dynamically from journal `FSDJump` and `Location` events. Replaced all hardcoded `body_id == 0` checks in the `Stellar Codex` and `Exobiology Predictor` with dynamic lookups. Fully resolves missing codex counts and exobiology predictor failures in multi-star binary/trinary systems.
+- **Transient Live Notification Footer (2026-05-27):** Implemented live, dynamic status notifications in the TUI footer upon FSD jump, FSS scan, and DSS mapping completions. Configured crossterm input polling to instantly dismiss transient status messages and restore the default keybindings bar upon any key press, resolving stale startup replay footers.
 - **Legacy Codex In-Memory Auto-Pruner (2026-05-27):** Integrated a robust upgrader inside the `load` sequence of `src/persistence.rs` to automatically identify the presence of legacy flat star classes (like "K" or "F") in `stellar_codex`, cleanly purging all non-authentic/mock star classes and resetting the codex to a 100% authentic, subtype-only slate. Successfully resolves TUI save-on-exit overwrite loops.
+
 - **Stateful Codex Scrolling & Highlight (2026-05-27):** Refactored the raw Stellar, Planetary, and Biological Codex tables inside the History sub-views to use stateful TableState, selection row highlighting, and right-pane scrollbars. Integrated Up/Down keyboard navigation directly into the History tab for seamless codex scrolling. All 96 tests pass green.
 - **Exobiology Tree-List Refinement (2026-05-27):** Refined the nested tree structure under active exobiology species in the inspector panel to show Location [i/3] labels instead of generic indices. Verified all coordinate rendering and Haversine distance computations via robust unit tests.
 - **Exobiology Replay & Grouping Refinements (2026-05-27):** Enabled exobiology progress state and scan history reconstruction during startup replay mode by running `ScanOrganic` regardless of track_trip status. Grouped predictions color variants by base species name to compress row listings. Implemented exobiology genus constraint: dynamically filters out all other species of a genus once a specific species is actively scanned, saving immense terminal rows and visual clutter. All 95 tests pass green.
@@ -25,7 +28,11 @@ _None._
 _None._
 
 ## 🧠 Session Memory
+- *2026-05-27* — Overhauled primary star index detection to dynamically resolve arrival star's BodyID from jump/location events, fixing Stellar Codex and Biologist. _(operational)_
+- *2026-05-27* — Set transient status notifications for FSDJump, Scan, and SAAScanComplete. _(operational)_
+- *2026-05-27* — Configured any keyboard press to instantly clear status messages in TUI. _(operational)_
 - *2026-05-27* — Implemented automatic startup legacy codex pruner in persistence layer. _(operational)_
+
 - *2026-05-27* — Refactored Codex views to use stateful state and scrollbars. _(operational)_
 - *2026-05-27* — Wired Up/Down arrow keys to scroll active Codex list when History tab is selected. _(operational)_
 - *2026-05-27* — Injected mock star subclass data into user's trip.json for immediate visualization. _(operational)_

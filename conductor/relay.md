@@ -4,6 +4,13 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 21:23
+- **Session:** Resolved multi-star Stellar Codex and Exobiology index discrepancies via dynamic primary star tracking; added transient live TUI status notifications.
+- **Tracks touched:** None (free-form bugfixes)
+- **Status:** Complete! High-impact multi-star codex counts and exobiology predictor bugs resolved. TUI footer is fully dynamic and transient. All 96 tests passing green.
+- **Decisions:** None (operational -> Pulse)
+- **Next:** Phase 6 — Exobiology Coordinate Tracking (Latitude/Longitude status mapping) or initiating the AI Astrogator track.
+
 ## 2026-05-27 20:10
 - **Session:** Implemented automatic startup legacy stellar codex pruner to cleanly clear mock/generic data.
 - **Tracks touched:** None

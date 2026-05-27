@@ -436,9 +436,9 @@ fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
 
     lines.push(Line::from(""));
     lines.push(Line::from(Span::styled("── EXOBIOLOGY PREDICTIONS ──", Style::default().fg(ELITE_DIM))));
-    
     if body.bio_signals > 0 && body.landable {
-        let primary_star = app.bodies.get(&0).and_then(|b| b.star_class_enum.as_ref());
+        let primary_star_id = app.system.primary_star_id.unwrap_or(0);
+        let primary_star = app.bodies.get(&primary_star_id).and_then(|b| b.star_class_enum.as_ref());
         let predictions = predictor::predict_species(body, primary_star);
 
         if predictions.is_empty() {
