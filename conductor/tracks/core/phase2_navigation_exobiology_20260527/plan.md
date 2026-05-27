@@ -1,6 +1,6 @@
 # Implementation Plan — Phase 2 Navigation & Exobiology
 
-## Phase 1: Research & Setup
+## Phase 1: Research & Setup [checkpoint: 20f1a32]
 - [x] Add `ureq` to `Cargo.toml`.
 - [x] Set up `Status.json` and `NavRoute.json` file watchers.
 - [x] Implement build-time exobiology parser to generate `src/model/biology/dataset.rs` from `conductor/canonn-data/`.
