@@ -645,7 +645,9 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
 /// Strip the system name prefix from a body name to get the short display name.
 /// e.g., "Prudgeou VD-B e1 9" with system "Prudgeou VD-B e1" → "9"
 fn strip_system_prefix(body_name: &str, system_name: &str) -> String {
-    if body_name.starts_with(system_name) && body_name.len() > system_name.len() {
+    let body_lower = body_name.to_lowercase();
+    let sys_lower = system_name.to_lowercase();
+    if body_lower.starts_with(&sys_lower) && body_name.len() > system_name.len() {
         body_name[system_name.len()..].trim().to_string()
     } else {
         body_name.to_string()
