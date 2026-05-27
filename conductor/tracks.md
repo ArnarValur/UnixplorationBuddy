@@ -14,12 +14,14 @@ All tracks organized by domain. Each track links to its dedicated folder.
 
 ## Active Tracks
 
-- [~] **Phase 4 — Automatic Tab Transitions**
-  - *Type:* feature | *Domain:* core | *Status:* in_progress
-  - *Link:* [tracks/core/phase4_tab_transitions_20260527/](./tracks/core/phase4_tab_transitions_20260527/)
+_None._
 
 
 ## Completed Tracks
+
+- [x] **Phase 4 — Automatic Tab Transitions**
+  - *Type:* feature | *Domain:* core | *Status:* completed
+  - *Link:* [tracks/core/phase4_tab_transitions_20260527/](./tracks/core/phase4_tab_transitions_20260527/)
 
 - [x] **Phase 3 — Stellar Codex Hierarchy**
   - *Type:* feature | *Domain:* core | *Status:* completed
