@@ -1,12 +1,13 @@
 # Pulse — Current Project State
 
-**Last Updated:** 2026-05-27 21:23
-**Session Focus:** Resolved multi-star Stellar Codex and Exobiology index discrepancies via dynamic primary star tracking; added transient live TUI status notifications.
+**Last Updated:** 2026-05-27 22:05
+**Session Focus:** Overhauled the Planetary Codex to support category grouping (Rare, Terrestrial, Gas Giants) and status badges (🚀, 🌍, 🪐, 🌿) with backward-compatible key-encoding life tracking.
 
 ## 🚀 Active Tracks
 _None._
 
 ## ✅ Recently Completed
+- **Hierarchical Planetary Codex & Badges (2026-05-27):** Overhauled `src/model/body.rs`, `src/app.rs`, `src/journal.rs`, and `src/ui/mod.rs` to structure scanned worlds into three distinct category groups. Implemented backward-compatible key encoding (`PlanetClass|L|T|R|B`) to track landables, terraformables, rings, and life-bearing counts trip-wide in `trip.json` with zero database migrations. Added green leaf `🌿` life badges, DNA/coordinates, and dynamic category sum rows. Verified with robust unit tests. All 97 tests pass green.
 - **Dynamic Primary Star Discovery (2026-05-27):** Overhauled `src/model/system.rs` and `src/journal.rs` to extract the arrival star's `body_id` dynamically from journal `FSDJump` and `Location` events. Replaced all hardcoded `body_id == 0` checks in the `Stellar Codex` and `Exobiology Predictor` with dynamic lookups. Fully resolves missing codex counts and exobiology predictor failures in multi-star binary/trinary systems.
 - **Transient Live Notification Footer (2026-05-27):** Implemented live, dynamic status notifications in the TUI footer upon FSD jump, FSS scan, and DSS mapping completions. Configured crossterm input polling to instantly dismiss transient status messages and restore the default keybindings bar upon any key press, resolving stale startup replay footers.
 - **Legacy Codex In-Memory Auto-Pruner (2026-05-27):** Integrated a robust upgrader inside the `load` sequence of `src/persistence.rs` to automatically identify the presence of legacy flat star classes (like "K" or "F") in `stellar_codex`, cleanly purging all non-authentic/mock star classes and resetting the codex to a 100% authentic, subtype-only slate. Successfully resolves TUI save-on-exit overwrite loops.
@@ -28,6 +29,7 @@ _None._
 _None._
 
 ## 🧠 Session Memory
+- *2026-05-27* — Overhauled Planetary Codex to use categories and status badges (🚀, 🌍, 🪐, 🌿) with composite key encoding. _(operational)_
 - *2026-05-27* — Overhauled primary star index detection to dynamically resolve arrival star's BodyID from jump/location events, fixing Stellar Codex and Biologist. _(operational)_
 - *2026-05-27* — Set transient status notifications for FSDJump, Scan, and SAAScanComplete. _(operational)_
 - *2026-05-27* — Configured any keyboard press to instantly clear status messages in TUI. _(operational)_
@@ -58,5 +60,5 @@ _None._
 - **2026-05-27 (Phase 2 Grill):** Exobiology predictions will match FSS `Scan` physical parameters against Canonn distribution boundaries, only compiling and checking if FSS discovery scan detects bio signals > 0 to keep the display clean. _(operational)_
 
 ## 📋 Next Session Suggestions
-- **Phase 6 — Exobiology Coordinate Tracking:** Implement physical coordinate tracking (Latitude/Longitude) for the first exobiology genetic sample taken, fetching coordinates in real-time from `Status.json` and displaying them in the TUI.
-- **Audio Notification Cue:** Play a subtle sound cue or terminal beep upon automatic tab switches to audibly notify the commander when tab focus transitions.
+- **Planetary Codex Verification:** Commander manually explores a few systems to verify FSS scans, DSS mapping, and life-bearing planet count updates in the Planetary Codex.
+- **Phase 6 — Exobiology Coordinate Tracking:** Implement physical exobiology coordinate tracking mapping to exobiology sampler stages in TUI.

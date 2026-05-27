@@ -4,6 +4,13 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 22:05
+- **Session:** Overhauled the Planetary Codex to support category grouping (Rare, Terrestrial, Gas Giants) and status badges (🚀, 🌍, 🪐, 🌿) with backward-compatible key-encoding life tracking.
+- **Tracks touched:** None (free-form / grill spec completion)
+- **Status:** Complete! Dynamic classification, composite key encoding, biological life tagging, and nested category rendering with scrollbars fully operational. All 97 tests passing green.
+- **Decisions:** ADR-0008 (Backward-Compatible Planetary Key Encoding)
+- **Next:** Commander manual verification of exobiological life and planetary scan badges in-game. Then Phase 6 exobiology coordinate tracking.
+
 ## 2026-05-27 21:23
 - **Session:** Resolved multi-star Stellar Codex and Exobiology index discrepancies via dynamic primary star tracking; added transient live TUI status notifications.
 - **Tracks touched:** None (free-form bugfixes)
