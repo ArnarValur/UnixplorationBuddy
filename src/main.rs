@@ -3,6 +3,7 @@
 mod app;
 mod journal;
 mod model;
+mod persistence;
 mod ui;
 
 use std::io;
@@ -13,6 +14,7 @@ use ratatui::DefaultTerminal;
 
 use app::App;
 use journal::JournalUpdate;
+use persistence::TripPersistence;
 
 fn main() -> io::Result<()> {
     // Parse CLI args
@@ -38,6 +40,24 @@ fn main() -> io::Result<()> {
 /// Main event loop.
 fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Result<()> {
     let mut app = App::new();
+
+    // Initialize trip persistence
+    let mut trip_persistence = match TripPersistence::new() {
+        Ok(p) => Some(p),
+        Err(e) => {
+            app.status_message = Some(format!("Warning: trip persistence disabled: {e}"));
+            None
+        }
+    };
+
+    // Load saved trip data
+    if let Some(ref persistence) = trip_persistence {
+        let (trip, warning) = persistence.load();
+        app.trip = trip;
+        if let Some(w) = warning {
+            app.status_message = Some(w);
+        }
+    }
 
     // Replay existing journal files to reconstruct state
     match journal::replay_session(&mut app, journal_dir) {
@@ -66,16 +86,30 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
 
         // Drain any pending journal events (non-blocking)
         if let Some(ref rx) = journal_rx {
+            let mut state_changed = false;
             while let Ok(update) = rx.try_recv() {
                 match update {
                     JournalUpdate::Event(event) => {
                         journal::process_event(&mut app, &event, true);
-                        app.rebuild_display_order();
+                        state_changed = true;
                     }
                     JournalUpdate::Error(e) => {
                         app.status_message = Some(format!("Journal error: {e}"));
                     }
                 }
+            }
+            if state_changed {
+                app.rebuild_display_order();
+                if let Some(ref mut p) = trip_persistence {
+                    p.mark_dirty();
+                }
+            }
+        }
+
+        // Debounced trip save
+        if let Some(ref mut p) = trip_persistence {
+            if let Some(err) = p.maybe_save(&app.trip) {
+                app.status_message = Some(err);
             }
         }
 
@@ -93,6 +127,18 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                         KeyCode::Char('2') => app.active_tab = app::Tab::History,
                         KeyCode::Up => app.select_previous_body(),
                         KeyCode::Down => app.select_next_body(),
+                        KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                            // Ctrl+R: reset trip
+                            app.trip.reset();
+                            app.status_message =
+                                Some("Trip statistics reset".to_string());
+                            if let Some(ref mut p) = trip_persistence {
+                                p.mark_dirty();
+                                if let Some(err) = p.force_save(&app.trip) {
+                                    app.status_message = Some(err);
+                                }
+                            }
+                        }
                         _ => {}
                     }
                 }
@@ -100,6 +146,12 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
         }
 
         if app.should_quit {
+            // Final save before exit
+            if let Some(ref mut p) = trip_persistence {
+                if let Some(err) = p.force_save(&app.trip) {
+                    eprintln!("Warning: final trip save failed: {err}");
+                }
+            }
             break;
         }
     }

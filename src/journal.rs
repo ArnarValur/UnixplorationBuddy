@@ -145,6 +145,12 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
     match &event.content {
         // --- System transitions ---
         LogEventContent::FSDJump(e) => {
+            if track_trip {
+                // Bank the departing system's value into the trip total
+                app.trip.total_value += app.system.total_value;
+                app.trip.systems_visited += 1;
+            }
+
             let sys_name = e.system_info.star_system.clone();
             let sys_addr = e.system_info.system_address;
             app.system = System::new(sys_name, sys_addr);
@@ -152,10 +158,6 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
             app.body_display_order.clear();
             app.selected_body_index = 0;
             app.system.body_count_discovered = 0;
-
-            if track_trip {
-                app.trip.systems_visited += 1;
-            }
         }
 
         LogEventContent::Location(e) => {

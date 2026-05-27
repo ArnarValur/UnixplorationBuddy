@@ -341,7 +341,7 @@ fn draw_status_bar(frame: &mut Frame, app: &App, area: Rect) {
     } else {
         match app.active_tab {
             Tab::Bodies => "q: quit │ Tab/1/2: switch view │ ↑↓: navigate".to_string(),
-            Tab::History => "q: quit │ Tab/1/2: switch view".to_string(),
+            Tab::History => "q: quit │ Tab/1/2: switch view │ Ctrl+R: reset trip".to_string(),
         }
     };
 

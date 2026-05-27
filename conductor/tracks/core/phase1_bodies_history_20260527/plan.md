@@ -102,38 +102,42 @@
 
 ---
 
-## Phase 4: TUI Rendering
+## Phase 4: TUI Rendering `bf5dc44`
 
-- [/] Task: System Header widget
-    - [ ] Slim single-line top bar
-    - [ ] Display: system name, "N of M bodies", total system value
-    - [ ] Elite orange-on-black styling
-    - [ ] Updates on FSDJump and body scan events
+- [x] Task: System Header widget
+    - [x] Slim single-line top bar
+    - [x] Display: system name, "N of M bodies", total system value
+    - [x] Elite orange-on-black styling
+    - [x] Updates on FSDJump and body scan events
 
-- [ ] Task: Bodies View tab
-    - [ ] Hierarchical table with indentation for parent→child Bodies
-    - [ ] Columns: Name, Type, Atmosphere, Distance (Ls), Scan State icons, Value (cr), Bio count, Geo count
-    - [ ] Scan State rendered as icons/symbols (e.g., ○ unseen, ◐ honked, ● FSS, ★ DSS)
-    - [ ] Scrollable table for large systems
-    - [ ] Highlight selected row (keyboard navigation: ↑/↓)
-    - [ ] Elite orange-on-black color scheme with Ratatui styles
-    - [ ] "No bodies discovered" placeholder for empty systems
+- [x] Task: Bodies View tab
+    - [x] Hierarchical table with indentation for parent→child Bodies
+    - [x] Columns: Name, Type, Atmosphere, Distance (Ls), Scan State icons, Value (cr), Bio count, Geo count
+    - [x] Scan State rendered as icons/symbols (e.g., ○ unseen, ◐ honked, ● FSS, ★ DSS)
+    - [x] Scrollable table for large systems (StatefulWidget + Scrollbar)
+    - [x] Highlight selected row (keyboard navigation: ↑/↓)
+    - [x] Color-coded body types (stars=yellow, planets=blue, moons=grey)
+    - [x] "No bodies discovered" placeholder for empty systems
+    - [x] First discovery/mapping indicators (◆/◇)
+    - [x] Value column shows mapped_value for DSS'd bodies
 
-- [ ] Task: History View tab
-    - [ ] Trip statistics display: systems, bodies FSS'd, bodies DSS'd, first discoveries, first mappings, bio counts, total value
-    - [ ] Clean layout with labeled stat rows
-    - [ ] Same color scheme as Bodies View
+- [x] Task: History View tab
+    - [x] Trip statistics display: systems, bodies FSS'd, bodies DSS'd, first discoveries, first mappings, bio counts, total value
+    - [x] Clean layout with labeled stat rows
+    - [x] Same color scheme as Bodies View
+    - [x] First discovery/mapping stat highlights
 
-- [ ] Task: Tab navigation
-    - [ ] Tab key or 1/2 to switch between Bodies and History
-    - [ ] Visual tab indicator (header bar or highlighted tab name)
-    - [ ] System Header persists across both tabs
+- [x] Task: Tab navigation
+    - [x] Tab key or 1/2 to switch between Bodies and History
+    - [x] Visual tab indicator (▸ prefix + number key hints)
+    - [x] System Header persists across both tabs
+    - [x] Context-aware status bar keybindings per tab
 
 ---
 
 ## Phase 5: Trip Persistence
 
-- [ ] Task: Trip file I/O
+- [/] Task: Trip file I/O
     - [ ] Serialize Trip to JSON at `~/.local/share/unixploration-buddy/trip.json`
     - [ ] Create directory if it doesn't exist (XDG compliant via `dirs` crate)
     - [ ] Load Trip on startup (if file exists)
