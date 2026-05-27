@@ -20,6 +20,12 @@ pub struct Status {
     pub event: String,
     #[serde(rename = "Destination")]
     pub destination: Option<Destination>,
+    #[serde(rename = "Latitude")]
+    pub latitude: Option<f64>,
+    #[serde(rename = "Longitude")]
+    pub longitude: Option<f64>,
+    #[serde(rename = "Heading")]
+    pub heading: Option<f64>,
 }
 
 /// Plotted system waypoint within NavRoute.json.

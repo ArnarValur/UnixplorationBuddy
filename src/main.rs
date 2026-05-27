@@ -85,6 +85,10 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
     let status_path = journal_dir.join("Status.json");
     if let Ok(content) = std::fs::read_to_string(&status_path) {
         if let Ok(status) = serde_json::from_str::<model::Status>(&content) {
+            app.last_latitude = status.latitude;
+            app.last_longitude = status.longitude;
+            app.last_heading = status.heading;
+
             if let Some(ref dest) = status.destination {
                 if dest.system == app.system.system_address {
                     app.targeted_body_id = Some(dest.body);
@@ -134,6 +138,10 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                         }
                     }
                     JournalUpdate::StatusUpdate(status) => {
+                        app.last_latitude = status.latitude;
+                        app.last_longitude = status.longitude;
+                        app.last_heading = status.heading;
+
                         if let Some(ref dest) = status.destination {
                             if dest.system == app.system.system_address {
                                 app.targeted_body_id = Some(dest.body);

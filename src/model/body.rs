@@ -86,6 +86,8 @@ pub struct Body {
     pub gravity: Option<f64>,
     /// Surface temperature (in Kelvin).
     pub temperature: Option<f64>,
+    /// Planetary radius (in meters).
+    pub radius: Option<f64>,
     /// Capable of planetary landing.
     pub landable: bool,
     /// Biological genuses reported by SAA scan.
@@ -121,6 +123,7 @@ impl Body {
             probes_efficient: false,
             gravity: None,
             temperature: None,
+            radius: None,
             landable: false,
             bio_genuses: Vec::new(),
         }

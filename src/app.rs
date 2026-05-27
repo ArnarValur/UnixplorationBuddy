@@ -99,6 +99,12 @@ pub struct App {
     pub show_settings: bool,
     /// Force display Right Pane Inspector even on small viewports.
     pub show_inspector: bool,
+    /// Real-time planetary latitude from Status.json.
+    pub last_latitude: Option<f64>,
+    /// Real-time planetary longitude from Status.json.
+    pub last_longitude: Option<f64>,
+    /// Real-time planetary heading from Status.json.
+    pub last_heading: Option<f64>,
 }
 
 impl App {
@@ -121,6 +127,9 @@ impl App {
             column_settings: ColumnSettings::default(),
             show_settings: false,
             show_inspector: false,
+            last_latitude: None,
+            last_longitude: None,
+            last_heading: None,
         }
     }
 

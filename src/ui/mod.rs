@@ -534,6 +534,33 @@ fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
                         Span::styled(format!(" R ▸ {} ", g.active_variant.as_deref().unwrap_or(&g.base_name)), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
                         Span::styled(format!("[Scanned {}/3]", g.active_progress), Style::default().fg(COLOR_FIRST).add_modifier(Modifier::BOLD)),
                     ]));
+
+                    // Render tracked sample locations under the active species
+                    let location_key = format!("{}_{}_{}", app.system.system_address, body.body_id, g.base_name);
+                    if let Some(locs) = app.trip.organic_locations.get(&location_key) {
+                        for (i, loc) in locs.iter().enumerate() {
+                            let is_last = i == locs.len() - 1;
+                            let prefix = if is_last { "   └─ " } else { "   ├─ " };
+
+                            let dist_str = if let (Some(cur_lat), Some(cur_lon), Some(rad)) = (app.last_latitude, app.last_longitude, body.radius) {
+                                let dist_m = calculate_haversine_distance(loc.latitude, loc.longitude, cur_lat, cur_lon, rad);
+                                if dist_m >= 1000.0 {
+                                    format!(" ({:.2} km)", dist_m / 1000.0)
+                                } else {
+                                    format!(" ({:.0} m)", dist_m)
+                                }
+                            } else {
+                                "".to_string()
+                            };
+
+                            lines.push(Line::from(vec![
+                                Span::styled(prefix, Style::default().fg(ELITE_DIM)),
+                                Span::styled(format!("Location [{}/3]: ", i + 1), Style::default().fg(ELITE_DIM)),
+                                Span::styled(format!("{:.4}°, {:.4}°", loc.latitude, loc.longitude), Style::default().fg(COLOR_VALUE_HIGH)),
+                                Span::styled(dist_str, Style::default().fg(COLOR_FIRST).add_modifier(Modifier::BOLD)),
+                            ]));
+                        }
+                    }
                 } else {
                     let variants_str = if g.variants.is_empty() {
                         "".to_string()
@@ -1085,6 +1112,20 @@ fn format_credits(value: u64) -> String {
     result.chars().rev().collect()
 }
 
+/// Calculate the Great-Circle distance in meters between two planetary coordinates using the Haversine formula.
+fn calculate_haversine_distance(lat1: f64, lon1: f64, lat2: f64, lon2: f64, radius: f64) -> f64 {
+    let d_lat = (lat2 - lat1).to_radians();
+    let d_lon = (lon2 - lon1).to_radians();
+    let r_lat1 = lat1.to_radians();
+    let r_lat2 = lat2.to_radians();
+
+    let a = (d_lat / 2.0).sin().powi(2)
+        + r_lat1.cos() * r_lat2.cos() * (d_lon / 2.0).sin().powi(2);
+    let c = 2.0 * a.sqrt().atan2((1.0 - a).sqrt());
+
+    radius * c
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1223,17 +1264,31 @@ mod tests {
         app.selected_body_index = 0; // selection points to planet 1
         app.show_inspector = true;
 
-        let output_unscanned = render_to_string(&app, 150, 25);
+        let output_unscanned = render_to_string(&app, 180, 25);
         assert!(!output_unscanned.contains("Base:"), "Should not show base credits line anymore");
 
-        // Case 2: Progress 1/3 scanned -> shows progress
+        // Case 2: Progress 1/3 scanned -> shows progress with coordinates and real-time distance
         app.trip.organic_progress.insert("4997497796_1_Aleoida Arcus - Grey".to_string(), 1);
-        let output_progress1 = render_to_string(&app, 150, 25);
+        let loc = crate::model::trip::OrganicSampleLocation {
+            latitude: -10.2345,
+            longitude: 140.5678,
+            heading: Some(45.0),
+        };
+        app.trip.organic_locations.insert("4997497796_1_Aleoida Arcus".to_string(), vec![loc]);
+        app.last_latitude = Some(-10.2340);
+        app.last_longitude = Some(140.5670);
+        if let Some(body) = app.bodies.get_mut(&1) {
+            body.radius = Some(1000000.0); // 1000 km planet
+        }
+        let output_progress1 = render_to_string(&app, 180, 25);
         assert!(output_progress1.contains("[Scanned 1/3]"), "Should show progress scanned 1/3");
+        assert!(output_progress1.contains("Location [1/3]:"), "Should show Location [1/3] tree row");
+        assert!(output_progress1.contains("-10.2345°, 140.5678°"), "Should show sample coordinates");
+        assert!(output_progress1.contains("m)"), "Should show real-time Haversine distance");
 
         // Case 3: Completed -> shows completed
         app.trip.organic_scans.insert("4997497796_1".to_string(), vec!["Aleoida Arcus - Grey".to_string()]);
-        let output_completed = render_to_string(&app, 150, 25);
+        let output_completed = render_to_string(&app, 180, 25);
         assert!(output_completed.contains("[Completed]"), "Should show progress completed");
     }
 

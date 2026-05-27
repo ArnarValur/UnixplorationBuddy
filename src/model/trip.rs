@@ -1,5 +1,13 @@
 use serde::{Deserialize, Serialize};
 
+/// Position telemetry of a taken exobiology genetic sample.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct OrganicSampleLocation {
+    pub latitude: f64,
+    pub longitude: f64,
+    pub heading: Option<f64>,
+}
+
 /// Accumulated exploration statistics for a trip.
 /// Persisted to disk as JSON.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -24,6 +32,9 @@ pub struct Trip {
     /// Maps \"systemAddress_bodyId_speciesName\" to the current stage (1, 2, or 3).
     #[serde(default)]
     pub organic_progress: std::collections::HashMap<String, u8>,
+    /// Maps \"systemAddress_bodyId_speciesName\" to recorded sample locations.
+    #[serde(default)]
+    pub organic_locations: std::collections::HashMap<String, Vec<OrganicSampleLocation>>,
 }
 
 impl Trip {

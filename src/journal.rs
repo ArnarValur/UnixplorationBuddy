@@ -566,6 +566,7 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     body.planet_class_enum = Some(planet.planet_class.clone());
                     body.gravity = Some(planet.surface_gravity.0 as f64 / 9.80665);
                     body.temperature = Some(planet.surface_temperature as f64);
+                    body.radius = Some(planet.radius as f64);
                     body.landable = planet.landable;
 
                     if track_trip && is_new_body {
@@ -725,6 +726,19 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
             }
 
             if track_trip {
+                if let (Some(lat), Some(lon)) = (app.last_latitude, app.last_longitude) {
+                    let location_key = format!("{}_{}_{}", e.system_address, e.body, species_name);
+                    let locs = app.trip.organic_locations.entry(location_key).or_default();
+                    let new_loc = crate::model::trip::OrganicSampleLocation {
+                        latitude: lat,
+                        longitude: lon,
+                        heading: app.last_heading,
+                    };
+                    if locs.len() < progress_val as usize {
+                        locs.push(new_loc);
+                    }
+                }
+
                 if matches!(e.scan_type, ed_journals::logs::scan_organic_event::ScanOrganicEventScanType::Analyse) {
                     app.trip.bio_analysed += 1;
 
