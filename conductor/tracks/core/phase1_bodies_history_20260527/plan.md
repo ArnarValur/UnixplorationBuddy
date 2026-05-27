@@ -97,14 +97,14 @@
     - [x] Efficiency bonus (1.25x when probes_used <= efficiency_target)
     - [x] 14 value calculation tests
     - [x] Integration: calculated_value + mapped_value set on Scan events
-    - [ ] Wire SAAScanComplete efficiency tracking (probes_efficient flag)
-    - [ ] Total system value aggregation from individual Body Values
+    - [x] Wire SAAScanComplete efficiency tracking (probes_efficient flag) `0004381`
+    - [x] Total system value aggregation from individual Body Values `0004381`
 
 ---
 
 ## Phase 4: TUI Rendering
 
-- [ ] Task: System Header widget
+- [/] Task: System Header widget
     - [ ] Slim single-line top bar
     - [ ] Display: system name, "N of M bodies", total system value
     - [ ] Elite orange-on-black styling
