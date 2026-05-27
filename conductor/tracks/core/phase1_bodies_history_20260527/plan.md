@@ -52,6 +52,30 @@
 
 ---
 
+## Phase 2.5: Foundation Hardening `75b7ace`
+
+- [x] Task: Separate replay from trip accumulation
+    - [x] Add `track_trip: bool` parameter to `process_event()`
+    - [x] Guard all trip mutations behind `if track_trip`
+    - [x] Replay passes `false` (state only), live passes `true`
+    - [x] Trip starts at 0 on launch (persistence in Phase 5)
+
+- [x] Task: process_event() test suite (22 tests)
+    - [x] Real journal JSON fixtures parsed via serde_json
+    - [x] All 7 event handlers tested (FSDJump, Location, FSSDiscoveryScan, Scan, FSSBodySignals, SAAScanComplete, SAASignalsFound)
+    - [x] State transition tests (scan upgrade, system reset, body creation)
+    - [x] Trip gating tests (replay vs live mode)
+    - [x] Edge cases (unknown bodies, duplicate scans, same-system Location)
+
+- [x] Task: TUI rendering tests (4 tests)
+    - [x] Ratatui TestBackend pattern established
+    - [x] Header renders system name + body count
+    - [x] Empty state placeholder
+    - [x] History tab renders trip stats
+    - [x] Bodies tab renders body types + scan state icons
+
+---
+
 ## Phase 3: Body Hierarchy & Value Calculation
 
 - [ ] Task: Naming convention parser for Body Hierarchy
