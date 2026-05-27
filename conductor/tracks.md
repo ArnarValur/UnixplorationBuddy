@@ -14,7 +14,9 @@ All tracks organized by domain. Each track links to its dedicated folder.
 
 ## Active Tracks
 
-_None._
+- [~] **Phase 4 — Automatic Tab Transitions**
+  - *Type:* feature | *Domain:* core | *Status:* in_progress
+  - *Link:* [tracks/core/phase4_tab_transitions_20260527/](./tracks/core/phase4_tab_transitions_20260527/)
 
 
 ## Completed Tracks
