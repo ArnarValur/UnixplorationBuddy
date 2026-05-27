@@ -43,7 +43,14 @@ impl TripPersistence {
 
         match std::fs::read_to_string(&self.path) {
             Ok(contents) => match serde_json::from_str::<Trip>(&contents) {
-                Ok(trip) => (trip, None),
+                Ok(mut trip) => {
+                    // Upgrader: if legacy generic keys exist in stellar_codex,
+                    // clear the entire codex to let them start fresh with 100% authentic subtypes!
+                    if trip.stellar_codex.contains_key("K") || trip.stellar_codex.contains_key("F") {
+                        trip.stellar_codex.clear();
+                    }
+                    (trip, None)
+                }
                 Err(e) => (
                     Trip::default(),
                     Some(format!(
