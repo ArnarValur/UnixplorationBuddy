@@ -1,12 +1,13 @@
 # Pulse — Current Project State
 
-**Last Updated:** 2026-05-27 18:30
-**Session Focus:** Enabled session exobiology reconstruction during startup replay mode, implemented species variant grouping by color options, and integrated genus exobiology constraints to automatically filter out other species once a scan is initiated.
+**Last Updated:** 2026-05-27 19:35
+**Session Focus:** Refined exobiology progress tree layout to show Location [i/3] labels, and explained the mechanism of real-time coordinate tracking and Great-Circle distance estimation.
 
 ## 🚀 Active Tracks
 _None._
 
 ## ✅ Recently Completed
+- **Exobiology Tree-List Refinement (2026-05-27):** Refined the nested tree structure under active exobiology species in the inspector panel to show Location [i/3] labels instead of generic indices. Verified all coordinate rendering and Haversine distance computations via robust unit tests.
 - **Exobiology Replay & Grouping Refinements (2026-05-27):** Enabled exobiology progress state and scan history reconstruction during startup replay mode by running `ScanOrganic` regardless of track_trip status. Grouped predictions color variants by base species name to compress row listings. Implemented exobiology genus constraint: dynamically filters out all other species of a genus once a specific species is actively scanned, saving immense terminal rows and visual clutter. All 95 tests pass green.
 - **Exobiology UI Refinements (2026-05-27):** Implemented exobiology sampling progress tracking for all genetic stages (Log = 1/3, Sample = 2/3, Analyse = 3/3 / Completed) with dynamic TUI updates, compacted the layout to a single premium line per predicted species variant (eliminating the redundant `Base` value row), added robust key lookups falling back to base species names, and validated all exobiology features with unit tests.
 - **Automatic Tab Transitions (2026-05-27):** Implemented automatic TUI tab switching to the Route tab when starting a live `Hyperspace` jump (if a route is plotted), and automatically returning to the Bodies tab when arriving in the destination system, protected against replay mode.
@@ -22,6 +23,8 @@ _None._
 _None._
 
 ## 🧠 Session Memory
+- *2026-05-27* — Unified exobiology sample locations label to show Location [i/3] format. _(operational)_
+- *2026-05-27* — Explained the real-time Status.json parsing and Haversine distance mechanism. _(operational)_
 - *2026-05-27* — Reconstructed active exobiology progress and completed scans during startup journal replay. _(operational)_
 - *2026-05-27* — Grouped predicted exobiology color variants in TUI right-pane to condense rows. _(operational)_
 - *2026-05-27* — Filtered out redundant species of the same genus once a specific species is actively scanned, honoring Elite Dangerous exobiology rules. _(operational)_

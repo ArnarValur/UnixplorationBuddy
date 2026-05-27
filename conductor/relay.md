@@ -4,6 +4,13 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 19:35
+- **Session:** Refined the exobiology tree-list layout under in-progress species in the inspector panel to show nested Location [i/3] rows, and explained the mechanism of real-time coordinate tracking and Haversine distance calculations.
+- **Tracks touched:** None
+- **Status:** Complete! Previous genetic sample positions are rendered dynamically as `Location [i/3]: <lat>°, <lon>° (<dist>)` underneath the species row, matching the user's aesthetic proposal. All 95 tests pass green.
+- **Decisions:** None (operational -> Pulse)
+- **Next:** Focus on other exploration or UI telemetry enhancements.
+
 ## 2026-05-27 18:30
 - **Session:** Enabled exobiology progress state and scan history reconstruction during startup replay mode. Grouped exobiology color variants in TUI right-pane to collapse row listings, and implemented exobiology genus filtering: dynamically removes all other species of a genus once a specific species is actively scanned, saving massive rows and clutter.
 - **Tracks touched:** None
