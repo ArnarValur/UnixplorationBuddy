@@ -18,9 +18,12 @@ pub struct Trip {
     pub planetary_codex: std::collections::HashMap<String, u32>,
     #[serde(default)]
     pub biological_codex: std::collections::HashMap<String, u32>,
-    /// Maps "systemAddress_bodyId" to a list of successfully analysed species names on that body.
+    /// Maps \"systemAddress_bodyId\" to a list of successfully analysed species names on that body.
     #[serde(default)]
     pub organic_scans: std::collections::HashMap<String, Vec<String>>,
+    /// Maps \"systemAddress_bodyId_speciesName\" to the current stage (1, 2, or 3).
+    #[serde(default)]
+    pub organic_progress: std::collections::HashMap<String, u8>,
 }
 
 impl Trip {

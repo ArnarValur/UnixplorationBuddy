@@ -452,20 +452,29 @@ fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
             for variant in predictions {
                 let has_scanned = organic_scans.map(|s| s.contains(&variant.name.to_string()) || s.contains(&variant.genus.to_string())).unwrap_or(false);
 
-                if has_scanned {
+                let progress_key = format!("{}_{}_{}", app.system.system_address, body.body_id, variant.name);
+                let mut progress_val = app.trip.organic_progress.get(&progress_key).cloned().unwrap_or(0);
+                if progress_val == 0 {
+                    if let Some(species_base) = variant.name.split(" - ").next() {
+                        let species_key = format!("{}_{}_{}", app.system.system_address, body.body_id, species_base);
+                        progress_val = app.trip.organic_progress.get(&species_key).cloned().unwrap_or(0);
+                    }
+                }
+
+                if has_scanned || progress_val == 3 {
                     lines.push(Line::from(vec![
                         Span::styled(format!(" R ▸ {} ", variant.name), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
-                        Span::styled("[Scanned]", Style::default().fg(COLOR_BIO)),
+                        Span::styled("[Completed]", Style::default().fg(COLOR_BIO)),
+                    ]));
+                } else if progress_val > 0 {
+                    lines.push(Line::from(vec![
+                        Span::styled(format!(" R ▸ {} ", variant.name), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
+                        Span::styled(format!("[Scanned {}/3]", progress_val), Style::default().fg(COLOR_FIRST).add_modifier(Modifier::BOLD)),
                     ]));
                 } else {
                     lines.push(Line::from(vec![
                         Span::styled(format!(" ▸ {} ", variant.name), Style::default().fg(ELITE_ORANGE)),
-                    ]));
-                    lines.push(Line::from(vec![
-                        Span::styled(format!("   Base: {} cr", format_credits(variant.reward)), Style::default().fg(ELITE_DIM)),
-                    ]));
-                    lines.push(Line::from(vec![
-                        Span::styled(format!("   First: {} cr", format_credits(variant.reward * 5)), Style::default().fg(COLOR_FIRST)),
+                        Span::styled(format!(": {} cr (First)", format_credits(variant.reward * 5)), Style::default().fg(COLOR_FIRST)),
                     ]));
                 }
             }
@@ -1120,6 +1129,44 @@ mod tests {
         assert!(output.contains("TTS"), "Should show main class TTS");
         assert!(output.contains("7"), "Should show TTS count");
         assert!(!output.contains("└─ TTS") && !output.contains("├─ TTS"), "Should not render redundant single child TTS");
+    }
+
+    #[test]
+    fn draw_inspector_exobiology_progress_and_collapsed_credits() {
+        let mut app = App::new();
+        app.system = System::new("Test System".into(), 4997497796);
+        
+        let mut planet = Body::new(1, "Test System 1".into());
+        planet.short_name = "1".into();
+        planet.body_type = BodyType::Planet;
+        planet.scan_state = ScanState::DSSMapped;
+        planet.distance_ls = Some(123.4);
+        planet.bio_signals = 3;
+        planet.landable = true;
+        planet.planet_class = Some("Rocky body".to_string());
+        planet.planet_class_enum = Some(ed_journals::galaxy::PlanetClass::RockyBody);
+        planet.atmosphere = Some("Thin Carbon dioxide".to_string());
+        planet.gravity = Some(2.5); // forces fallback
+        planet.temperature = Some(900.0);
+        planet.bio_genuses = vec!["Aleoida".to_string()];
+        app.bodies.insert(1, planet);
+
+        app.rebuild_display_order();
+        app.selected_body_index = 0; // selection points to planet 1
+        app.show_inspector = true;
+
+        let output_unscanned = render_to_string(&app, 150, 25);
+        assert!(!output_unscanned.contains("Base:"), "Should not show base credits line anymore");
+
+        // Case 2: Progress 1/3 scanned -> shows progress
+        app.trip.organic_progress.insert("4997497796_1_Aleoida Arcus - Grey".to_string(), 1);
+        let output_progress1 = render_to_string(&app, 150, 25);
+        assert!(output_progress1.contains("[Scanned 1/3]"), "Should show progress scanned 1/3");
+
+        // Case 3: Completed -> shows completed
+        app.trip.organic_scans.insert("4997497796_1".to_string(), vec!["Aleoida Arcus - Grey".to_string()]);
+        let output_completed = render_to_string(&app, 150, 25);
+        assert!(output_completed.contains("[Completed]"), "Should show progress completed");
     }
 
     #[test]

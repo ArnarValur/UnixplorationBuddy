@@ -689,16 +689,34 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
 
         LogEventContent::ScanOrganic(e) => {
             if track_trip {
+                let species_name = e.species_localized.clone().unwrap_or_else(|| format!("{:?}", e.species));
+                let genus_name = e.genus_localized.clone().unwrap_or_else(|| format!("{:?}", e.genus));
+
+                let progress_val = match &e.scan_type {
+                    ed_journals::logs::scan_organic_event::ScanOrganicEventScanType::Log => 1,
+                    ed_journals::logs::scan_organic_event::ScanOrganicEventScanType::Sample => 2,
+                    ed_journals::logs::scan_organic_event::ScanOrganicEventScanType::Analyse => 3,
+                };
+
+                let progress_key = format!("{}_{}_{}", e.system_address, e.body, species_name);
+                app.trip.organic_progress.insert(progress_key, progress_val);
+
+                let progress_key_genus = format!("{}_{}_{}", e.system_address, e.body, genus_name);
+                app.trip.organic_progress.insert(progress_key_genus, progress_val);
+
+                if let Some(variant_name) = &e.variant_localized {
+                    let progress_key_variant = format!("{}_{}_{}", e.system_address, e.body, variant_name);
+                    app.trip.organic_progress.insert(progress_key_variant, progress_val);
+                }
+
                 if matches!(e.scan_type, ed_journals::logs::scan_organic_event::ScanOrganicEventScanType::Analyse) {
                     app.trip.bio_analysed += 1;
 
                     // Increment biological codex count
-                    let species_name = e.species_localized.clone().unwrap_or_else(|| format!("{:?}", e.species));
                     *app.trip.biological_codex.entry(species_name.clone()).or_insert(0) += 1;
 
                     // Add to completed organic scans map
                     let key = format!("{}_{}", e.system_address, e.body);
-                    let genus_name = e.genus_localized.clone().unwrap_or_else(|| format!("{:?}", e.genus));
                     let scans = app.trip.organic_scans.entry(key).or_default();
                     if !scans.contains(&genus_name.to_string()) {
                         scans.push(genus_name.to_string());
@@ -1466,5 +1484,27 @@ mod tests {
         // Live mode: SHOULD increment trip bio_analysed
         process_event(&mut app, &event, true);
         assert_eq!(app.trip.bio_analysed, 1);
+    }
+
+    #[test]
+    fn scanorganic_tracks_sampling_progress_stages() {
+        let mut app = App::new();
+        
+        let log_json = r#"{ "timestamp":"2026-05-26T16:00:00Z", "event":"ScanOrganic", "ScanType":"Log", "Genus":"$Codex_Ent_Bacterial_Genus_Name;", "Genus_Localised":"Bacterial Colonies", "Species":"$Codex_Ent_Bacterial_01_Name;", "Species_Localised":"Bacterium Acies", "Variant":null, "SystemAddress":4997497796, "Body":61 }"#;
+        let sample_json = r#"{ "timestamp":"2026-05-26T16:01:00Z", "event":"ScanOrganic", "ScanType":"Sample", "Genus":"$Codex_Ent_Bacterial_Genus_Name;", "Genus_Localised":"Bacterial Colonies", "Species":"$Codex_Ent_Bacterial_01_Name;", "Species_Localised":"Bacterium Acies", "Variant":null, "SystemAddress":4997497796, "Body":61 }"#;
+        let analyse_json = r#"{ "timestamp":"2026-05-26T16:02:00Z", "event":"ScanOrganic", "ScanType":"Analyse", "Genus":"$Codex_Ent_Bacterial_Genus_Name;", "Genus_Localised":"Bacterial Colonies", "Species":"$Codex_Ent_Bacterial_01_Name;", "Species_Localised":"Bacterium Acies", "Variant":null, "SystemAddress":4997497796, "Body":61 }"#;
+
+        // Stage 1: Log (1/3)
+        process_event(&mut app, &parse_event(log_json), true);
+        let progress_key = "4997497796_61_Bacterium Acies";
+        assert_eq!(app.trip.organic_progress.get(progress_key), Some(&1));
+
+        // Stage 2: Sample (2/3)
+        process_event(&mut app, &parse_event(sample_json), true);
+        assert_eq!(app.trip.organic_progress.get(progress_key), Some(&2));
+
+        // Stage 3: Analyse (3/3)
+        process_event(&mut app, &parse_event(analyse_json), true);
+        assert_eq!(app.trip.organic_progress.get(progress_key), Some(&3));
     }
 }
