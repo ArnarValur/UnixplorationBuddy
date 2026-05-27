@@ -4,6 +4,13 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 18:25
+- **Session:** Refined the exobiology predicted species list in the TUI right-pane inspector to dynamically track multi-stage genetic sampling progress, optimized the layout by collapsing predictions to a single premium line (eliminating the separate `Base:` row), and designed real-time exobiology coordinate tracking.
+- **Tracks touched:** None
+- **Status:** Dynamic exobiology updates fully completed, compiled, and verified. 95/95 unit tests are green. Sampling progress (Log = 1/3, Sample = 2/3, Completed) renders in real-time under a robust species name fallback. Predicted species are collapsed to a single line showing variant name and first discovery reward.
+- **Decisions:** None (operational -> Pulse)
+- **Next:** Implement Phase 6 exobiology coordinate tracking by reading Latitude and Longitude from Status.json.
+
 ## 2026-05-27 18:11
 - **Session:** Implemented automatic TUI tab transitions switching to Route tab on FSD jump start and returning to Bodies tab upon system arrival.
 - **Tracks touched:** `phase4_tab_transitions_20260527`

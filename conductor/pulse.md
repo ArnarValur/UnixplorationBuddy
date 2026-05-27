@@ -1,12 +1,13 @@
 # Pulse — Current Project State
 
-**Last Updated:** 2026-05-27 18:11
-**Session Focus:** Implemented automatic TUI tab transitions switching to Route tab on FSD jump start and returning to Bodies tab upon system arrival.
+**Last Updated:** 2026-05-27 18:25
+**Session Focus:** Refined the exobiology predicted species list in the TUI right-pane inspector to dynamically track multi-stage genetic sampling progress, optimized the layout by collapsing predictions to a single premium line (eliminating the separate `Base:` row), and designed real-time exobiology coordinate tracking.
 
 ## 🚀 Active Tracks
 _None._
 
 ## ✅ Recently Completed
+- **Exobiology UI Refinements (2026-05-27):** Implemented exobiology sampling progress tracking for all genetic stages (Log = 1/3, Sample = 2/3, Analyse = 3/3 / Completed) with dynamic TUI updates, compacted the layout to a single premium line per predicted species variant (eliminating the redundant `Base` value row), added robust key lookups falling back to base species names, and validated all exobiology features with unit tests.
 - **Automatic Tab Transitions (2026-05-27):** Implemented automatic TUI tab switching to the Route tab when starting a live `Hyperspace` jump (if a route is plotted), and automatically returning to the Bodies tab when arriving in the destination system, protected against replay mode.
 - **Stellar Codex Hierarchy (2026-05-27):** Parsed specific star types (`{StarType}{Subclass} {Luminosity}` like `F9 VAB` or `K5 VA`) on star `Scan` events, and rendered them using a beautiful, premium tree-guide structure (`  ├─ ` / `  └─ `) under their main class inside the Stellar Codex TUI tab, summing base visits automatically.
 - **Sandboxed Flatpak Watcher Fix (2026-05-27):** Replaced inotify-based LiveLogDirReader with a highly robust filesystem-polling log tailer, fully resolving TUI lockups inside sandboxed Flatpak container environments on Linux.
@@ -20,6 +21,9 @@ _None._
 _None._
 
 ## 🧠 Session Memory
+- *2026-05-27* — Indexed exobiology organic progress under specific variant localized names in addition to species and genus names. _(operational)_
+- *2026-05-27* — Resolved exobiology predictions panel key mismatch by implementing a base species name fallback lookup. _(operational)_
+- *2026-05-27* — Compacted exobiology predictions UI layout in the inspector to a single premium line (name and first discovery value) to save 50% vertical space. _(operational)_
 - *2026-05-27* — Ingested StartJump event matching the Hyperspace struct variant to automate tab navigation. _(operational)_
 - *2026-05-27* — Handled live-mode protection inside StartJump and FSDJump to ensure tab transitions only occur during live sessions. _(operational)_
 - *2026-05-27* — Grouped and summed primary star types by their base non-digit class letters, sorting base classes and subtypes descending by visits. _(operational)_
@@ -34,5 +38,5 @@ _None._
 - **2026-05-27 (Phase 2 Grill):** Exobiology predictions will match FSS `Scan` physical parameters against Canonn distribution boundaries, only compiling and checking if FSS discovery scan detects bio signals > 0 to keep the display clean. _(operational)_
 
 ## 📋 Next Session Suggestions
-- **Further Exobiology Panel Tweaks:** Refine exobiology panel layout and detailed telemetry displays based on live session feedback.
+- **Phase 6 — Exobiology Coordinate Tracking:** Implement physical coordinate tracking (Latitude/Longitude) for the first exobiology genetic sample taken, fetching coordinates in real-time from `Status.json` and displaying them in the TUI.
 - **Audio Notification Cue:** Play a subtle sound cue or terminal beep upon automatic tab switches to audibly notify the commander when tab focus transitions.
