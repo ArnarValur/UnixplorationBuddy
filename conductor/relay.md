@@ -4,6 +4,17 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 10:52
+- **Session:** Phase 3 — naming parser, value calculation, GitHub repo setup
+- **Tracks touched:** `phase1_bodies_history_20260527`
+- **Status:** Phase 3 nearly complete (2 small tasks remain). 65/65 tests.
+- **Decisions:** None (3 operational → Pulse)
+- **Next:** Finish Phase 3 (SAAScanComplete efficiency + system value aggregation), then Phase 4 TUI polish
+- **Key commits:** `c21d7bd` (naming parser + gitignore), `a1ffbcb` (value calc + integration), `865cfa2` (README)
+- **Repo:** github.com/ArnarValur/UnixplorationBuddy — connected, pushed, 260MB codex purged from history
+- **Test status:** 65/65 passing (naming: 19, valuation: 14, process_event: 22, hierarchy: 3, TUI: 4, misc: 3)
+- **Uncommitted work:** None — all Phase 3 work committed and pushed
+
 ## 2026-05-27 10:27
 - **Session:** Phase 2.5 Foundation Hardening — replay/trip fix, test suite
 - **Tracks touched:** `phase1_bodies_history_20260527`

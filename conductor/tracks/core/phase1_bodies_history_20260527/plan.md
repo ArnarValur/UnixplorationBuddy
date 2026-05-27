@@ -78,21 +78,26 @@
 
 ## Phase 3: Body Hierarchy & Value Calculation
 
-- [ ] Task: Naming convention parser for Body Hierarchy
-    - [ ] Parse Elite's body naming scheme to extract hierarchy
-    - [ ] Handle star designations (A, B, C, ABC)
-    - [ ] Handle planet numbering (1, 2, 3...)
-    - [ ] Handle moon lettering (a, b, c...)
-    - [ ] Handle belt clusters as root-level entries
-    - [ ] Fallback to flat list for unparseable names
-    - [ ] Test with known systems: Sol, Colonia, procedural names
+- [x] Task: Naming convention parser for Body Hierarchy `c21d7bd`
+    - [x] Parse Elite's body naming scheme to extract hierarchy
+    - [x] Handle star designations (A, B, C, ABC, CDE)
+    - [x] Handle planet numbering (1, 2, 3...)
+    - [x] Handle moon lettering (a, b, c...) and sub-moons
+    - [x] Handle belt clusters as root-level entries
+    - [x] Fallback to flat list for unparseable names
+    - [x] Test with real journal data (19 tests)
+    - [x] Integrate: hierarchy sorts by sort_key instead of body_id
 
-- [ ] Task: Validate `ed-journals` exploration value calculation (ADR-0003)
-    - [ ] Use the crate's `exploration` module for Body Value estimation
-    - [ ] Validate outputs against Pioneer's known correct values for 5+ body types
-    - [ ] Verify first discovery bonus modifier
-    - [ ] Verify first mapping bonus modifier (with efficiency bonus)
-    - [ ] If values diverge from Pioneer: implement own formulas as override
+- [/] Task: Own value calculation (Pioneer port, replaces ed-journals' incomplete version) `a1ffbcb`
+    - [x] Port Pioneer's body_calc.py formulas to Rust (src/model/valuation.rs)
+    - [x] Star values: all star classes, mass scaling, first discovery
+    - [x] Planet values: all planet classes, terraform bonus, mass scaling
+    - [x] First discovery (2.6x) and first mapping modifiers
+    - [x] Odyssey/4.0+ mapping bonus (always on)
+    - [x] Efficiency bonus (1.25x when probes_used <= efficiency_target)
+    - [x] 14 value calculation tests
+    - [x] Integration: calculated_value + mapped_value set on Scan events
+    - [ ] Wire SAAScanComplete efficiency tracking (probes_efficient flag)
     - [ ] Total system value aggregation from individual Body Values
 
 ---
