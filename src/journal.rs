@@ -587,10 +587,20 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     body.temperature = Some(planet.surface_temperature as f64);
                     body.radius = Some(planet.radius as f64);
                     body.landable = planet.landable;
+                    body.ringed = !planet.rings.is_empty();
 
                     if track_trip && is_new_body {
-                        let planet_class_str = format!("{}", planet.planet_class);
-                        *app.trip.planetary_codex.entry(planet_class_str).or_insert(0) += 1;
+                        let mut key = format!("{}", planet.planet_class);
+                        if planet.landable {
+                            key.push_str("|L");
+                        }
+                        if body.terraformable {
+                            key.push_str("|T");
+                        }
+                        if !planet.rings.is_empty() {
+                            key.push_str("|R");
+                        }
+                        *app.trip.planetary_codex.entry(key).or_insert(0) += 1;
                     }
 
                     let first_disc = !body.was_discovered;
@@ -629,10 +639,12 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                 .entry(body_id)
                 .or_insert_with(|| create_scanned_body(body_id, &e.body_name, &app.system.name));
 
+            let mut bio_count = 0;
             for signal in &e.signals {
                 match signal.kind {
                     ed_journals::exploration::PlanetarySignalType::Biological => {
                         body.bio_signals = u32::from(signal.count);
+                        bio_count = u32::from(signal.count);
                         if track_trip {
                             app.trip.bio_detected += u32::from(signal.count);
                         }
@@ -641,6 +653,27 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                         body.geo_signals = u32::from(signal.count);
                     }
                     _ => {} // Human, Thargoid, Guardian, etc. — not tracked in Phase 1
+                }
+            }
+
+            if track_trip && bio_count > 0 {
+                if let Some(ref pc) = body.planet_class {
+                    let mut old_key = pc.clone();
+                    if body.landable {
+                        old_key.push_str("|L");
+                    }
+                    if body.terraformable {
+                        old_key.push_str("|T");
+                    }
+                    if body.ringed {
+                        old_key.push_str("|R");
+                    }
+
+                    if let Some(count) = app.trip.planetary_codex.remove(&old_key) {
+                        let mut new_key = old_key.clone();
+                        new_key.push_str("|B");
+                        *app.trip.planetary_codex.entry(new_key).or_insert(0) += count;
+                    }
                 }
             }
         }
@@ -697,15 +730,38 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     body.bio_genuses.push(format!("{:?}", g.genus));
                 }
 
+                let mut bio_count = 0;
                 for signal in &e.signals {
                     match signal.kind {
                         ed_journals::exploration::PlanetarySignalType::Biological => {
                             body.bio_signals = u32::from(signal.count);
+                            bio_count = u32::from(signal.count);
                         }
                         ed_journals::exploration::PlanetarySignalType::Geological => {
                             body.geo_signals = u32::from(signal.count);
                         }
                         _ => {}
+                    }
+                }
+
+                if track_trip && bio_count > 0 {
+                    if let Some(ref pc) = body.planet_class {
+                        let mut old_key = pc.clone();
+                        if body.landable {
+                            old_key.push_str("|L");
+                        }
+                        if body.terraformable {
+                            old_key.push_str("|T");
+                        }
+                        if body.ringed {
+                            old_key.push_str("|R");
+                        }
+
+                        if let Some(count) = app.trip.planetary_codex.remove(&old_key) {
+                            let mut new_key = old_key.clone();
+                            new_key.push_str("|B");
+                            *app.trip.planetary_codex.entry(new_key).or_insert(0) += count;
+                        }
                     }
                 }
             }

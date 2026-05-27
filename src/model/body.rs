@@ -90,6 +90,8 @@ pub struct Body {
     pub radius: Option<f64>,
     /// Capable of planetary landing.
     pub landable: bool,
+    /// Has planetary rings.
+    pub ringed: bool,
     /// Biological genuses reported by SAA scan.
     pub bio_genuses: Vec<String>,
 }
@@ -125,6 +127,7 @@ impl Body {
             temperature: None,
             radius: None,
             landable: false,
+            ringed: false,
             bio_genuses: Vec::new(),
         }
     }

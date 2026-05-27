@@ -203,7 +203,20 @@ impl App {
                 }
                 count
             }
-            CodexTab::Planetary => self.trip.planetary_codex.len(),
+            CodexTab::Planetary => {
+                let mut unique_classes = std::collections::HashSet::new();
+                for key in self.trip.planetary_codex.keys() {
+                    let parts: Vec<&str> = key.split('|').collect();
+                    unique_classes.insert(parts[0].to_string());
+                }
+
+                let mut categories = std::collections::HashSet::new();
+                for planet_class in &unique_classes {
+                    categories.insert(get_planet_category(planet_class));
+                }
+
+                unique_classes.len() + categories.len()
+            }
             CodexTab::Biological => self.trip.biological_codex.len(),
         }
     }
@@ -269,6 +282,18 @@ impl App {
     }
 }
 
+/// Helper to classify a planet class into a premium category.
+pub fn get_planet_category(planet_class: &str) -> &'static str {
+    let lower = planet_class.to_lowercase();
+    if lower.contains("earth-like") || lower.contains("ammonia world") || lower.contains("water world") {
+        "Rare Worlds"
+    } else if lower.contains("gas giant") || lower.contains("water giant") {
+        "Gas Giants"
+    } else {
+        "Terrestrial Worlds"
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -320,5 +345,27 @@ mod tests {
         assert_eq!(app.selected_codex_index, 0);
         app.select_previous_codex_row();
         assert_eq!(app.selected_codex_index, 3);
+    }
+
+    #[test]
+    fn test_planetary_codex_rows_and_categories() {
+        assert_eq!(get_planet_category("Earth-like World"), "Rare Worlds");
+        assert_eq!(get_planet_category("High metal content body"), "Terrestrial Worlds");
+        assert_eq!(get_planet_category("Sudarsky Class III gas giant"), "Gas Giants");
+
+        let mut app = App::new();
+        app.active_codex_tab = CodexTab::Planetary;
+        assert_eq!(app.max_codex_rows(), 0);
+
+        // Ingest mock planetary codex data with sub-attribute flags encoded in keys
+        app.trip.planetary_codex.insert("High metal content body|L".to_string(), 3);
+        app.trip.planetary_codex.insert("High metal content body|L|T|R".to_string(), 1);
+        app.trip.planetary_codex.insert("Earth-like World|L".to_string(), 2);
+        app.trip.planetary_codex.insert("Rocky body|L".to_string(), 5);
+
+        // Active categories: "Rare Worlds", "Terrestrial Worlds" (2 categories)
+        // Unique planet classes: "High metal content body", "Earth-like World", "Rocky body" (3 classes)
+        // Total rows = 2 + 3 = 5
+        assert_eq!(app.max_codex_rows(), 5);
     }
 }

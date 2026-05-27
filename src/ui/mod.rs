@@ -840,20 +840,131 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
             }
         }
         CodexTab::Planetary => {
-            let mut entries: Vec<(&String, &u32)> = trip.planetary_codex.iter().collect();
-            entries.sort_by(|a, b| b.1.cmp(a.1));
-            let rows: Vec<Row> = entries.iter().map(|(planet_class, count)| {
-                Row::new(vec![
-                    (*planet_class).clone(),
-                    count.to_string(),
-                ]).style(Style::default().fg(COLOR_PLANET))
-            }).collect();
+            // Group our entries and aggregate sub-attributes
+            struct PlanetCodexGrouped {
+                planet_class: String,
+                total_scans: u32,
+                landable_count: u32,
+                terraformable_count: u32,
+                ringed_count: u32,
+                life_count: u32,
+            }
 
-            let header = Row::new(vec!["Planet Class", "Scans"])
+            let mut grouped: std::collections::HashMap<String, PlanetCodexGrouped> = std::collections::HashMap::new();
+            for (key, count) in &trip.planetary_codex {
+                let parts: Vec<&str> = key.split('|').collect();
+                let planet_class = parts[0].to_string();
+                let is_landable = parts.contains(&"L");
+                let is_terraformable = parts.contains(&"T");
+                let has_rings = parts.contains(&"R");
+                let has_life = parts.contains(&"B");
+
+                let entry = grouped.entry(planet_class.clone()).or_insert_with(|| PlanetCodexGrouped {
+                    planet_class: planet_class.clone(),
+                    total_scans: 0,
+                    landable_count: 0,
+                    terraformable_count: 0,
+                    ringed_count: 0,
+                    life_count: 0,
+                });
+
+                entry.total_scans += count;
+                if is_landable {
+                    entry.landable_count += count;
+                }
+                if is_terraformable {
+                    entry.terraformable_count += count;
+                }
+                if has_rings {
+                    entry.ringed_count += count;
+                }
+                if has_life {
+                    entry.life_count += count;
+                }
+            }
+
+            // Group by premium categories
+            let mut rare_list = Vec::new();
+            let mut terrestrial_list = Vec::new();
+            let mut gas_list = Vec::new();
+
+            for entry in grouped.into_values() {
+                let cat = crate::app::get_planet_category(&entry.planet_class);
+                if cat == "Rare Worlds" {
+                    rare_list.push(entry);
+                } else if cat == "Gas Giants" {
+                    gas_list.push(entry);
+                } else {
+                    terrestrial_list.push(entry);
+                }
+            }
+
+            // Sort lists descending by scans, then name alphabetically
+            rare_list.sort_by(|a, b| b.total_scans.cmp(&a.total_scans).then_with(|| a.planet_class.cmp(&b.planet_class)));
+            terrestrial_list.sort_by(|a, b| b.total_scans.cmp(&a.total_scans).then_with(|| a.planet_class.cmp(&b.planet_class)));
+            gas_list.sort_by(|a, b| b.total_scans.cmp(&a.total_scans).then_with(|| a.planet_class.cmp(&b.planet_class)));
+
+            let mut rows = Vec::new();
+
+            let categories = [
+                ("Rare Worlds", rare_list, COLOR_VALUE_HIGH),
+                ("Terrestrial Worlds", terrestrial_list, COLOR_PLANET),
+                ("Gas Giants", gas_list, COLOR_STAR),
+            ];
+
+            for (cat_name, list, cat_color) in categories {
+                if !list.is_empty() {
+                    let cat_total: u32 = list.iter().map(|e| e.total_scans).sum();
+                    rows.push(
+                        Row::new(vec![
+                            cat_name.to_string(),
+                            cat_total.to_string(),
+                        ])
+                        .style(Style::default().fg(cat_color).add_modifier(Modifier::BOLD))
+                    );
+
+                    let len = list.len();
+                    for (i, entry) in list.iter().enumerate() {
+                        let is_last = i == len - 1;
+                        let prefix = if is_last { "  └─ " } else { "  ├─ " };
+
+                        // Construct beautiful sub-attribute badges
+                        let mut badges = Vec::new();
+                        if entry.landable_count > 0 {
+                            badges.push(format!("🚀x{}", entry.landable_count));
+                        }
+                        if entry.terraformable_count > 0 {
+                            badges.push(format!("🌍x{}", entry.terraformable_count));
+                        }
+                        if entry.ringed_count > 0 {
+                            badges.push(format!("🪐x{}", entry.ringed_count));
+                        }
+                        if entry.life_count > 0 {
+                            badges.push(format!("🌿x{}", entry.life_count));
+                        }
+
+                        let badges_str = if badges.is_empty() {
+                            "".to_string()
+                        } else {
+                            format!("  ({})", badges.join(" │ "))
+                        };
+
+                        rows.push(
+                            Row::new(vec![
+                                format!("{}{}{}", prefix, entry.planet_class, badges_str),
+                                entry.total_scans.to_string(),
+                            ])
+                            .style(Style::default().fg(ELITE_DIM))
+                        );
+                    }
+                }
+            }
+
+            let header = Row::new(vec!["Planet Class Hierarchy", "Scans"])
                 .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
 
             let total_rows = rows.len();
-            let widths = [Constraint::Length(45), Constraint::Min(10)];
+            let widths = [Constraint::Length(55), Constraint::Min(10)];
             let table = Table::new(rows, widths)
                 .header(header)
                 .block(
