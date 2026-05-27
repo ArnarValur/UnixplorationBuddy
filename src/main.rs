@@ -59,12 +59,21 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
         }
     }
 
+    // Show loading indicator during journal replay
+    app.status_message = Some("Replaying journal files...".to_string());
+    terminal.draw(|frame| ui::draw(frame, &app))?;
+
     // Replay existing journal files to reconstruct state
     match journal::replay_session(&mut app, journal_dir) {
         Ok(count) => {
+            let body_count = app.bodies.len();
+            let system = if app.system.name.is_empty() {
+                "no system".to_string()
+            } else {
+                app.system.name.clone()
+            };
             app.status_message = Some(format!(
-                "Replayed {} events — watching for new activity",
-                count
+                "Replayed {count} events — {system}, {body_count} bodies — watching for new activity",
             ));
         }
         Err(e) => {
@@ -117,29 +126,39 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
         if event::poll(Duration::from_millis(250))? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
-                    match key.code {
-                        KeyCode::Char('q') | KeyCode::Esc => app.quit(),
-                        KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                            app.quit();
-                        }
-                        KeyCode::Tab => app.next_tab(),
-                        KeyCode::Char('1') => app.active_tab = app::Tab::Bodies,
-                        KeyCode::Char('2') => app.active_tab = app::Tab::History,
-                        KeyCode::Up => app.select_previous_body(),
-                        KeyCode::Down => app.select_next_body(),
-                        KeyCode::Char('r') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                            // Ctrl+R: reset trip
-                            app.trip.reset();
-                            app.status_message =
-                                Some("Trip statistics reset".to_string());
-                            if let Some(ref mut p) = trip_persistence {
-                                p.mark_dirty();
-                                if let Some(err) = p.force_save(&app.trip) {
-                                    app.status_message = Some(err);
+                    // If help overlay is showing, any key dismisses it
+                    if app.show_help {
+                        app.show_help = false;
+                    } else {
+                        match key.code {
+                            KeyCode::Char('q') | KeyCode::Esc => app.quit(),
+                            KeyCode::Char('c')
+                                if key.modifiers.contains(KeyModifiers::CONTROL) =>
+                            {
+                                app.quit();
+                            }
+                            KeyCode::Tab => app.next_tab(),
+                            KeyCode::Char('1') => app.active_tab = app::Tab::Bodies,
+                            KeyCode::Char('2') => app.active_tab = app::Tab::History,
+                            KeyCode::Up => app.select_previous_body(),
+                            KeyCode::Down => app.select_next_body(),
+                            KeyCode::Char('?') => app.show_help = true,
+                            KeyCode::Char('r')
+                                if key.modifiers.contains(KeyModifiers::CONTROL) =>
+                            {
+                                // Ctrl+R: reset trip
+                                app.trip.reset();
+                                app.status_message =
+                                    Some("Trip statistics reset".to_string());
+                                if let Some(ref mut p) = trip_persistence {
+                                    p.mark_dirty();
+                                    if let Some(err) = p.force_save(&app.trip) {
+                                        app.status_message = Some(err);
+                                    }
                                 }
                             }
+                            _ => {}
                         }
-                        _ => {}
                     }
                 }
             }

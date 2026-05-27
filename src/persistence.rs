@@ -103,6 +103,7 @@ impl TripPersistence {
     }
 
     /// Get the trip file path (for display/debugging).
+    #[allow(dead_code)]
     pub fn path(&self) -> &std::path::Path {
         &self.path
     }

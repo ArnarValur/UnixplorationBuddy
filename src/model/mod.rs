@@ -6,6 +6,6 @@ pub mod trip;
 pub mod valuation;
 
 pub use body::{Body, BodyType, ScanState};
-pub use hierarchy::{BodyHierarchy, HierarchyNode};
+pub use hierarchy::BodyHierarchy;
 pub use system::System;
 pub use trip::Trip;

@@ -35,6 +35,8 @@ pub struct App {
     pub body_display_order: Vec<(u32, u32)>,
     /// Status message displayed in the footer bar.
     pub status_message: Option<String>,
+    /// Whether the help overlay is currently visible.
+    pub show_help: bool,
 }
 
 impl App {
@@ -49,6 +51,7 @@ impl App {
             selected_body_index: 0,
             body_display_order: Vec::new(),
             status_message: None,
+            show_help: false,
         }
     }
 

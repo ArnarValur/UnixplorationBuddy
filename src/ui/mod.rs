@@ -6,7 +6,7 @@
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Paragraph, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table, TableState};
+use ratatui::widgets::{Block, Borders, Clear, Paragraph, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table, TableState};
 use ratatui::Frame;
 
 use crate::app::{App, Tab};
@@ -33,8 +33,6 @@ const COLOR_BELT: Color = Color::Rgb(120, 110, 90);
 const COLOR_VALUE_HIGH: Color = Color::Rgb(80, 220, 80);
 /// Bio signal color.
 const COLOR_BIO: Color = Color::Rgb(80, 230, 160);
-/// Geo signal color.
-const COLOR_GEO: Color = Color::Rgb(230, 140, 60);
 /// First discovery / first mapping marker.
 const COLOR_FIRST: Color = Color::Rgb(255, 215, 0);
 
@@ -62,6 +60,11 @@ pub fn draw(frame: &mut Frame, app: &App) {
     }
 
     draw_status_bar(frame, app, chunks[2]);
+
+    // Help overlay (rendered last to be on top)
+    if app.show_help {
+        draw_help_overlay(frame);
+    }
 }
 
 // ── System header ────────────────────────────────────────────────
@@ -340,8 +343,8 @@ fn draw_status_bar(frame: &mut Frame, app: &App, area: Rect) {
         msg.clone()
     } else {
         match app.active_tab {
-            Tab::Bodies => "q: quit │ Tab/1/2: switch view │ ↑↓: navigate".to_string(),
-            Tab::History => "q: quit │ Tab/1/2: switch view │ Ctrl+R: reset trip".to_string(),
+            Tab::Bodies => "q: quit │ Tab/1/2: switch │ ↑↓: navigate │ ?: help".to_string(),
+            Tab::History => "q: quit │ Tab/1/2: switch │ Ctrl+R: reset trip │ ?: help".to_string(),
         }
     };
 
@@ -351,6 +354,66 @@ fn draw_status_bar(frame: &mut Frame, app: &App, area: Rect) {
     .style(Style::default().bg(BG_DARK));
 
     frame.render_widget(bar, area);
+}
+
+// ── Help overlay ─────────────────────────────────────────────────
+
+/// Centered help overlay with all keybindings.
+fn draw_help_overlay(frame: &mut Frame) {
+    let area = frame.area();
+    let help_width = 48u16.min(area.width.saturating_sub(4));
+    let help_height = 14u16.min(area.height.saturating_sub(4));
+    let x = (area.width.saturating_sub(help_width)) / 2;
+    let y = (area.height.saturating_sub(help_height)) / 2;
+    let popup = Rect::new(x, y, help_width, help_height);
+
+    let lines = vec![
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("  q / Esc    ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
+            Span::styled("Quit", Style::default().fg(ELITE_DIM)),
+        ]),
+        Line::from(vec![
+            Span::styled("  Tab / 1 2  ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
+            Span::styled("Switch tab", Style::default().fg(ELITE_DIM)),
+        ]),
+        Line::from(vec![
+            Span::styled("  ↑ / ↓      ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
+            Span::styled("Navigate bodies", Style::default().fg(ELITE_DIM)),
+        ]),
+        Line::from(vec![
+            Span::styled("  Ctrl+R     ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
+            Span::styled("Reset trip stats", Style::default().fg(ELITE_DIM)),
+        ]),
+        Line::from(vec![
+            Span::styled("  ?          ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
+            Span::styled("Toggle this help", Style::default().fg(ELITE_DIM)),
+        ]),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("  ◆ ", Style::default().fg(COLOR_FIRST)),
+            Span::styled("First discovery  ", Style::default().fg(ELITE_DIM)),
+            Span::styled("◇ ", Style::default().fg(COLOR_FIRST)),
+            Span::styled("First mapping", Style::default().fg(ELITE_DIM)),
+        ]),
+        Line::from(""),
+        Line::from(Span::styled(
+            "         Press any key to close",
+            Style::default().fg(ELITE_DIM),
+        )),
+    ];
+
+    let help = Paragraph::new(lines)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" Keybindings ")
+                .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
+        )
+        .style(Style::default().bg(BG_DARK));
+
+    frame.render_widget(Clear, popup);
+    frame.render_widget(help, popup);
 }
 
 // ── Helpers ──────────────────────────────────────────────────────

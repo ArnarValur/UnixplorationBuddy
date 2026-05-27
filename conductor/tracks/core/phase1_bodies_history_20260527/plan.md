@@ -135,33 +135,33 @@
 
 ---
 
-## Phase 5: Trip Persistence
+## Phase 5: Trip Persistence `abe9ac2`
 
-- [/] Task: Trip file I/O
-    - [ ] Serialize Trip to JSON at `~/.local/share/unixploration-buddy/trip.json`
-    - [ ] Create directory if it doesn't exist (XDG compliant via `dirs` crate)
-    - [ ] Load Trip on startup (if file exists)
-    - [ ] Save Trip on each state change (debounced — at most once per second)
-    - [ ] Handle malformed trip file gracefully (fresh trip + warning)
+- [x] Task: Trip file I/O
+    - [x] Serialize Trip to JSON at `~/.local/share/unixploration-buddy/trip.json`
+    - [x] Create directory if it doesn't exist (XDG compliant via `dirs` crate)
+    - [x] Load Trip on startup (if file exists)
+    - [x] Save Trip on each state change (debounced — at most once per second)
+    - [x] Handle malformed trip file gracefully (fresh trip + warning)
 
-- [ ] Task: Manual trip reset
-    - [ ] Keybinding (e.g., `r` with confirmation prompt) to reset Trip stats
-    - [ ] Clear all counters, save empty trip to disk
-    - [ ] Display confirmation in status bar
+- [x] Task: Manual trip reset
+    - [x] Ctrl+R keybinding to reset Trip stats
+    - [x] Clear all counters, save empty trip to disk
+    - [x] Display confirmation in status bar
 
-- [ ] Task: Trip accumulation from journal events
-    - [ ] Increment systems_visited on `FSDJump`
-    - [ ] Increment bodies_scanned on `Scan` (FSS) / `SAAScanComplete` (DSS)
-    - [ ] Track first discoveries via `Scan` event `was_discovered` field
-    - [ ] Track first mappings via `SAAScanComplete` `was_mapped` field
-    - [ ] Track bio signals from `FSSBodySignals` / `SAASignalsFound`
-    - [ ] Accumulate total value from Body Value calculations
+- [x] Task: Trip accumulation from journal events
+    - [x] Increment systems_visited on `FSDJump` (Phase 2.5)
+    - [x] Increment bodies_scanned on `Scan` (FSS) / `SAAScanComplete` (DSS) (Phase 2.5)
+    - [x] Track first discoveries via `Scan` event `was_discovered` field (Phase 2.5)
+    - [x] Track first mappings via `SAAScanComplete` `was_mapped` field (Phase 2.5)
+    - [x] Track bio signals from `FSSBodySignals` / `SAASignalsFound` (Phase 2.5)
+    - [x] Accumulate total value: system value banked on FSDJump departure `abe9ac2`
 
 ---
 
 ## Phase 6: Integration & Polish
 
-- [ ] Task: End-to-end integration testing
+- [/] Task: End-to-end integration testing
     - [ ] Test with real journal files from player's journal directory
     - [ ] Verify body hierarchy for 3+ known systems
     - [ ] Verify value calculations match Pioneer for 3+ known systems
