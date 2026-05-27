@@ -490,7 +490,7 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     );
                     body.planet_class = Some(format!("{}", planet.planet_class));
                     body.planet_class_enum = Some(planet.planet_class.clone());
-                    body.gravity = Some(planet.surface_gravity.0 as f64);
+                    body.gravity = Some(planet.surface_gravity.0 as f64 / 9.80665);
                     body.temperature = Some(planet.surface_temperature as f64);
                     body.landable = planet.landable;
 
@@ -902,7 +902,7 @@ mod tests {
         assert!((body.distance_ls.unwrap() - 3378.469848).abs() < 0.01);
         assert!(!body.was_discovered);
         assert!(!body.was_mapped);
-        assert!((body.gravity.unwrap() - 34.01046).abs() < 0.0001);
+        assert!((body.gravity.unwrap() - (34.01046 / 9.80665)).abs() < 0.0001);
         assert!((body.temperature.unwrap() - 2282.107422).abs() < 0.0001);
         assert!(!body.landable);
     }
@@ -922,7 +922,7 @@ mod tests {
         assert_eq!(body.body_type, BodyType::Moon, "Body with Planet parent should be Moon");
         assert_eq!(body.short_name, "8 a");
         assert_eq!(body.parent_id, Some(53), "Immediate parent should be the planet");
-        assert!((body.gravity.unwrap() - 1.113483).abs() < 0.0001);
+        assert!((body.gravity.unwrap() - (1.113483 / 9.80665)).abs() < 0.0001);
         assert!((body.temperature.unwrap() - 352.186981).abs() < 0.0001);
         assert!(body.landable);
     }
