@@ -1,12 +1,13 @@
 # Pulse — Current Project State
 
-**Last Updated:** 2026-05-27 14:06
-**Session Focus:** Domain refinement grill session covering exobiology, navigation, trip logbook, and target-syncing features. Compiled Phase 2 specifications.
+**Last Updated:** 2026-05-27 14:38
+**Session Focus:** Track creation, ureq HTTP client dependency addition, and cargo verification for Phase 2.
 
 ## 🚀 Active Tracks
-_None._
+- **Phase 2 — Navigation & Exobiology (phase2_navigation_exobiology_20260527):** Implementing real-time target-syncing, exobiology predictions, trip codex logs, and route sync with EDSM streaming. [Progress: 1/21 tasks complete]
 
 ## ✅ Recently Completed
+- **EDSM Dependency Added (2026-05-27):** Integrated stable `ureq = "3.3.0"` as the lightweight, synchronous API driver, compiling and verifying successfully.
 - **Phase 2 Specs (2026-05-27):** Complete exobiology prediction, navigation, trip logbook, and target-syncing specifications defined and committed via a successful domain grill session.
 - **Phase 1 Complete (phase1_bodies_history_20260527):** Standalone Rust TUI exploration companion successfully verified live during actual Elite Dangerous session. Rendering, valuation, hierarchy, and persistence fully working!
 - **Hierarchy Rendering Fix (Phase 6):** Parent-less bodies are treated as temporary root entries (depth 0) to prevent them from being hidden during out-of-order FSS scans. They shift to correct nested indentations when parent is scanned.

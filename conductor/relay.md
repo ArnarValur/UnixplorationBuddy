@@ -4,6 +4,13 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 14:38
+- **Session:** Phase 2 Bootstrapping & Setup
+- **Tracks touched:** `phase2_navigation_exobiology_20260527`
+- **Status:** Track initialized, EDSM `ureq` dependency integrated, and compiled successfully.
+- **Decisions:** None (grill decisions previously batched)
+- **Next:** Implement Status.json and NavRoute.json file watchers.
+
 ## 2026-05-27 14:06
 - **Session:** Domain Refinement Grill — Phase 2 Navigation & Exobiology Specs
 - **Tracks touched:** None (spec/design phase)
