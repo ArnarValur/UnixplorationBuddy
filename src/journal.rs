@@ -526,7 +526,14 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     body.temperature = Some(star.surface_temperature as f64);
 
                     if track_trip && is_new_body && body_id == 0 {
-                        let star_class_str = format!("{}", star.star_type);
+                        let star_type_str = format!("{}", star.star_type);
+                        let sub = star.subclass;
+                        let lum = format!("{}", star.luminosity).trim().to_uppercase();
+                        let star_class_str = if lum.is_empty() {
+                            format!("{}{}", star_type_str, sub)
+                        } else {
+                            format!("{}{} {}", star_type_str, sub, lum)
+                        };
                         *app.trip.stellar_codex.entry(star_class_str).or_insert(0) += 1;
                     }
 

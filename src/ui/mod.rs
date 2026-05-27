@@ -648,14 +648,59 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
             frame.render_widget(table, content_area);
         }
         CodexTab::Stellar => {
-            let mut entries: Vec<(&String, &u32)> = trip.stellar_codex.iter().collect();
-            entries.sort_by(|a, b| b.1.cmp(a.1));
-            let rows: Vec<Row> = entries.iter().map(|(star_class, count)| {
-                Row::new(vec![
-                    (*star_class).clone(),
-                    count.to_string(),
-                ]).style(Style::default().fg(COLOR_STAR))
-            }).collect();
+            struct MainClassGroup {
+                main_class: String,
+                total_visits: u32,
+                subtypes: Vec<(String, u32)>,
+            }
+
+            let mut groups: std::collections::HashMap<String, MainClassGroup> = std::collections::HashMap::new();
+
+            for (subtype, count) in &trip.stellar_codex {
+                let main_class = get_main_class(subtype);
+                let group = groups.entry(main_class.clone()).or_insert_with(|| MainClassGroup {
+                    main_class: main_class.clone(),
+                    total_visits: 0,
+                    subtypes: Vec::new(),
+                });
+                group.total_visits += count;
+                group.subtypes.push((subtype.clone(), *count));
+            }
+
+            let mut group_list: Vec<MainClassGroup> = groups.into_values().collect();
+            group_list.sort_by(|a, b| b.total_visits.cmp(&a.total_visits).then_with(|| a.main_class.cmp(&b.main_class)));
+
+            for group in &mut group_list {
+                group.subtypes.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+            }
+
+            let mut rows = Vec::new();
+
+            for group in group_list {
+                rows.push(
+                    Row::new(vec![
+                        group.main_class.clone(),
+                        group.total_visits.to_string(),
+                    ])
+                    .style(Style::default().fg(COLOR_STAR).add_modifier(Modifier::BOLD))
+                );
+
+                let has_redundant_single_child = group.subtypes.len() == 1 && group.subtypes[0].0 == group.main_class;
+                if !has_redundant_single_child {
+                    let len = group.subtypes.len();
+                    for (i, (subtype, count)) in group.subtypes.iter().enumerate() {
+                        let is_last = i == len - 1;
+                        let prefix = if is_last { "  └─ " } else { "  ├─ " };
+                        rows.push(
+                            Row::new(vec![
+                                format!("{}{}", prefix, subtype),
+                                count.to_string(),
+                            ])
+                            .style(Style::default().fg(ELITE_DIM))
+                        );
+                    }
+                }
+            }
 
             let header = Row::new(vec!["Primary Star Class", "Visits"])
                 .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
@@ -931,6 +976,22 @@ fn format_first_indicators(b: &crate::model::Body) -> String {
     indicators
 }
 
+/// Extract base star class from subclass/luminosity string (e.g. "F" from "F9 VAB", "DA" from "DA2").
+fn get_main_class(subtype: &str) -> String {
+    let mut prefix = String::new();
+    for c in subtype.chars() {
+        if c.is_ascii_digit() || c == ' ' {
+            break;
+        }
+        prefix.push(c);
+    }
+    if prefix.is_empty() {
+        subtype.to_string()
+    } else {
+        prefix
+    }
+}
+
 /// Format credits with thousands separators.
 fn format_credits(value: u64) -> String {
     if value == 0 {
@@ -1027,6 +1088,38 @@ mod tests {
             output.contains("17"),
             "History should show FSS scan count.\nOutput:\n{output}"
         );
+    }
+
+    #[test]
+    fn stellar_codex_renders_hierarchical_tree() {
+        let mut app = App::new();
+        app.active_tab = Tab::History;
+        app.active_codex_tab = CodexTab::Stellar;
+        
+        // Add some subtypes
+        app.trip.stellar_codex.insert("F9 VAB".to_string(), 40);
+        app.trip.stellar_codex.insert("F1 VA".to_string(), 20);
+        app.trip.stellar_codex.insert("F2".to_string(), 6);
+        app.trip.stellar_codex.insert("TTS".to_string(), 7);
+
+        let output = render_to_string(&app, 80, 20);
+        
+        // Main classes should be displayed with sum counts
+        assert!(output.contains("F"), "Stellar Codex should show main class F");
+        assert!(output.contains("66"), "Stellar Codex should sum F visits (40+20+6=66)");
+        
+        // Subtypes should be displayed with tree lines
+        assert!(output.contains("├─ F9 VAB"), "Should render child F9 VAB");
+        assert!(output.contains("40"), "Should show F9 VAB count");
+        assert!(output.contains("├─ F1 VA"), "Should render child F1 VA");
+        assert!(output.contains("20"), "Should show F1 VA count");
+        assert!(output.contains("└─ F2"), "Should render last child F2");
+        assert!(output.contains("6"), "Should show F2 count");
+
+        // TTS should be rendered as main class but not duplicated as child because subtype == main_class
+        assert!(output.contains("TTS"), "Should show main class TTS");
+        assert!(output.contains("7"), "Should show TTS count");
+        assert!(!output.contains("└─ TTS") && !output.contains("├─ TTS"), "Should not render redundant single child TTS");
     }
 
     #[test]
