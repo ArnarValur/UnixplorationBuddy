@@ -460,6 +460,9 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                 // Bank the departing system's value into the trip total
                 app.trip.total_value += app.system.total_value;
                 app.trip.systems_visited += 1;
+
+                // Automatic transition back to Bodies view upon system arrival
+                app.active_tab = crate::app::Tab::Bodies;
             }
 
             let sys_name = e.system_info.star_system.clone();
@@ -707,7 +710,17 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
             }
         }
 
-        // All other events — ignored for Phase 1
+        LogEventContent::StartJump(e) => {
+            if track_trip {
+                if let ed_journals::logs::start_jump_event::StartJumpType::Hyperspace { .. } = &e.jump {
+                    if let Some(ref r) = app.plotted_route {
+                        if !r.route.is_empty() {
+                            app.active_tab = crate::app::Tab::Route;
+                        }
+                    }
+                }
+            }
+        }
         _ => {}
     }
 }
@@ -794,6 +807,8 @@ mod tests {
     const FSDJUMP_JSON: &str = r#"{ "timestamp":"2026-05-26T15:57:40Z", "event":"FSDJump", "Taxi":false, "Multicrew":false, "StarSystem":"Prudgeou VD-B e1", "SystemAddress":4997497796, "StarPos":[-23117.25,-209.53125,-4787.25], "SystemAllegiance":"", "SystemEconomy":"$economy_None;", "SystemEconomy_Localised":"None", "SystemSecondEconomy":"$economy_None;", "SystemSecondEconomy_Localised":"None", "SystemGovernment":"$government_None;", "SystemGovernment_Localised":"None", "SystemSecurity":"$GAlAXY_MAP_INFO_state_anarchy;", "SystemSecurity_Localised":"Anarchy", "Population":0, "Body":"Prudgeou VD-B e1", "BodyID":0, "BodyType":"Star", "JumpDist":75.834, "FuelUsed":4.144365, "FuelLevel":11.855635 }"#;
 
     const LOCATION_JSON: &str = r#"{ "timestamp":"2026-05-26T15:55:51Z", "event":"Location", "DistFromStarLS":278.271102, "Docked":false, "Taxi":false, "Multicrew":false, "StarSystem":"Prudgaei OD-B e0", "SystemAddress":706724804, "StarPos":[-23060.6875,-200.96875,-4837.03125], "SystemAllegiance":"", "SystemEconomy":"$economy_None;", "SystemEconomy_Localised":"None", "SystemSecondEconomy":"$economy_None;", "SystemSecondEconomy_Localised":"None", "SystemGovernment":"$government_None;", "SystemGovernment_Localised":"None", "SystemSecurity":"$GAlAXY_MAP_INFO_state_anarchy;", "SystemSecurity_Localised":"Anarchy", "Population":0, "Body":"Prudgaei OD-B e0 AB", "BodyID":0, "BodyType":"Null" }"#;
+
+    const STARTJUMP_JSON: &str = r#"{ "timestamp":"2026-05-26T15:56:00Z", "event":"StartJump", "JumpType":"Hyperspace", "StarSystem":"Prudgeou VD-B e1", "SystemAddress":4997497796, "StarClass":"B" }"#;
 
     const FSSDISCOVERYSCAN_JSON: &str = r#"{ "timestamp":"2026-05-26T15:57:00Z", "event":"FSSDiscoveryScan", "Progress":1.0, "BodyCount":2, "NonBodyCount":0, "SystemName":"Prudgaei OD-B e0", "SystemAddress":706724804 }"#;
 
@@ -882,6 +897,53 @@ mod tests {
         // Live: trip SHOULD increment
         process_event(&mut app, &event, true);
         assert_eq!(app.trip.systems_visited, 1);
+    }
+
+    #[test]
+    fn startjump_transitions_tab_only_when_live_and_route_plotted() {
+        let mut app = App::new();
+        // Plotted route is empty -> should not switch
+        app.active_tab = crate::app::Tab::Bodies;
+        let event = parse_event(STARTJUMP_JSON);
+        process_event(&mut app, &event, true);
+        assert_eq!(app.active_tab, crate::app::Tab::Bodies);
+
+        // Plotted route is present but we are in replay mode -> should not switch
+        let mut app = App::new();
+        let mut route = NavRoute {
+            timestamp: "2026-05-26T15:56:00Z".to_string(),
+            event: "NavRoute".to_string(),
+            route: Vec::new(),
+        };
+        route.route.push(crate::model::navigation::RouteEntry {
+            star_system: "Prudgeou VD-B e1".to_string(),
+            system_address: 4997497796,
+            star_pos: vec![0.0, 0.0, 0.0],
+            star_class: "B".to_string(),
+        });
+        app.plotted_route = Some(route.clone());
+        app.active_tab = crate::app::Tab::Bodies;
+        process_event(&mut app, &event, false); // replay = false
+        assert_eq!(app.active_tab, crate::app::Tab::Bodies);
+
+        // Plotted route is present and we are in live mode -> should switch to Route tab!
+        process_event(&mut app, &event, true); // live = true
+        assert_eq!(app.active_tab, crate::app::Tab::Route);
+    }
+
+    #[test]
+    fn fsdjump_transitions_tab_back_to_bodies_only_when_live() {
+        let mut app = App::new();
+        app.active_tab = crate::app::Tab::Route;
+        let event = parse_event(FSDJUMP_JSON);
+
+        // Replay: should not transition
+        process_event(&mut app, &event, false);
+        assert_eq!(app.active_tab, crate::app::Tab::Route);
+
+        // Live: should transition back to Bodies!
+        process_event(&mut app, &event, true);
+        assert_eq!(app.active_tab, crate::app::Tab::Bodies);
     }
 
     // ---------------------------------------------------------------
