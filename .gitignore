@@ -11,3 +11,6 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# Large data files (download separately)
+conductor/canonn-data/*.json.gz
