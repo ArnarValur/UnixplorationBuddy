@@ -784,7 +784,7 @@ fn draw_status_bar(frame: &mut Frame, app: &App, area: Rect) {
     } else {
         match app.active_tab {
             Tab::Bodies => "q: quit │ Tab/1/2/3: switch │ ↑↓: navigate │ s: settings │ i: toggle inspector │ ?: help".to_string(),
-            Tab::History => "q: quit │ Tab/1/2/3: switch │ ←→/h/l: sub-tabs │ Ctrl+R: reset trip │ ?: help".to_string(),
+            Tab::History => "q: quit │ Tab/1/2/3: switch │ ←→/a/d: sub-tabs │ Ctrl+R: reset trip │ ?: help".to_string(),
             Tab::Route => "q: quit │ Tab/1/2/3: switch │ ?: help".to_string(),
         }
     };
@@ -823,7 +823,7 @@ fn draw_help_overlay(frame: &mut Frame) {
             Span::styled("Navigate bodies", Style::default().fg(ELITE_DIM)),
         ]),
         Line::from(vec![
-            Span::styled("  h / l / ← →  ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
+            Span::styled("  a / d / ← →  ", Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)),
             Span::styled("Switch Codex sub-tab", Style::default().fg(ELITE_DIM)),
         ]),
         Line::from(vec![

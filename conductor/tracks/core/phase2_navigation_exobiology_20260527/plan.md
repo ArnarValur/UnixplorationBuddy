@@ -24,7 +24,7 @@
 - [x] Rebuild the main TUI layout to support split-pane rendering (Left: table, Right: Inspector).
 - [x] Implement dynamic split collapse under 110 terminal columns.
 - [x] Implement the Settings overlay (`s` key) with dynamic column visibility.
-- [x] Implement the Trip Codex sub-views navigation (`h/l` or arrow keys).
+- [x] Implement the Trip Codex sub-views navigation (`a/d` or arrow keys).
 - [x] Implement the Route Exploration tab showing scoopable diagnostics and streamed EDSM badges (`💰`, `🌍`, `🚀`).
 
 ## Phase 6: Integration & Verification

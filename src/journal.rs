@@ -430,13 +430,7 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
             let is_new_body = !app.bodies.contains_key(&body_id);
 
             let body = app.bodies.entry(body_id).or_insert_with(|| {
-                let mut b = Body::new(body_id, e.body_name.clone());
-                // Derive short name by stripping system name prefix
-                b.short_name = strip_system_prefix(&e.body_name, &app.system.name);
-                // Parse naming convention for hierarchy sort ordering
-                let pos = parse_body_name(&b.short_name);
-                b.sort_key = pos.sort_key;
-                b
+                create_scanned_body(body_id, &e.body_name, &app.system.name)
             });
 
             // Update scan state (only upgrade, never downgrade)
@@ -539,7 +533,7 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
             let body = app
                 .bodies
                 .entry(body_id)
-                .or_insert_with(|| Body::new(body_id, e.body_name.clone()));
+                .or_insert_with(|| create_scanned_body(body_id, &e.body_name, &app.system.name));
 
             for signal in &e.signals {
                 match signal.kind {
@@ -654,6 +648,15 @@ fn strip_system_prefix(body_name: &str, system_name: &str) -> String {
     }
 }
 
+/// Create a new body and pre-populate short_name and sort_key correctly.
+fn create_scanned_body(body_id: u32, body_name: &str, system_name: &str) -> Body {
+    let mut b = Body::new(body_id, body_name.to_string());
+    b.short_name = strip_system_prefix(body_name, system_name);
+    let pos = parse_body_name(&b.short_name);
+    b.sort_key = pos.sort_key;
+    b
+}
+
 /// Aggregate total system value from all discovered bodies.
 /// Uses mapped_value for DSS'd bodies (higher payout), calculated_value (FSS) for others.
 fn aggregate_system_value(bodies: &std::collections::HashMap<u32, Body>) -> u64 {
@@ -678,17 +681,23 @@ fn has_planet_parent(
     })
 }
 
-/// Extract the immediate parent body_id from the Parents array.
-/// The first entry is the immediate parent.
+/// Extract the parent body_id from the Parents array.
+/// Finds the first non-Null parent to gracefully skip barycentres and nest
+/// binary planets/moons under their parent star or planet, falling back to
+/// the immediate parent if all are Null.
 fn extract_parent_id(
     parents: &[ed_journals::logs::scan_event::ScanEventParent],
 ) -> Option<u32> {
-    parents.first().map(|p| match p {
-        ed_journals::logs::scan_event::ScanEventParent::Null(id) => u32::from(*id),
-        ed_journals::logs::scan_event::ScanEventParent::Star(id) => u32::from(*id),
-        ed_journals::logs::scan_event::ScanEventParent::Ring(id) => u32::from(*id),
-        ed_journals::logs::scan_event::ScanEventParent::Planet(id) => u32::from(*id),
-    })
+    parents
+        .iter()
+        .find(|p| !matches!(p, ed_journals::logs::scan_event::ScanEventParent::Null(_)))
+        .or_else(|| parents.first())
+        .map(|p| match p {
+            ed_journals::logs::scan_event::ScanEventParent::Null(id) => u32::from(*id),
+            ed_journals::logs::scan_event::ScanEventParent::Star(id) => u32::from(*id),
+            ed_journals::logs::scan_event::ScanEventParent::Ring(id) => u32::from(*id),
+            ed_journals::logs::scan_event::ScanEventParent::Planet(id) => u32::from(*id),
+        })
 }
 
 #[cfg(test)]
@@ -916,6 +925,40 @@ mod tests {
         assert!((body.gravity.unwrap() - 1.113483).abs() < 0.0001);
         assert!((body.temperature.unwrap() - 352.186981).abs() < 0.0001);
         assert!(body.landable);
+    }
+
+    // ---------------------------------------------------------------
+    // Scan — Barycentre skips
+    // ---------------------------------------------------------------
+
+    #[test]
+    fn scan_skips_null_barycentre_parent_to_find_star() {
+        let mut app = app_in_prudgeou();
+        
+        // Planet 2 in a system with binary planets orbiting a barycenter Null 2, which orbits Star 0.
+        let json = r#"{
+            "timestamp":"2026-05-27T15:01:56Z",
+            "event":"Scan",
+            "ScanType":"Detailed",
+            "BodyName":"Prudgeou VD-B e1 2",
+            "BodyID":3,
+            "Parents":[ {"Null":2}, {"Star":0} ],
+            "StarSystem":"Prudgeou VD-B e1",
+            "SystemAddress":4997497796,
+            "DistanceFromArrivalLS":493.314,
+            "PlanetClass":"High metal content body",
+            "SurfaceGravity":5.85,
+            "SurfaceTemperature":365.0,
+            "WasDiscovered":true,
+            "WasMapped":false,
+            "WasFootfalled":false
+        }"#;
+        
+        let event = parse_event(json);
+        process_event(&mut app, &event, false);
+        
+        let body = app.bodies.get(&3).expect("Planet body should exist");
+        assert_eq!(body.parent_id, Some(0), "Should skip Null parent to nest directly under Star 0");
     }
 
     // ---------------------------------------------------------------

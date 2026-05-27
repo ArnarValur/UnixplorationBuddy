@@ -43,7 +43,7 @@ UnixplorationBuddy is a standalone Rust TUI application for Linux commanders pla
 - **Telemetry Details:** Surface gravity, temperature, and atmosphere type rendering for landable planets.
 
 **Trip Codex (Logbook & Statistics):**
-- Four fluid sub-views under the Exploration Trip tab (`Left/Right` arrow keys or `h/l` to toggle):
+- Four fluid sub-views under the Exploration Trip tab (`Left/Right` arrow keys or `a/d` to toggle):
   - **Overview:** General trip stats (Systems visited, scanned, mapped, total value, total organic value, first discoveries).
   - **Stellar Codex:** Live tally count of every primary star class jumped to (e.g., Star Class G3 V, Neutron, Black Hole).
   - **Planetary Codex:** Live tally count of every planet class scanned (e.g., High metal content body, Earth-like World).

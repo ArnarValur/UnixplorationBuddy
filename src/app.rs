@@ -138,6 +138,26 @@ impl App {
         };
     }
 
+    /// Cycle to the next codex sub-tab in the History view.
+    pub fn next_codex_tab(&mut self) {
+        self.active_codex_tab = match self.active_codex_tab {
+            CodexTab::Overview => CodexTab::Stellar,
+            CodexTab::Stellar => CodexTab::Planetary,
+            CodexTab::Planetary => CodexTab::Biological,
+            CodexTab::Biological => CodexTab::Overview,
+        };
+    }
+
+    /// Cycle to the previous codex sub-tab in the History view.
+    pub fn prev_codex_tab(&mut self) {
+        self.active_codex_tab = match self.active_codex_tab {
+            CodexTab::Overview => CodexTab::Biological,
+            CodexTab::Stellar => CodexTab::Overview,
+            CodexTab::Planetary => CodexTab::Stellar,
+            CodexTab::Biological => CodexTab::Planetary,
+        };
+    }
+
     /// Move selection down in the body list.
     pub fn select_next_body(&mut self) {
         if !self.body_display_order.is_empty() {
@@ -176,5 +196,34 @@ impl App {
         } else if self.selected_body_index >= self.body_display_order.len() {
             self.selected_body_index = self.body_display_order.len() - 1;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_codex_tab_cycling() {
+        let mut app = App::new();
+        assert_eq!(app.active_codex_tab, CodexTab::Overview);
+
+        app.next_codex_tab();
+        assert_eq!(app.active_codex_tab, CodexTab::Stellar);
+
+        app.next_codex_tab();
+        assert_eq!(app.active_codex_tab, CodexTab::Planetary);
+
+        app.next_codex_tab();
+        assert_eq!(app.active_codex_tab, CodexTab::Biological);
+
+        app.next_codex_tab();
+        assert_eq!(app.active_codex_tab, CodexTab::Overview);
+
+        app.prev_codex_tab();
+        assert_eq!(app.active_codex_tab, CodexTab::Biological);
+
+        app.prev_codex_tab();
+        assert_eq!(app.active_codex_tab, CodexTab::Planetary);
     }
 }

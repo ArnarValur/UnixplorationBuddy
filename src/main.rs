@@ -195,6 +195,12 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                             KeyCode::Char('3') => app.active_tab = app::Tab::Route,
                             KeyCode::Up => app.select_previous_body(),
                             KeyCode::Down => app.select_next_body(),
+                            KeyCode::Left | KeyCode::Char('a') | KeyCode::Char('A') if app.active_tab == app::Tab::History => {
+                                app.prev_codex_tab();
+                            }
+                            KeyCode::Right | KeyCode::Char('d') | KeyCode::Char('D') if app.active_tab == app::Tab::History => {
+                                app.next_codex_tab();
+                            }
                             KeyCode::Char('?') => app.show_help = true,
                             KeyCode::Char('r')
                                 if key.modifiers.contains(KeyModifiers::CONTROL) =>
