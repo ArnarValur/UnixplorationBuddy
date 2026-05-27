@@ -80,6 +80,12 @@ pub struct Body {
     pub star_class_enum: Option<StarClass>,
     /// Whether DSS mapping used optimal probes (efficiency bonus).
     pub probes_efficient: bool,
+    /// Surface gravity (in m/s^2 or Gs).
+    pub gravity: Option<f64>,
+    /// Surface temperature (in Kelvin).
+    pub temperature: Option<f64>,
+    /// Capable of planetary landing.
+    pub landable: bool,
 }
 
 impl Body {
@@ -109,6 +115,9 @@ impl Body {
             planet_class_enum: None,
             star_class_enum: None,
             probes_efficient: false,
+            gravity: None,
+            temperature: None,
+            landable: false,
         }
     }
 }

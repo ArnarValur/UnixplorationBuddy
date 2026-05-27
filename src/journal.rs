@@ -296,6 +296,7 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     body.terraformable = false;
                     body.star_type = Some(format!("{}", star.star_type));
                     body.star_class_enum = Some(star.star_type.clone());
+                    body.temperature = Some(star.surface_temperature as f64);
 
                     let first_disc = !body.was_discovered;
                     let value = calculate_star_value(
@@ -321,6 +322,9 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     );
                     body.planet_class = Some(format!("{}", planet.planet_class));
                     body.planet_class_enum = Some(planet.planet_class.clone());
+                    body.gravity = Some(planet.surface_gravity.0 as f64);
+                    body.temperature = Some(planet.surface_temperature as f64);
+                    body.landable = planet.landable;
 
                     let first_disc = !body.was_discovered;
                     let first_map = !body.was_mapped;
@@ -659,6 +663,9 @@ mod tests {
         assert!(body.atmosphere.is_none(), "Stars have no atmosphere");
         assert!(!body.terraformable);
         assert_eq!(body.distance_ls.unwrap(), 0.0);
+        assert_eq!(body.temperature.unwrap(), 11197.0);
+        assert!(body.gravity.is_none());
+        assert!(!body.landable);
     }
 
     // ---------------------------------------------------------------
@@ -682,6 +689,9 @@ mod tests {
         assert!((body.distance_ls.unwrap() - 3378.469848).abs() < 0.01);
         assert!(!body.was_discovered);
         assert!(!body.was_mapped);
+        assert!((body.gravity.unwrap() - 34.01046).abs() < 0.0001);
+        assert!((body.temperature.unwrap() - 2282.107422).abs() < 0.0001);
+        assert!(!body.landable);
     }
 
     // ---------------------------------------------------------------
@@ -699,6 +709,9 @@ mod tests {
         assert_eq!(body.body_type, BodyType::Moon, "Body with Planet parent should be Moon");
         assert_eq!(body.short_name, "8 a");
         assert_eq!(body.parent_id, Some(53), "Immediate parent should be the planet");
+        assert!((body.gravity.unwrap() - 1.113483).abs() < 0.0001);
+        assert!((body.temperature.unwrap() - 352.186981).abs() < 0.0001);
+        assert!(body.landable);
     }
 
     // ---------------------------------------------------------------
