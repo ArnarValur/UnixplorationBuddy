@@ -4,6 +4,17 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 10:27
+- **Session:** Phase 2.5 Foundation Hardening — replay/trip fix, test suite
+- **Tracks touched:** `phase1_bodies_history_20260527`
+- **Status:** Phases 1–2.5 complete. 4 of 7 phases remaining (3–6). 31/31 tests.
+- **Decisions:** None (4 operational decisions recorded in pulse Session Memory)
+- **Next:** Phase 3 (naming convention parser + value calculation), then Phase 4–6
+- **Key commits:** `75b7ace` (Phase 2.5 code), `5f2354c` (plan update)
+- **Key changes:** `process_event()` takes `track_trip: bool`. Replay = state only. Live = state + trip.
+- **Test status:** 31/31 passing, 0 compilation errors, cargo check clean
+- **Note:** User confirmed live testing available — ED runs on Ultra at 30% GPU. Ask to launch for integration tests.
+
 ## 2026-05-27 01:42
 - **Session:** Phase 1 implementation — project bootstrap + journal ingestion
 - **Tracks touched:** `phase1_bodies_history_20260527`
