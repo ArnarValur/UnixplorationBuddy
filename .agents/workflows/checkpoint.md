@@ -1,31 +1,22 @@
-# Source: TheOracle v2.1 @ 2026-05-25
-
 ---
-name: checkpoint
-description: "Save session state and classify accumulated decisions. Updates pulse.md, archives if needed, repurposes Step 3 as the ADR gate (architectural → conductor/adr/, operational → pulse Session Memory, ephemeral → drop), and only processes decisions NOT already handled by a /grill or /new-track command-end batch."
-reads:
-  - conductor/pulse.md
-  - conductor/relay.md
-  - conductor/tracks.md
-  - conductor/tracks/*/plan.md
-  - conductor/tracks/*/metadata.json
-  - conductor/adr/              # for sequential ADR numbering
-writes:
-  - conductor/pulse.md
-  - conductor/pulse-archive/{YYYY-MM-DD}.md   # conditional — 200-line guardrail
-  - conductor/relay.md
-  - conductor/tracks.md
-  - conductor/tracks/*/plan.md
-  - conductor/tracks/*/metadata.json
-  - conductor/adr/*.md          # conditional — classifier-approved decisions
-  - conductor/index.md          # link appends only, via protocols/index-sync.md
+description: Save session state and classify accumulated decisions into ADR, pulse, or drop. The ADR gate.
 ---
 
-# 🎵 Checkpoint — Save Session State (v2.1 ADR gate)
+# Checkpoint — Save Session State
 
-When the user invokes `/checkpoint`, execute this sequence to persist the current session state. **In v2.1, Step 3 is the ADR gate** — it classifies accumulated decisions into architectural (→ ADR), operational (→ pulse Session Memory), and ephemeral (→ drop). This replaces v2.0's "Decision Log Update", which appended everything into `pulse.md` and created competing decision logs.
+When the user invokes `/checkpoint`, execute this sequence to persist the current session state. **Step 3 is the ADR gate** — it classifies accumulated decisions into architectural (→ ADR), operational (→ pulse Session Memory), and ephemeral (→ drop). Each decision ends up in exactly one place.
 
 Supports `--quick` flag: `/checkpoint --quick` skips Step 3 (the decision classifier).
+
+---
+
+## Step 0: Pre-flight
+
+Verify that `conductor/` exists in the project root. If it does not, halt with:
+> "Conductor is not initialized. Run `/conductor-init` to set up the project."
+
+Verify that `conductor/project-context.md` exists. If it does not, halt with:
+> "`conductor/project-context.md` is missing — the conductor is broken. Run `/conductor-init` to repair."
 
 ---
 
@@ -63,6 +54,8 @@ Update the following sections in `conductor/pulse.md`:
 
 These section names are parsed by Conductor. **Do not rename them.**
 
+> **Note on Session Memory:** Append the session's work summary here. Leave room for Step 3d to append classified operational decisions below — do not overwrite the section, only append.
+
 ### 200-Line Archiving Guardrail
 
 After updating, check if `pulse.md` exceeds 200 lines. If it does:
@@ -75,13 +68,11 @@ After updating, check if `pulse.md` exceeds 200 lines. If it does:
 
 ---
 
-## Step 3: Decision Classifier (the ADR Gate — D11 + S1)
+## Step 3: Decision Classifier
 
 > **Skipped with `--quick` flag.**
->
-> **v2.1 redefines this step.** v2.0 unconditionally appended every decision into `pulse.md`'s Session Memory, creating two competing decision logs (ephemeral in pulse, durable in `adr/`). v2.1 classifies decisions at checkpoint time so each one ends up in exactly one place.
 
-### Step 3a: Scope (S1 — no double-processing)
+### Step 3a: Scope (no double-processing)
 
 `/checkpoint` only classifies decisions that were **not already handled by a command-end batch**. Source these from:
 
@@ -90,7 +81,7 @@ After updating, check if `pulse.md` exceeds 200 lines. If it does:
 
 Decisions **already approved** by a prior `/grill` or `/new-track` ADR batch are already in `conductor/adr/` — do NOT re-record them.
 
-Decisions **explicitly rejected** by a prior batch are settled-as-dropped — do NOT re-surface them. Re-surfacing a deliberate rejection erodes trust in the batching UX (see brief D11 + S1).
+Decisions **explicitly rejected** by a prior batch are settled-as-dropped — do NOT re-surface them. Re-surfacing a deliberate rejection erodes trust in the batching UX.
 
 If unsure whether a decision was already handled, ask the user — do not silently re-prompt.
 
@@ -109,16 +100,16 @@ Per-bucket guidance (apply the same three criteria as `/grill` for the ADR bucke
 
 | Bucket | Test | Examples |
 |--------|------|----------|
-| **ADR** (architectural) | Hard to reverse, surprising without context, real trade-off | "Chose token-bucket over leaky-bucket", "Adopted event sourcing for orders", "Pinned Vue 3.5+ for `<script setup>` features" |
-| **Pulse** (operational) | Workflow/process notes, session-scoped reminders, future-self breadcrumbs | "Sprinted on the navbar — finished header, hamburger pending", "Considered Sentry but parked it for later" |
-| **Drop** (ephemeral) | Thinking-out-loud, exploratory tangents that didn't pan out, transient debugging notes | "Tried `npx clear-cache` first, didn't help", "Wondered if SSR was the issue — it wasn't" |
+| **ADR** (architectural) | Hard to reverse, surprising without context, real trade-off | "Chose token-bucket over leaky-bucket", "Adopted event sourcing for orders" |
+| **Pulse** (operational) | Workflow/process notes, session-scoped reminders, future-self breadcrumbs | "Sprinted on the navbar — finished header, hamburger pending" |
+| **Drop** (ephemeral) | Thinking-out-loud, exploratory tangents that didn't pan out, transient debugging notes | "Tried `npx clear-cache` first, didn't help" |
 
 ### Step 3c: Write ADR-bucket decisions
 
 For each decision the user classified as **ADR**:
 
 1. Number sequentially from the highest existing `conductor/adr/NNNN-*.md`.
-2. Write `conductor/adr/{NNNN}-{short-title-kebab}.md` using the format in [`conductor-v2.1-design-brief.md`](../conductor-v2.1-design-brief.md) → D3:
+2. Write `conductor/adr/{NNNN}-{short-title-kebab}.md` using this format:
 
    ```markdown
    # {Short title of the decision}
@@ -193,7 +184,12 @@ Simplify to `checkpoint: {brief summary}` when no ADRs were recorded.
 
 ## Step 7: Index Sync
 
-If a first ADR was written this checkpoint (queued in Step 3c), apply [`protocols/index-sync.md`](../protocols/index-sync.md) to create the `## Decisions` section and append `- [ADR Directory](./adr/)` to `conductor/index.md`. Idempotent — no-op when the link already exists.
+If a first ADR was written this checkpoint (queued in Step 3c), update `conductor/index.md`:
+
+1. Create a `## Decisions` section (if it doesn't exist).
+2. Append `- [ADR Directory](./adr/)` under that section.
+
+Idempotency: if the link already exists, skip (no-op). Never write a dead link.
 
 ---
 
@@ -202,11 +198,13 @@ If a first ADR was written this checkpoint (queued in Step 3c), apply [`protocol
 Tell the user:
 
 > "✅ Checkpoint saved.
+>
 > - Decisions classified: **{N total}** → **{ADR_count}** ADR, **{Pulse_count}** Pulse, **{Drop_count}** dropped.
 > - Tracks touched: **{list}**.
 > - Session state captured in `pulse.md`{; archived to pulse-archive/{date}.md if guardrail tripped}.
 >
 > **Options:**
+>
 > - Continue working on current track
 > - Switch to a different track
 > - End session"

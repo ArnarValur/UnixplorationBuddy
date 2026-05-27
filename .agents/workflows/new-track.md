@@ -1,32 +1,10 @@
-# Source: TheOracle v2.1 @ 2026-05-25
-
 ---
-name: new-track
-description: "Create a new Conductor track with domain-aware spec and phased implementation plan. Reads context.md, adr/, and prd.md before the spec interview so questions speak the project's ubiquitous language. Validates the chosen domain against context-map.md when present (S4 forward-compat gate). Batches new domain terms and ADR candidates at the end of the command."
-reads:
-  - conductor/project-context.md
-  - conductor/context.md
-  - conductor/context-map.md
-  - conductor/prd.md
-  - conductor/adr/
-  - conductor/workflow.md
-  - conductor/tracks.md
-writes:
-  - conductor/tracks/<domain>/<track_id>/spec.md
-  - conductor/tracks/<domain>/<track_id>/plan.md
-  - conductor/tracks/<domain>/<track_id>/metadata.json
-  - conductor/tracks/<domain>/<track_id>/index.md
-  - conductor/tracks.md
-  - conductor/context.md      # conditional — new domain terms discovered during spec
-  - conductor/adr/*.md        # conditional — batched at command end, user-approved
-  - conductor/index.md        # link appends only, via protocols/index-sync.md
+description: Create a domain-aware track with spec and implementation plan. Reads context.md, ADRs, and PRD for informed specification
 ---
 
-# 🎵 New Track — Create a Domain-Aware Track (v2.1)
+# New Track — Create a Domain-Aware Track
 
 When the user invokes `/new-track`, execute this sequence to create a new track with full spec and plan artifacts, informed by the project's domain glossary, ADRs, and PRD.
-
-> **v2.1 changes from v2.0:** pre-reads `context.md` / `adr/` / `prd.md` so the spec interview speaks the project's ubiquitous language; validates domain against `context-map.md` when present (S4); appends new domain terms to `context.md` as they surface; batches ADR candidates at command end.
 
 ---
 
@@ -45,7 +23,7 @@ If the user provides a description inline (e.g., `/new-track add rate limiting`)
 
 ---
 
-## Step 1b: Load Domain Context (v2.1)
+## Step 1b: Load Domain Context
 
 Before any domain-related question or spec interview, load all v2.1 context documents that exist. Lazy files may be absent — that is a valid state.
 
@@ -68,7 +46,7 @@ Other v2.1 files (`context.md`, `prd.md`, `adr/*`, `context-map.md`) are LAZY �
 
 ---
 
-## Step 2a: Context-Map Validation Gate (S4 — D5 forward-compat)
+## Step 2a: Context-Map Validation Gate
 
 **Order matters.** This step runs BEFORE Step 2 (existing-domain parsing). Without this ordering, `tracks.md` domains can shadow the context-map check.
 
@@ -81,7 +59,7 @@ Other v2.1 files (`context.md`, `prd.md`, `adr/*`, `context-map.md`) are LAZY �
       - **Invalid:** halt with:
         > "Domain `{proposed}` is not registered in `context-map.md`. Valid contexts: {list}. To add a new context, edit `context-map.md` first, then re-run `/new-track`."
 
-> **Why this step exists today as a near-no-op:** v2.1 supports `context-map.md` but most projects do not have one yet. The gate is wired now so it has zero cost when the file is absent and full enforcement when it appears (e.g., when DittoDatto gets multi-context). See brief D5 + S4.
+> **Why this step exists today as a near-no-op:** `context-map.md` is supported but most projects do not have one yet. The gate is wired now so it has zero cost when the file is absent and full enforcement when it appears (e.g., when DittoDatto gets multi-context).
 
 ---
 
@@ -232,11 +210,11 @@ Add the new track entry under the **Active Tracks** section:
 
 ---
 
-## Step 6: Domain Glossary Update (v2.1)
+## Step 6: Domain Glossary Update
 
 For each **New domain term** accumulated in Step 4:
 
-1. If `context.md` does NOT exist, create it from the greenfield template (see [`conductor-v2.1-design-brief.md`](../conductor-v2.1-design-brief.md) → `context.md` Templates → Greenfield).
+1. If `context.md` does NOT exist, create it from the greenfield template.
 2. Present the proposed terms to the user as a single batch:
    > "These terms came up during the spec interview that aren't yet in the glossary. Should I add them?"
 3. For approved terms, append rows to the `## Entities` table of `context.md`. Update the `> Last refined: {datetime}` header.
@@ -244,7 +222,7 @@ For each **New domain term** accumulated in Step 4:
 
 ---
 
-## Step 7: ADR Batch (Command-End — D3 + D10)
+## Step 7: ADR Batch (Command-End)
 
 This is the same batching pattern as `/grill`. Runs once, at command end.
 
@@ -253,8 +231,8 @@ This is the same batching pattern as `/grill`. Runs once, at command end.
    > "These architectural decisions surfaced while specifying this track. Which should be recorded as ADRs?"
    > {numbered list with proposed titles + 1-sentence summary}
 3. For each candidate, the user can: **approve**, **reject**, or **defer**.
-4. For each approved candidate, write `conductor/adr/{NNNN}-{short-title-kebab}.md` using the format in [`conductor-v2.1-design-brief.md`](../conductor-v2.1-design-brief.md) → D3. Number sequentially from the highest existing `NNNN`.
-5. **No double-processing.** Settled candidates (approved or rejected here) MUST NOT resurface in `/checkpoint`'s decision classifier ([S1]).
+4. For each approved candidate, write `conductor/adr/{NNNN}-{short-title-kebab}.md` using the standard ADR format. Number sequentially from the highest existing `NNNN`.
+5. **No double-processing.** Settled candidates (approved or rejected here) MUST NOT resurface in `/checkpoint`'s decision classifier.
 
 If this is the **first ADR** ever written for the project, queue an index-sync append for the `adr/` directory (applied in Step 8).
 
@@ -262,12 +240,12 @@ If this is the **first ADR** ever written for the project, queue an index-sync a
 
 ## Step 8: Index Sync
 
-For every lazy file or directory created this command, apply the rules in [`protocols/index-sync.md`](../protocols/index-sync.md):
+For every lazy file or directory created this command, update `conductor/index.md`:
 
-- `context.md` created → append `- [Domain Glossary](./context.md)` under `## Context`
-- First ADR written → create `## Decisions` section + append `- [ADR Directory](./adr/)`
+- `context.md` created → append `- [Domain Glossary](./context.md)` under the `## Context` section
+- First ADR written → create a `## Decisions` section and append `- [ADR Directory](./adr/)`
 
-Re-running an append must be a no-op (idempotent check).
+Idempotency: if the link already exists in `index.md`, skip (no-op). Never write a dead link.
 
 ---
 
@@ -289,10 +267,12 @@ If neither glossary nor ADRs were touched, simplify the message: `track: create 
 Tell the user:
 
 > "✅ Track `{track_id}` created at `conductor/tracks/{domain}/{track_id}/`.
+>
 > - Glossary updates: **{N terms}**
 > - ADRs recorded: **{M}** ({titles if any})
 >
 > **Next steps:**
+>
 > - Review the spec: `conductor/tracks/{domain}/{track_id}/spec.md`
 > - Start implementation: run `/conductor` and select this track
 > - Create another track: `/new-track`"

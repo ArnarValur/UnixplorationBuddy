@@ -11,7 +11,6 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-use ed_journals::logs::blocking::LiveLogDirReader;
 use ed_journals::logs::{LogDir, LogEvent, LogEventContent};
 
 use serde::Deserialize;
@@ -246,27 +245,92 @@ pub fn start_live_watcher(
     thread::Builder::new()
         .name("journal-watcher".into())
         .spawn(move || {
-            let reader = match LiveLogDirReader::open(&journal_dir_copy1) {
-                Ok(r) => r,
-                Err(e) => {
-                    let _ = tx_journal.send(JournalUpdate::Error(format!(
-                        "Failed to start journal watcher: {e}"
-                    )));
-                    return;
-                }
-            };
+            let mut current_file: Option<PathBuf> = None;
+            let mut current_offset: u64 = 0;
 
-            for entry_result in reader {
-                match entry_result {
-                    Ok(event) => {
-                        if tx_journal.send(JournalUpdate::Event(event)).is_err() {
-                            break;
+            loop {
+                // Find all log files and sort them to get the latest active one
+                let mut log_files: Vec<PathBuf> = Vec::new();
+                match std::fs::read_dir(&journal_dir_copy1) {
+                    Ok(entries) => {
+                        for entry in entries.filter_map(|e| e.ok()) {
+                            let path = entry.path();
+                            if path.is_file() && path.extension().map(|s| s == "log").unwrap_or(false) {
+                                log_files.push(path);
+                            }
                         }
                     }
                     Err(e) => {
-                        eprintln!("Warning: journal watcher error: {e}");
+                        let _ = tx_journal.send(JournalUpdate::Error(format!(
+                            "Failed to read journal directory: {e}"
+                        )));
                     }
                 }
+                log_files.sort();
+
+                if let Some(latest_file) = log_files.last() {
+                    let file_changed = match &current_file {
+                        Some(f) => f != latest_file,
+                        None => true,
+                    };
+
+                    if file_changed {
+                        // If we had an active file, finish reading its remaining content before switching
+                        if let Some(ref old_path) = current_file {
+                            if let Ok(file) = std::fs::File::open(old_path) {
+                                use std::io::{Seek, SeekFrom, BufRead, BufReader};
+                                let mut reader = BufReader::new(file);
+                                if reader.seek(SeekFrom::Start(current_offset)).is_ok() {
+                                    let mut line = String::new();
+                                    while reader.read_line(&mut line).unwrap_or(0) > 0 {
+                                        if let Ok(event) = serde_json::from_str::<ed_journals::logs::LogEvent>(&line) {
+                                            if tx_journal.send(JournalUpdate::Event(event)).is_err() {
+                                                return;
+                                            }
+                                        }
+                                        line.clear();
+                                    }
+                                }
+                            }
+                        }
+
+                        current_file = Some(latest_file.clone());
+                        // Seek to the end of the latest log file on startup since replay_session
+                        // has already parsed everything up to this point.
+                        if let Ok(metadata) = std::fs::metadata(latest_file) {
+                            current_offset = metadata.len();
+                        } else {
+                            current_offset = 0;
+                        }
+                    }
+
+                    // Read new lines from the active log file
+                    if let Some(ref path) = current_file {
+                        if let Ok(file) = std::fs::File::open(path) {
+                            use std::io::{Seek, SeekFrom, BufRead, BufReader};
+                            let mut reader = BufReader::new(file);
+                            if reader.seek(SeekFrom::Start(current_offset)).is_ok() {
+                                let mut line = String::new();
+                                while reader.read_line(&mut line).unwrap_or(0) > 0 {
+                                    if !line.trim().is_empty() {
+                                        if let Ok(event) = serde_json::from_str::<ed_journals::logs::LogEvent>(&line) {
+                                            if tx_journal.send(JournalUpdate::Event(event)).is_err() {
+                                                return;
+                                            }
+                                        }
+                                    }
+                                    line.clear();
+                                }
+                                if let Ok(pos) = reader.stream_position() {
+                                    current_offset = pos;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Poll filesystem every 250 milliseconds
+                thread::sleep(Duration::from_millis(250));
             }
         })
         .map_err(|e| format!("Failed to spawn journal watcher thread: {e}"))?;
@@ -594,6 +658,11 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
         LogEventContent::SAASignalsFound(e) => {
             let body_id = u32::from(e.body_id);
             if let Some(body) = app.bodies.get_mut(&body_id) {
+                body.bio_genuses.clear();
+                for g in &e.genuses {
+                    body.bio_genuses.push(format!("{:?}", g.genus));
+                }
+
                 for signal in &e.signals {
                     match signal.kind {
                         ed_journals::exploration::PlanetarySignalType::Biological => {

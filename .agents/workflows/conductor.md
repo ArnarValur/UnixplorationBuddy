@@ -1,27 +1,8 @@
-# Source: TheOracle v2.1 @ 2026-05-25
-
 ---
-name: conductor
-description: "Resume Conductor — load project context (project-context, context.md, prd.md, adr/, workflow, pulse, relay, tracks), run a defensive index-sync reconcile, present status, and await orders. v2.1 adds awareness of the lazy domain documents and a self-healing index pass."
-reads:
-  - conductor/project-context.md
-  - conductor/context.md
-  - conductor/context-map.md
-  - conductor/prd.md
-  - conductor/adr/
-  - conductor/docs/             # awareness only — directory listing, not contents
-  - conductor/workflow.md
-  - conductor/relay.md
-  - conductor/pulse.md
-  - conductor/tracks.md
-  - conductor/tracks/*/metadata.json
-  - conductor/tracks/*/plan.md
-  - conductor/agent-rules/      # optional, from agent-rules plugin
-writes:
-  - conductor/index.md          # reconcile — link appends only (idempotent), via protocols/index-sync.md
+description: Resume session context, reconcile the conductor index, and present project status with actionable options
 ---
 
-# 🎵 Conductor — Resume Protocol (v2.1)
+# Conductor — Resume Protocol
 
 When the user invokes `/conductor`, execute the following sequence to restore session context, self-heal the index, and present actionable status.
 
@@ -29,7 +10,7 @@ When the user invokes `/conductor`, execute the following sequence to restore se
 
 ## Step 1: Load Context
 
-Read the following files from the project's `conductor/` directory. If any file is missing, note it but do not halt — many v2.1 files are lazy.
+Read the following files from the project's `conductor/` directory. If any file is missing, note it but do not halt — many files are created lazily.
 
 ### 1a. Required (halt if missing)
 
@@ -48,7 +29,7 @@ Read the following files from the project's `conductor/` directory. If any file 
 >
 > > "`conductor/project-context.md` is missing — the conductor is broken. Run `/conductor-init` to repair (it will detect the existing conductor and offer a re-init / migration path)."
 
-### 1b. Optional (absence is a valid state — v2.1 lazy files)
+### 1b. Optional (absence is a valid state — lazy files)
 
 | File / dir | Purpose | When present, treat as |
 |------------|---------|------------------------|
@@ -66,17 +47,22 @@ For lazy files that are absent, note the absence internally. The user may want t
 
 ## Step 2: Defensive Index Reconcile
 
-Run the reconcile path from [`protocols/index-sync.md`](../protocols/index-sync.md):
+Reconcile `conductor/index.md` against actual files on disk:
 
-1. Scan `conductor/` for files matching the Append Rules table in the protocol.
-2. Diff against `conductor/index.md`:
-   - For each disk file that has a rule but no matching link → queue an append.
-   - For each link in `index.md` whose target does not exist on disk → queue a **dead-link warning** (do NOT auto-remove).
-3. Apply queued appends idempotently (no-op when the link already exists).
-4. **Report inline** in the status output:
+1. Scan `conductor/` for these files and check if `index.md` has a matching link:
+   - `context.md` → should appear as `- [Domain Glossary](./context.md)` under `## Context`
+   - `context-map.md` → `- [Context Map](./context-map.md)` under `## Context`
+   - `prd.md` → `- [Product Requirements](./prd.md)` under `## Context`
+   - `agent-rules/` → `- [Agent Rules](./agent-rules/)` under `## Context`
+   - First real file in `adr/` (not `.gitkeep`) → `- [ADR Directory](./adr/)` under `## Decisions` (create section if missing)
+   - Real files in `docs/` → `- [Project Docs](./docs/)` under `## Documentation` (create section if missing)
+2. For each disk file with no matching link → queue an append.
+3. For each link in `index.md` whose target does not exist on disk → queue a **dead-link warning** (do NOT auto-remove).
+4. Apply queued appends idempotently (no-op when the link already exists).
+5. **Report inline** in the status output:
    - `N links added` (silently OK if N=0)
    - `M dead links` (with paths — surface to the user as bugs to fix)
-   - `K orphans` (informational only — files on disk with no Append Rule)
+   - `K orphans` (informational only — files on disk with no matching rule)
 
 This step is idempotent and safe to run on every `/conductor` invocation.
 
@@ -84,12 +70,12 @@ This step is idempotent and safe to run on every `/conductor` invocation.
 
 ## Step 3: Status Report
 
-Invoke the status protocol by reading and executing [`protocols/status.md`](../protocols/status.md).
+Generate a structured status overview of all tracks and domain knowledge.
 
 The status report should present:
 
 ```text
-🎵 Conductor Online (v2.1)
+🎵 Conductor Online
 
 📍 Last Session: {date from pulse.md} — {focus}
 🔄 Active Tracks: {count}
@@ -153,5 +139,5 @@ Once initialized, maintain awareness of:
 - Settled architectural decisions from `conductor/adr/*.md` — defer to them unless the user explicitly asks to reopen a decision (in which case the result is a new ADR that supersedes the old one, not an edit)
 - Caution levels from `conductor/project-context.md`
 - Any blockers or urgent items from `conductor/pulse.md`
-- **`conductor/project-context.md` is user-owned (S3).** Do not propose edits to it during a session. Surface them at `/checkpoint` time as Pulse-bucket items if they truly need recording.
-- **`conductor/docs/` has no command writers (P1).** Do not auto-generate documentation there. Reading is fine on user request.
+- **`conductor/project-context.md` is user-owned.** Do not propose edits to it during a session. Surface them at `/checkpoint` time as Pulse-bucket items if they truly need recording.
+- **`conductor/docs/` has no command writers.** Do not auto-generate documentation there. Reading is fine on user request.

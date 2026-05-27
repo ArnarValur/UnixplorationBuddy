@@ -88,6 +88,8 @@ pub struct Body {
     pub temperature: Option<f64>,
     /// Capable of planetary landing.
     pub landable: bool,
+    /// Biological genuses reported by SAA scan.
+    pub bio_genuses: Vec<String>,
 }
 
 impl Body {
@@ -120,6 +122,7 @@ impl Body {
             gravity: None,
             temperature: None,
             landable: false,
+            bio_genuses: Vec::new(),
         }
     }
 }

@@ -4,6 +4,13 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-27 17:41
+- **Session:** Solved Flatpak sandbox TUI watcher freeze and exobiology prediction discrepancies.
+- **Tracks touched:** None
+- **Status:** Compiled, exobiology predictor and polling watcher verified, unit tests passing.
+- **Decisions:** ADR-0006 (Hybrid Exobiology Prediction Fallback), ADR-0007 (Flatpak Sandboxing Polling Log Tailer)
+- **Next:** Implement automatic tab switching to Route tab on FSD jump, and hop back to Bodies tab on system arrival.
+
 ## 2026-05-27 16:38
 - **Session:** Phase 2 Execution — Exploration Enrichment & Navigation Completed
 - **Tracks touched:** `phase2_navigation_exobiology_20260527`

@@ -17,7 +17,8 @@ pub fn normalize_atmosphere(atmo: &str) -> String {
     normalized = normalized
         .replace("thin", "")
         .replace("thick", "")
-        .replace("atmosphere", "");
+        .replace("atmosphere", "")
+        .replace("sulphur", "sulfur");
         
     if normalized.is_empty() || normalized == "none" || normalized == "no" {
         "noatmosphere".to_string()
@@ -145,11 +146,58 @@ pub fn predict_species(body: &Body, primary_star: Option<&StarClass>) -> Vec<Spe
         return Vec::new();
     }
 
-    DATASET
+    let mut matches: Vec<SpeciesVariant> = DATASET
         .iter()
         .filter(|v| match_variant(v, body, primary_star))
         .cloned()
-        .collect()
+        .collect();
+
+    // If we have definitive genus information from SAA scan, filter/fallback based on it
+    if !body.bio_genuses.is_empty() {
+        matches.retain(|v| {
+            body.bio_genuses
+                .iter()
+                .any(|g| g.eq_ignore_ascii_case(v.genus))
+        });
+
+        // If strict filtering returned no matches for the known genus, fall back to relaxed matching
+        // (atmosphere and planet class matching, ignoring gravity, temperature, and primary star)
+        if matches.is_empty() {
+            let norm_pc = body.planet_class.as_deref().map(normalize_planet_class).unwrap_or_default();
+            let norm_atmo = body.atmosphere.as_deref().map(normalize_atmosphere).unwrap_or_else(|| "noatmosphere".to_string());
+
+            matches = DATASET
+                .iter()
+                .filter(|v| {
+                    // 1. Genus must match one of the reported genuses
+                    let genus_matches = body.bio_genuses.iter().any(|g| g.eq_ignore_ascii_case(v.genus));
+                    if !genus_matches {
+                        return false;
+                    }
+
+                    // 2. Planet class matches (if defined in dataset variant)
+                    let planet_class_matches = v.bodies.is_empty() || v.bodies.iter().any(|b| normalize_planet_class(b) == norm_pc);
+                    if !planet_class_matches {
+                        return false;
+                    }
+
+                    // 3. Atmosphere matches (if defined in dataset variant)
+                    let atmo_matches = v.atmosphere_types.is_empty() || v.atmosphere_types.iter().any(|a| {
+                        let norm_rule = normalize_atmosphere(a);
+                        norm_rule == norm_atmo || (norm_rule == "noatmosphere" && norm_atmo == "none")
+                    });
+                    if !atmo_matches {
+                        return false;
+                    }
+
+                    true
+                })
+                .cloned()
+                .collect();
+        }
+    }
+
+    matches
 }
 
 #[cfg(test)]
@@ -161,7 +209,7 @@ mod tests {
     fn test_normalize_atmosphere() {
         assert_eq!(normalize_atmosphere("Thin Carbon dioxide"), "carbondioxide");
         assert_eq!(normalize_atmosphere("CarbonDioxide"), "carbondioxide");
-        assert_eq!(normalize_atmosphere("Thin Sulphur dioxide"), "sulphurdioxide");
+        assert_eq!(normalize_atmosphere("Thin Sulphur dioxide"), "sulfurdioxide");
         assert_eq!(normalize_atmosphere("No atmosphere"), "noatmosphere");
         assert_eq!(normalize_atmosphere("None"), "noatmosphere");
     }
@@ -218,5 +266,26 @@ mod tests {
         // Gravity out of bounds should fail
         body.gravity = Some(0.30);
         assert!(!match_variant(&variant, &body, Some(&StarClass::M)));
+    }
+
+    #[test]
+    fn test_relaxed_fallback_when_strict_bounds_fail() {
+        let mut body = Body::new(1, "Test Planet".into());
+        body.body_type = BodyType::Planet;
+        body.landable = true;
+        body.planet_class = Some("Rocky body".to_string());
+        body.atmosphere = Some("Thin Carbon dioxide".to_string());
+        // Gravity and temperature are completely out of range of Aleoida bounds
+        body.gravity = Some(2.5);
+        body.temperature = Some(900.0);
+        body.bio_signals = 1;
+        // BUT we know Aleoida is present via SAA scan
+        body.bio_genuses = vec!["Aleoida".to_string()];
+
+        // Strict matching would fail completely because of gravity and temperature.
+        // But with bio_genuses set, the relaxed fallback should kick in and find Aleoida variants!
+        let predictions = predict_species(&body, Some(&StarClass::M));
+        assert!(!predictions.is_empty(), "Relaxed fallback should predict species even if bounds fail");
+        assert_eq!(predictions[0].genus, "Aleoida");
     }
 }
