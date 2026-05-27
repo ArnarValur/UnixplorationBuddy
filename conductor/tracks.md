@@ -14,8 +14,8 @@ All tracks organized by domain. Each track links to its dedicated folder.
 
 ## Active Tracks
 
-- [ ] **Phase 2 — Navigation & Exobiology**
-  - *Type:* feature | *Domain:* core | *Status:* new
+- [~] **Phase 2 — Navigation & Exobiology**
+  - *Type:* feature | *Domain:* core | *Status:* in_progress
   - *Link:* [tracks/core/phase2_navigation_exobiology_20260527/](./tracks/core/phase2_navigation_exobiology_20260527/)
 
 ## Completed Tracks
