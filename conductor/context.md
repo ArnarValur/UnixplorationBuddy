@@ -47,4 +47,3 @@
 | Honk | FSS Scan | Honk (Discovery Scan) reveals body count. FSS resolves individual bodies. Different scan stages. |
 | Bio Signal | Species Prediction | Signal = in-game detection count. Prediction = Canonn data match. Signal confirms life exists; prediction tells you what it might be. |
 | Target Sync | Selection Navigation | Target Sync = automatic cockpit focus tracking. Selection Navigation = manual TUI list selection. |
-
