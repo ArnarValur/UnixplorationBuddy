@@ -14,3 +14,6 @@ Thumbs.db
 
 # Large data files (download separately)
 conductor/canonn-data/*.json.gz
+
+# Scratch files
+/scratch/
