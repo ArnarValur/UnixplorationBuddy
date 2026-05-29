@@ -696,24 +696,12 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(1), // Sub-tabs header
             Constraint::Min(0),   // Codex view content
+            Constraint::Length(1), // Sub-tabs header at the bottom
         ])
         .split(area);
 
-    // Draw Codex sub-tabs
-    let sub_tabs = Line::from(vec![
-        Span::styled(" Overview ", Style::default().fg(if app.active_codex_tab == CodexTab::Overview { COLOR_STAR } else { ELITE_DIM }).add_modifier(if app.active_codex_tab == CodexTab::Overview { Modifier::UNDERLINED | Modifier::BOLD } else { Modifier::empty() })),
-        Span::styled(" │ ", Style::default().fg(ELITE_DIM)),
-        Span::styled(" Stellar Codex ", Style::default().fg(if app.active_codex_tab == CodexTab::Stellar { COLOR_STAR } else { ELITE_DIM }).add_modifier(if app.active_codex_tab == CodexTab::Stellar { Modifier::UNDERLINED | Modifier::BOLD } else { Modifier::empty() })),
-        Span::styled(" │ ", Style::default().fg(ELITE_DIM)),
-        Span::styled(" Planetary Codex ", Style::default().fg(if app.active_codex_tab == CodexTab::Planetary { COLOR_STAR } else { ELITE_DIM }).add_modifier(if app.active_codex_tab == CodexTab::Planetary { Modifier::UNDERLINED | Modifier::BOLD } else { Modifier::empty() })),
-        Span::styled(" │ ", Style::default().fg(ELITE_DIM)),
-        Span::styled(" Biological Codex ", Style::default().fg(if app.active_codex_tab == CodexTab::Biological { COLOR_STAR } else { ELITE_DIM }).add_modifier(if app.active_codex_tab == CodexTab::Biological { Modifier::UNDERLINED | Modifier::BOLD } else { Modifier::empty() })),
-    ]);
-    frame.render_widget(Paragraph::new(sub_tabs).style(Style::default().bg(BG_DARK)), chunks[0]);
-
-    let content_area = chunks[1];
+    let content_area = chunks[0];
     let trip = &app.trip;
 
     match app.active_codex_tab {
@@ -748,15 +736,63 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 .collect();
 
             let widths = [Constraint::Length(25), Constraint::Min(15)];
-            let table = Table::new(rows, widths)
+            let table_stats = Table::new(rows, widths)
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .title(tab_title("History", Tab::History, app.active_tab))
+                        .title(tab_title("Trip Statistics", Tab::History, app.active_tab))
                         .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
                 )
                 .style(Style::default().bg(BG_DARK));
-            frame.render_widget(table, content_area);
+
+            let mut entries: Vec<(&String, &u32)> = trip.biological_codex.iter().collect();
+            entries.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
+            let rows_bio: Vec<Row> = entries.iter().map(|(species, count)| {
+                Row::new(vec![
+                    (*species).clone(),
+                    count.to_string(),
+                ]).style(Style::default().fg(COLOR_BIO))
+            }).collect();
+
+            let header_bio = Row::new(vec!["Species Name", "Analyses Completed"])
+                .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
+
+            let total_rows_bio = rows_bio.len();
+            let widths_bio = [Constraint::Length(35), Constraint::Min(10)];
+            let table_bio = Table::new(rows_bio, widths_bio)
+                .header(header_bio)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(tab_title("Biological Codex", Tab::History, app.active_tab))
+                        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
+                )
+                .row_highlight_style(Style::default().bg(HIGHLIGHT_BG))
+                .style(Style::default().bg(BG_DARK));
+
+            let split_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+                .split(content_area);
+
+            frame.render_widget(table_stats, split_chunks[0]);
+
+            let mut state_bio = TableState::default().with_selected(Some(app.selected_codex_index));
+            frame.render_stateful_widget(table_bio, split_chunks[1], &mut state_bio);
+
+            if total_rows_bio > (split_chunks[1].height as usize).saturating_sub(4) {
+                let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                    .begin_symbol(None)
+                    .end_symbol(None)
+                    .track_symbol(Some("│"))
+                    .thumb_symbol("█");
+                let mut scrollbar_state = ScrollbarState::new(total_rows_bio).position(app.selected_codex_index);
+                frame.render_stateful_widget(
+                    scrollbar,
+                    split_chunks[1].inner(ratatui::layout::Margin { vertical: 1, horizontal: 0 }),
+                    &mut scrollbar_state,
+                );
+            }
         }
         CodexTab::Stellar => {
             struct MainClassGroup {
@@ -785,10 +821,10 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 group.subtypes.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
             }
 
-            let mut rows = Vec::new();
+            let mut stellar_rows = Vec::new();
 
             for group in group_list {
-                rows.push(
+                stellar_rows.push(
                     Row::new(vec![
                         group.main_class.clone(),
                         group.total_visits.to_string(),
@@ -802,7 +838,7 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                     for (i, (subtype, count)) in group.subtypes.iter().enumerate() {
                         let is_last = i == len - 1;
                         let prefix = if is_last { "  └─ " } else { "  ├─ " };
-                        rows.push(
+                        stellar_rows.push(
                             Row::new(vec![
                                 format!("{}{}", prefix, subtype),
                                 count.to_string(),
@@ -813,41 +849,7 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 }
             }
 
-            let header = Row::new(vec!["Primary Star Class", "Visits"])
-                .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
-
-            let total_rows = rows.len();
-            let widths = [Constraint::Length(30), Constraint::Min(10)];
-            let table = Table::new(rows, widths)
-                .header(header)
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title(tab_title("Stellar Codex", Tab::History, app.active_tab))
-                        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
-                )
-                .row_highlight_style(Style::default().bg(HIGHLIGHT_BG))
-                .style(Style::default().bg(BG_DARK));
-
-            let mut state = TableState::default().with_selected(Some(app.selected_codex_index));
-            frame.render_stateful_widget(table, content_area, &mut state);
-
-            if total_rows > (content_area.height as usize).saturating_sub(4) {
-                let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                    .begin_symbol(None)
-                    .end_symbol(None)
-                    .track_symbol(Some("│"))
-                    .thumb_symbol("█");
-                let mut scrollbar_state = ScrollbarState::new(total_rows).position(app.selected_codex_index);
-                frame.render_stateful_widget(
-                    scrollbar,
-                    content_area.inner(ratatui::layout::Margin { vertical: 1, horizontal: 0 }),
-                    &mut scrollbar_state,
-                );
-            }
-        }
-        CodexTab::Planetary => {
-            // Group our entries and aggregate sub-attributes
+            // Group our entries and aggregate sub-attributes for Planetary Codex
             struct PlanetCodexGrouped {
                 planet_class: String,
                 total_scans: u32,
@@ -890,7 +892,6 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 }
             }
 
-            // Group by premium categories
             let mut rare_list = Vec::new();
             let mut terrestrial_list = Vec::new();
             let mut gas_list = Vec::new();
@@ -906,12 +907,11 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 }
             }
 
-            // Sort lists descending by scans, then name alphabetically
             rare_list.sort_by(|a, b| b.total_scans.cmp(&a.total_scans).then_with(|| a.planet_class.cmp(&b.planet_class)));
             terrestrial_list.sort_by(|a, b| b.total_scans.cmp(&a.total_scans).then_with(|| a.planet_class.cmp(&b.planet_class)));
             gas_list.sort_by(|a, b| b.total_scans.cmp(&a.total_scans).then_with(|| a.planet_class.cmp(&b.planet_class)));
 
-            let mut rows = Vec::new();
+            let mut planetary_rows = Vec::new();
 
             let categories = [
                 ("Rare Worlds", rare_list, COLOR_VALUE_HIGH),
@@ -922,7 +922,7 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
             for (cat_name, list, cat_color) in categories {
                 if !list.is_empty() {
                     let cat_total: u32 = list.iter().map(|e| e.total_scans).sum();
-                    rows.push(
+                    planetary_rows.push(
                         Row::new(vec![
                             cat_name.to_string(),
                             cat_total.to_string(),
@@ -935,7 +935,6 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                         let is_last = i == len - 1;
                         let prefix = if is_last { "  └─ " } else { "  ├─ " };
 
-                        // Construct beautiful sub-attribute badges
                         let mut badges = Vec::new();
                         if entry.landable_count > 0 {
                             badges.push(format!("🚀x{}", entry.landable_count));
@@ -956,7 +955,7 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                             format!("  ({})", badges.join(" │ "))
                         };
 
-                        rows.push(
+                        planetary_rows.push(
                             Row::new(vec![
                                 format!("{}{}{}", prefix, entry.planet_class, badges_str),
                                 entry.total_scans.to_string(),
@@ -967,13 +966,53 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 }
             }
 
-            let header = Row::new(vec!["Planet Class Hierarchy", "Scans"])
+            let total_stellar = stellar_rows.len();
+            let total_planetary = planetary_rows.len();
+
+            let split_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(45), Constraint::Percentage(55)])
+                .split(content_area);
+
+            // Draw Stellar Codex on Left
+            let header_stellar = Row::new(vec!["Primary Star Class", "Visits"])
                 .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
 
-            let total_rows = rows.len();
-            let widths = [Constraint::Length(55), Constraint::Min(10)];
-            let table = Table::new(rows, widths)
-                .header(header)
+            let table_stellar = Table::new(stellar_rows, [Constraint::Length(30), Constraint::Min(10)])
+                .header(header_stellar)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(tab_title("Stellar Codex", Tab::History, app.active_tab))
+                        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
+                )
+                .row_highlight_style(Style::default().bg(HIGHLIGHT_BG))
+                .style(Style::default().bg(BG_DARK));
+
+            let selected_stellar = if total_stellar > 0 { Some(app.selected_codex_index % total_stellar) } else { None };
+            let mut state_stellar = TableState::default().with_selected(selected_stellar);
+            frame.render_stateful_widget(table_stellar, split_chunks[0], &mut state_stellar);
+
+            if total_stellar > (split_chunks[0].height as usize).saturating_sub(4) {
+                let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                    .begin_symbol(None)
+                    .end_symbol(None)
+                    .track_symbol(Some("│"))
+                    .thumb_symbol("█");
+                let mut scrollbar_state = ScrollbarState::new(total_stellar).position(selected_stellar.unwrap_or(0));
+                frame.render_stateful_widget(
+                    scrollbar,
+                    split_chunks[0].inner(ratatui::layout::Margin { vertical: 1, horizontal: 0 }),
+                    &mut scrollbar_state,
+                );
+            }
+
+            // Draw Planetary Codex on Right
+            let header_planetary = Row::new(vec!["Planet Class Hierarchy", "Scans"])
+                .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
+
+            let table_planetary = Table::new(planetary_rows, [Constraint::Length(42), Constraint::Min(10)])
+                .header(header_planetary)
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
@@ -983,67 +1022,33 @@ fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 .row_highlight_style(Style::default().bg(HIGHLIGHT_BG))
                 .style(Style::default().bg(BG_DARK));
 
-            let mut state = TableState::default().with_selected(Some(app.selected_codex_index));
-            frame.render_stateful_widget(table, content_area, &mut state);
+            let selected_planetary = if total_planetary > 0 { Some(app.selected_codex_index % total_planetary) } else { None };
+            let mut state_planetary = TableState::default().with_selected(selected_planetary);
+            frame.render_stateful_widget(table_planetary, split_chunks[1], &mut state_planetary);
 
-            if total_rows > (content_area.height as usize).saturating_sub(4) {
+            if total_planetary > (split_chunks[1].height as usize).saturating_sub(4) {
                 let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
                     .begin_symbol(None)
                     .end_symbol(None)
                     .track_symbol(Some("│"))
                     .thumb_symbol("█");
-                let mut scrollbar_state = ScrollbarState::new(total_rows).position(app.selected_codex_index);
+                let mut scrollbar_state = ScrollbarState::new(total_planetary).position(selected_planetary.unwrap_or(0));
                 frame.render_stateful_widget(
                     scrollbar,
-                    content_area.inner(ratatui::layout::Margin { vertical: 1, horizontal: 0 }),
-                    &mut scrollbar_state,
-                );
-            }
-        }
-        CodexTab::Biological => {
-            let mut entries: Vec<(&String, &u32)> = trip.biological_codex.iter().collect();
-            entries.sort_by(|a, b| b.1.cmp(a.1));
-            let rows: Vec<Row> = entries.iter().map(|(species, count)| {
-                Row::new(vec![
-                    (*species).clone(),
-                    count.to_string(),
-                ]).style(Style::default().fg(COLOR_BIO))
-            }).collect();
-
-            let header = Row::new(vec!["Species Name", "Analyses Completed"])
-                .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
-
-            let total_rows = rows.len();
-            let widths = [Constraint::Length(45), Constraint::Min(10)];
-            let table = Table::new(rows, widths)
-                .header(header)
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title(tab_title("Biological Codex", Tab::History, app.active_tab))
-                        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
-                )
-                .row_highlight_style(Style::default().bg(HIGHLIGHT_BG))
-                .style(Style::default().bg(BG_DARK));
-
-            let mut state = TableState::default().with_selected(Some(app.selected_codex_index));
-            frame.render_stateful_widget(table, content_area, &mut state);
-
-            if total_rows > (content_area.height as usize).saturating_sub(4) {
-                let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                    .begin_symbol(None)
-                    .end_symbol(None)
-                    .track_symbol(Some("│"))
-                    .thumb_symbol("█");
-                let mut scrollbar_state = ScrollbarState::new(total_rows).position(app.selected_codex_index);
-                frame.render_stateful_widget(
-                    scrollbar,
-                    content_area.inner(ratatui::layout::Margin { vertical: 1, horizontal: 0 }),
+                    split_chunks[1].inner(ratatui::layout::Margin { vertical: 1, horizontal: 0 }),
                     &mut scrollbar_state,
                 );
             }
         }
     }
+
+    // Draw Codex conjoined sub-tabs at the bottom
+    let sub_tabs = Line::from(vec![
+        Span::styled(" Overview & Biology ", Style::default().fg(if app.active_codex_tab == CodexTab::Overview { COLOR_STAR } else { ELITE_DIM }).add_modifier(if app.active_codex_tab == CodexTab::Overview { Modifier::UNDERLINED | Modifier::BOLD } else { Modifier::empty() })),
+        Span::styled(" │ ", Style::default().fg(ELITE_DIM)),
+        Span::styled(" Stellar & Planetary ", Style::default().fg(if app.active_codex_tab == CodexTab::Stellar { COLOR_STAR } else { ELITE_DIM }).add_modifier(if app.active_codex_tab == CodexTab::Stellar { Modifier::UNDERLINED | Modifier::BOLD } else { Modifier::empty() })),
+    ]);
+    frame.render_widget(Paragraph::new(sub_tabs).style(Style::default().bg(BG_DARK)).alignment(ratatui::layout::Alignment::Center), chunks[1]);
 }
 
 // ── Column Settings Overlay ──────────────────────────────────────

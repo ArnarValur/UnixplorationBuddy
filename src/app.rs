@@ -21,10 +21,8 @@ impl Default for Tab {
 /// Which sub-tab in the Trip view is active.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CodexTab {
-    Overview,
-    Stellar,
-    Planetary,
-    Biological,
+    Overview, // conjoined Overview + Biological
+    Stellar,  // conjoined Stellar + Planetary
 }
 
 impl Default for CodexTab {
@@ -155,9 +153,7 @@ impl App {
         self.selected_codex_index = 0;
         self.active_codex_tab = match self.active_codex_tab {
             CodexTab::Overview => CodexTab::Stellar,
-            CodexTab::Stellar => CodexTab::Planetary,
-            CodexTab::Planetary => CodexTab::Biological,
-            CodexTab::Biological => CodexTab::Overview,
+            CodexTab::Stellar => CodexTab::Overview,
         };
     }
 
@@ -165,19 +161,17 @@ impl App {
     pub fn prev_codex_tab(&mut self) {
         self.selected_codex_index = 0;
         self.active_codex_tab = match self.active_codex_tab {
-            CodexTab::Overview => CodexTab::Biological,
+            CodexTab::Overview => CodexTab::Stellar,
             CodexTab::Stellar => CodexTab::Overview,
-            CodexTab::Planetary => CodexTab::Stellar,
-            CodexTab::Biological => CodexTab::Planetary,
         };
     }
 
     /// Calculate the maximum number of rows in the active codex tab.
     pub fn max_codex_rows(&self) -> usize {
         match self.active_codex_tab {
-            CodexTab::Overview => 0,
+            CodexTab::Overview => self.trip.biological_codex.len(),
             CodexTab::Stellar => {
-                let mut groups: HashMap<String, (u32, Vec<String>)> = HashMap::new();
+                let mut groups: HashMap<String, Vec<String>> = HashMap::new();
                 for subtype in self.trip.stellar_codex.keys() {
                     let mut main_class = String::new();
                     for c in subtype.chars() {
@@ -189,21 +183,18 @@ impl App {
                     if main_class.is_empty() {
                         main_class = subtype.clone();
                     }
-                    let entry = groups.entry(main_class).or_insert((0, Vec::new()));
-                    entry.1.push(subtype.clone());
+                    groups.entry(main_class).or_insert_with(Vec::new).push(subtype.clone());
                 }
                 
-                let mut count = 0;
-                for (main_class, (_, subtypes)) in groups {
-                    count += 1; // main class row
+                let mut stellar_rows = 0;
+                for (main_class, subtypes) in groups {
+                    stellar_rows += 1; // main class row
                     let has_redundant_single_child = subtypes.len() == 1 && subtypes[0] == main_class;
                     if !has_redundant_single_child {
-                        count += subtypes.len();
+                        stellar_rows += subtypes.len();
                     }
                 }
-                count
-            }
-            CodexTab::Planetary => {
+
                 let mut unique_classes = std::collections::HashSet::new();
                 for key in self.trip.planetary_codex.keys() {
                     let parts: Vec<&str> = key.split('|').collect();
@@ -215,9 +206,9 @@ impl App {
                     categories.insert(get_planet_category(planet_class));
                 }
 
-                unique_classes.len() + categories.len()
+                let planetary_rows = unique_classes.len() + categories.len();
+                std::cmp::max(stellar_rows, planetary_rows)
             }
-            CodexTab::Biological => self.trip.biological_codex.len(),
         }
     }
 
@@ -307,19 +298,13 @@ mod tests {
         assert_eq!(app.active_codex_tab, CodexTab::Stellar);
 
         app.next_codex_tab();
-        assert_eq!(app.active_codex_tab, CodexTab::Planetary);
-
-        app.next_codex_tab();
-        assert_eq!(app.active_codex_tab, CodexTab::Biological);
-
-        app.next_codex_tab();
         assert_eq!(app.active_codex_tab, CodexTab::Overview);
 
         app.prev_codex_tab();
-        assert_eq!(app.active_codex_tab, CodexTab::Biological);
+        assert_eq!(app.active_codex_tab, CodexTab::Stellar);
 
         app.prev_codex_tab();
-        assert_eq!(app.active_codex_tab, CodexTab::Planetary);
+        assert_eq!(app.active_codex_tab, CodexTab::Overview);
     }
 
     #[test]
@@ -354,7 +339,7 @@ mod tests {
         assert_eq!(get_planet_category("Sudarsky Class III gas giant"), "Gas Giants");
 
         let mut app = App::new();
-        app.active_codex_tab = CodexTab::Planetary;
+        app.active_codex_tab = CodexTab::Stellar;
         assert_eq!(app.max_codex_rows(), 0);
 
         // Ingest mock planetary codex data with sub-attribute flags encoded in keys
