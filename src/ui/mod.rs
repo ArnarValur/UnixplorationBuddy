@@ -6,39 +6,45 @@
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Clear, Paragraph, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table, TableState};
+use ratatui::widgets::{Block, Borders, Clear, Paragraph};
 use ratatui::Frame;
 
-use crate::app::{App, Tab, CodexTab};
+use crate::app::{App, Tab};
 use crate::model::{BodyType, ScanState};
-use crate::model::biology::predictor;
+
+// Register submodules
+pub mod orrery;
+pub mod bodies;
+pub mod inspector;
+pub mod route;
+pub mod history;
 
 // ── Color palette ────────────────────────────────────────────────
 /// Elite Dangerous signature orange.
-const ELITE_ORANGE: Color = Color::Rgb(255, 147, 0);
+pub const ELITE_ORANGE: Color = Color::Rgb(255, 147, 0);
 /// Dimmer orange for secondary text.
-const ELITE_DIM: Color = Color::Rgb(140, 85, 0);
+pub const ELITE_DIM: Color = Color::Rgb(140, 85, 0);
 /// Dark background matching the cockpit aesthetic.
-const BG_DARK: Color = Color::Rgb(10, 10, 10);
+pub const BG_DARK: Color = Color::Rgb(10, 10, 10);
 /// Highlight color for the selected row.
-const HIGHLIGHT_BG: Color = Color::Rgb(50, 35, 0);
+pub const HIGHLIGHT_BG: Color = Color::Rgb(50, 35, 0);
 /// Star body color — warm yellow.
-const COLOR_STAR: Color = Color::Rgb(255, 220, 100);
+pub const COLOR_STAR: Color = Color::Rgb(255, 220, 100);
 /// Planet body color — steely blue.
-const COLOR_PLANET: Color = Color::Rgb(100, 170, 255);
+pub const COLOR_PLANET: Color = Color::Rgb(100, 170, 255);
 /// Moon body color — soft grey.
-const COLOR_MOON: Color = Color::Rgb(170, 170, 190);
+pub const COLOR_MOON: Color = Color::Rgb(170, 170, 190);
 /// Belt cluster color — muted.
-const COLOR_BELT: Color = Color::Rgb(120, 110, 90);
+pub const COLOR_BELT: Color = Color::Rgb(120, 110, 90);
 /// High-value highlight — green tint for valuable bodies.
-const COLOR_VALUE_HIGH: Color = Color::Rgb(80, 220, 80);
+pub const COLOR_VALUE_HIGH: Color = Color::Rgb(80, 220, 80);
 /// Bio signal color.
-const COLOR_BIO: Color = Color::Rgb(80, 230, 160);
+pub const COLOR_BIO: Color = Color::Rgb(80, 230, 160);
 /// First discovery / first mapping marker.
-const COLOR_FIRST: Color = Color::Rgb(255, 215, 0);
+pub const COLOR_FIRST: Color = Color::Rgb(255, 215, 0);
 
 /// Value threshold for "high value" highlighting (credits).
-const HIGH_VALUE_THRESHOLD: u64 = 100_000;
+pub const HIGH_VALUE_THRESHOLD: u64 = 100_000;
 
 // ── Root draw ────────────────────────────────────────────────────
 
@@ -56,9 +62,9 @@ pub fn draw(frame: &mut Frame, app: &App) {
     draw_header(frame, app, chunks[0]);
 
     match app.active_tab {
-        Tab::Bodies => draw_bodies(frame, app, chunks[1]),
-        Tab::History => draw_history(frame, app, chunks[1]),
-        Tab::Route => draw_route(frame, app, chunks[1]),
+        Tab::Bodies => bodies::draw_bodies(frame, app, chunks[1]),
+        Tab::History => history::draw_history(frame, app, chunks[1]),
+        Tab::Route => route::draw_route(frame, app, chunks[1]),
     }
 
     draw_status_bar(frame, app, chunks[2]);
@@ -121,1323 +127,6 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(widget, area);
 }
 
-// Kepler eccentric anomaly solver using Newton-Raphson method
-fn solve_kepler(mean_anomaly: f64, eccentricity: f64) -> f64 {
-    let mut eccentric_anomaly = mean_anomaly;
-    for _ in 0..5 {
-        let diff = eccentric_anomaly - eccentricity * eccentric_anomaly.sin() - mean_anomaly;
-        let deriv = 1.0 - eccentricity * eccentric_anomaly.cos();
-        if deriv.abs() < 1e-9 {
-            break;
-        }
-        eccentric_anomaly -= diff / deriv;
-    }
-    eccentric_anomaly
-}
-
-// 3D Isometric View Camera Projection (pitch: 30°, yaw: 45°)
-fn project_3d_to_2d(x: f64, y: f64, z: f64) -> (f64, f64) {
-    let yaw = 45.0 * std::f64::consts::PI / 180.0;
-    let pitch = 30.0 * std::f64::consts::PI / 180.0;
-    
-    let x_screen = x * yaw.cos() - y * yaw.sin();
-    let y_screen = (x * yaw.sin() + y * yaw.cos()) * pitch.cos() - z * pitch.sin();
-    (x_screen, y_screen)
-}
-
-// Draw Orrery Map canvas using high-res Braille sub-pixel symbols
-fn draw_orrery(frame: &mut Frame, app: &App, area: Rect) {
-    use ratatui::widgets::canvas::{Canvas, Line};
-    
-    if app.body_display_order.is_empty() {
-        let content = Paragraph::new(" No bodies discovered yet")
-            .style(Style::default().fg(ELITE_DIM).bg(BG_DARK))
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title(tab_title("Orrery Map", Tab::Bodies, app.active_tab))
-                    .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
-            );
-        frame.render_widget(content, area);
-        return;
-    }
-
-    let primary_star_id = app.system.primary_star_id.unwrap_or(0);
-    let selected_body_id = app.body_display_order
-        .get(app.selected_body_index)
-        .map(|&(id, _)| id)
-        .unwrap_or(primary_star_id);
-
-    // 1. Resolve absolute 3D scaled coordinates hierarchically in one sequential pass
-    let mut abs_scaled_positions: std::collections::HashMap<u32, (f64, f64, f64)> = std::collections::HashMap::new();
-    abs_scaled_positions.insert(primary_star_id, (0.0, 0.0, 0.0));
-
-    for &(body_id, _) in &app.body_display_order {
-        if body_id == primary_star_id {
-            continue;
-        }
-        if let Some(b) = app.bodies.get(&body_id) {
-            let parent_pos = b.parent_id
-                .and_then(|pid| abs_scaled_positions.get(&pid).copied())
-                .unwrap_or((0.0, 0.0, 0.0));
-
-            let relative_pos = if let (Some(a), Some(e), Some(incl), Some(peri), Some(period)) = (
-                b.semi_major_axis,
-                b.eccentricity,
-                b.inclination,
-                b.periapsis,
-                b.orbital_period,
-            ) {
-                let mean_anom_epoch = b.mean_anomaly.unwrap_or(0.0);
-                let node = b.ascending_node.unwrap_or(0.0);
-
-                let n = 2.0 * std::f64::consts::PI / period;
-                let m = (mean_anom_epoch * std::f64::consts::PI / 180.0) + n * app.sim_time;
-
-                let eccentric_anomaly = solve_kepler(m, e);
-
-                let x_plane = a * (eccentric_anomaly.cos() - e);
-                let y_plane = a * (1.0 - e * e).sqrt() * eccentric_anomaly.sin();
-
-                let i_rad = incl * std::f64::consts::PI / 180.0;
-                let w_rad = peri * std::f64::consts::PI / 180.0;
-                let node_rad = node * std::f64::consts::PI / 180.0;
-
-                let cos_w = w_rad.cos();
-                let sin_w = w_rad.sin();
-                let cos_node = node_rad.cos();
-                let sin_node = node_rad.sin();
-                let cos_i = i_rad.cos();
-                let sin_i = i_rad.sin();
-
-                let x_3d = x_plane * (cos_w * cos_node - sin_w * sin_node * cos_i) - y_plane * (sin_w * cos_node + cos_w * sin_node * cos_i);
-                let y_3d = x_plane * (cos_w * sin_node + sin_w * cos_node * cos_i) - y_plane * (sin_w * sin_node - cos_w * cos_node * cos_i);
-                let z_3d = x_plane * (sin_w * sin_i) + y_plane * (cos_w * sin_i);
-
-                (x_3d, y_3d, z_3d)
-            } else {
-                let r = b.distance_ls.map(|d| d * 2.99792e8).unwrap_or((body_id as f64) * 5e9);
-                let speed = 2.0 * std::f64::consts::PI / (r.powf(1.5) * 1e-6).max(100.0);
-                let angle = speed * app.sim_time;
-                let x_3d = r * angle.cos();
-                let y_3d = r * angle.sin();
-                let z_3d = 0.0;
-                (x_3d, y_3d, z_3d)
-            };
-
-            let r_mag = (relative_pos.0.powi(2) + relative_pos.1.powi(2) + relative_pos.2.powi(2)).sqrt();
-            let is_moon = b.body_type == crate::model::BodyType::Moon;
-            let r_scaled = if is_moon {
-                3.5 * (1.0 + r_mag / 1e7).ln()
-            } else {
-                15.0 * (1.0 + r_mag / 1e9).ln()
-            };
-
-            let scaled_rel = if r_mag > 1.0 {
-                (
-                    (r_scaled / r_mag) * relative_pos.0,
-                    (r_scaled / r_mag) * relative_pos.1,
-                    (r_scaled / r_mag) * relative_pos.2,
-                )
-            } else {
-                (0.0, 0.0, 0.0)
-            };
-
-            let abs_pos = (
-                parent_pos.0 + scaled_rel.0,
-                parent_pos.1 + scaled_rel.1,
-                parent_pos.2 + scaled_rel.2,
-            );
-
-            abs_scaled_positions.insert(body_id, abs_pos);
-        }
-    }
-
-    // 2. Resolve orbital path lines for all scanned bodies
-    let mut orbits = Vec::new();
-    for &(body_id, _) in &app.body_display_order {
-        if body_id == primary_star_id {
-            continue;
-        }
-        if let Some(b) = app.bodies.get(&body_id) {
-            let parent_pos = b.parent_id
-                .and_then(|pid| abs_scaled_positions.get(&pid).copied())
-                .unwrap_or((0.0, 0.0, 0.0));
-
-            let is_moon = b.body_type == crate::model::BodyType::Moon;
-            let scale_factor = if is_moon { 3.5 } else { 15.0 };
-            let r0 = if is_moon { 1e7 } else { 1e9 };
-
-            let mut points = Vec::new();
-            let steps = 32;
-
-            for step in 0..=steps {
-                let step_angle = (step as f64) * 2.0 * std::f64::consts::PI / (steps as f64);
-                
-                let rel_pos = if let (Some(a), Some(e), Some(incl), Some(peri)) = (
-                    b.semi_major_axis,
-                    b.eccentricity,
-                    b.inclination,
-                    b.periapsis,
-                ) {
-                    let node = b.ascending_node.unwrap_or(0.0);
-
-                    let x_plane = a * (step_angle.cos() - e);
-                    let y_plane = a * (1.0 - e * e).sqrt() * step_angle.sin();
-
-                    let i_rad = incl * std::f64::consts::PI / 180.0;
-                    let w_rad = peri * std::f64::consts::PI / 180.0;
-                    let node_rad = node * std::f64::consts::PI / 180.0;
-
-                    let cos_w = w_rad.cos();
-                    let sin_w = w_rad.sin();
-                    let cos_node = node_rad.cos();
-                    let sin_node = node_rad.sin();
-                    let cos_i = i_rad.cos();
-                    let sin_i = i_rad.sin();
-
-                    let x_3d = x_plane * (cos_w * cos_node - sin_w * sin_node * cos_i) - y_plane * (sin_w * cos_node + cos_w * sin_node * cos_i);
-                    let y_3d = x_plane * (cos_w * sin_node + sin_w * cos_node * cos_i) - y_plane * (sin_w * sin_node - cos_w * cos_node * cos_i);
-                    let z_3d = x_plane * (sin_w * sin_i) + y_plane * (cos_w * sin_i);
-
-                    (x_3d, y_3d, z_3d)
-                } else {
-                    let r = b.distance_ls.map(|d| d * 2.99792e8).unwrap_or((body_id as f64) * 5e9);
-                    let x_3d = r * step_angle.cos();
-                    let y_3d = r * step_angle.sin();
-                    let z_3d = 0.0;
-                    (x_3d, y_3d, z_3d)
-                };
-
-                let r_mag = (rel_pos.0.powi(2) + rel_pos.1.powi(2) + rel_pos.2.powi(2)).sqrt();
-                let r_scaled = scale_factor * (1.0 + r_mag / r0).ln();
-                let scaled_rel = if r_mag > 1.0 {
-                    (
-                        (r_scaled / r_mag) * rel_pos.0,
-                        (r_scaled / r_mag) * rel_pos.1,
-                        (r_scaled / r_mag) * rel_pos.2,
-                    )
-                } else {
-                    (0.0, 0.0, 0.0)
-                };
-
-                let abs_pt = (
-                    parent_pos.0 + scaled_rel.0,
-                    parent_pos.1 + scaled_rel.1,
-                    parent_pos.2 + scaled_rel.2,
-                );
-
-                let (xs, ys) = project_3d_to_2d(abs_pt.0, abs_pt.1, abs_pt.2);
-                points.push((xs, ys));
-            }
-            orbits.push((body_id, points));
-        }
-    }
-
-    // Determine dynamic boundary sizing
-    let mut max_x: f64 = 45.0;
-    let mut max_y: f64 = 35.0;
-    for &pos in abs_scaled_positions.values() {
-        let (xs, ys) = project_3d_to_2d(pos.0, pos.1, pos.2);
-        max_x = max_x.max(xs.abs() + 8.0);
-        max_y = max_y.max(ys.abs() + 4.0);
-    }
-    max_x = max_x.min(100.0);
-    max_y = max_y.min(75.0);
-
-    let speed_text = format!("Speed: {:.3}x", app.sim_speed);
-
-    // Pre-calculate owned drawable body components to capture by value into static closure
-    struct DrawableBody {
-        xs: f64,
-        ys: f64,
-        symbol: &'static str,
-        short_name: String,
-        body_color: Color,
-        label_style: Style,
-    }
-
-    let mut drawables = Vec::new();
-    for &(body_id, _) in &app.body_display_order {
-        if body_id == primary_star_id {
-            continue;
-        }
-        if let Some(b) = app.bodies.get(&body_id) {
-            if let Some(&pos) = abs_scaled_positions.get(&body_id) {
-                let (xs, ys) = project_3d_to_2d(pos.0, pos.1, pos.2);
-                let is_selected = body_id == selected_body_id;
-                
-                let symbol = if b.body_type == crate::model::BodyType::Moon {
-                    "•"
-                } else {
-                    "●"
-                };
-
-                let body_color = if is_selected {
-                    Color::Yellow
-                } else {
-                    body_type_color(b.body_type)
-                };
-
-                let label_color = if is_selected {
-                    Color::White
-                } else {
-                    Color::DarkGray
-                };
-
-                let label_style = if is_selected {
-                    Style::default().fg(label_color).add_modifier(Modifier::BOLD)
-                } else {
-                    Style::default().fg(label_color)
-                };
-
-                drawables.push(DrawableBody {
-                    xs,
-                    ys,
-                    symbol,
-                    short_name: b.short_name.clone(),
-                    body_color,
-                    label_style,
-                });
-            }
-        }
-    }
-
-    let active_tab = app.active_tab;
-
-    let canvas = Canvas::default()
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(tab_title("Orrery Map", Tab::Bodies, active_tab))
-                .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
-        )
-        .x_bounds([-max_x, max_x])
-        .y_bounds([-max_y, max_y])
-        .marker(ratatui::symbols::Marker::Braille)
-        .paint(move |ctx| {
-            // 1. Draw orbits
-            for &(body_id, ref pts) in &orbits {
-                let is_selected = body_id == selected_body_id;
-                let orbit_color = if is_selected {
-                    Color::Yellow
-                } else {
-                    Color::Indexed(237)
-                };
-
-                for i in 0..pts.len() - 1 {
-                    ctx.draw(&Line {
-                        x1: pts[i].0,
-                        y1: pts[i].1,
-                        x2: pts[i+1].0,
-                        y2: pts[i+1].1,
-                        color: orbit_color,
-                    });
-                }
-            }
-
-            // 2. Draw Center Primary Star
-            let (star_x, star_y) = project_3d_to_2d(0.0, 0.0, 0.0);
-            ctx.print(
-                star_x - 0.5,
-                star_y - 0.25,
-                Span::styled("★", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-            );
-
-            // 3. Draw Bodies (Planets and Moons) and Labels
-            for b in &drawables {
-                ctx.print(
-                    b.xs - 0.4,
-                    b.ys - 0.25,
-                    Span::styled(b.symbol, Style::default().fg(b.body_color).add_modifier(Modifier::BOLD)),
-                );
-
-                ctx.print(
-                    b.xs + 0.8,
-                    b.ys - 0.25,
-                    Span::styled(b.short_name.clone(), b.label_style),
-                );
-            }
-
-            // 4. Render simulation speed multiplier overlay inside canvas
-            ctx.print(
-                max_x - (speed_text.len() as f64) * 0.9 - 1.0,
-                max_y - 2.0,
-                Span::styled(speed_text.clone(), Style::default().fg(ELITE_DIM)),
-            );
-        });
-
-    frame.render_widget(canvas, area);
-}
-
-// ── Bodies tab ───────────────────────────────────────────────────
-
-/// Bodies tab — hierarchical, scrollable body table with color-coded types.
-fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
-    if app.body_display_order.is_empty() {
-        let content = Paragraph::new(" No bodies discovered yet")
-            .style(Style::default().fg(ELITE_DIM).bg(BG_DARK))
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title(tab_title("Bodies", Tab::Bodies, app.active_tab))
-                    .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
-            );
-        frame.render_widget(content, area);
-        return;
-    }
-
-    // Split-Pane check
-    let show_inspect = area.width >= 110 || app.show_inspector;
-    let main_chunks = if show_inspect {
-        Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Percentage(60),
-                Constraint::Percentage(40),
-            ])
-            .split(area)
-    } else {
-        Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(100)])
-            .split(area)
-    };
-
-    // Split the left content pane vertically to reserve a 1-line subtab selection bar at the bottom
-    let left_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Min(0),      // Content (hierarchical table OR 3D Orrery canvas)
-            Constraint::Length(1),   // Centered subtab selector
-        ])
-        .split(main_chunks[0]);
-
-    let content_area = left_layout[0];
-    let selector_area = left_layout[1];
-
-    // Center-aligned subtab bar at the bottom
-    let (tab1_prefix, tab2_prefix) = match app.bodies_subtab {
-        crate::app::BodiesSubTab::Table => ("● ", "○ "),
-        crate::app::BodiesSubTab::Orrery => ("○ ", "● "),
-    };
-
-    let selector_spans = vec![
-        Span::styled(format!("{}{}", tab1_prefix, "System Map"), Style::default().fg(if app.bodies_subtab == crate::app::BodiesSubTab::Table { ELITE_ORANGE } else { ELITE_DIM })),
-        Span::styled("   │   ", Style::default().fg(ELITE_DIM)),
-        Span::styled(format!("{}{}", tab2_prefix, "Orrery Map"), Style::default().fg(if app.bodies_subtab == crate::app::BodiesSubTab::Orrery { ELITE_ORANGE } else { ELITE_DIM })),
-    ];
-    let selector_para = Paragraph::new(Line::from(selector_spans))
-        .alignment(ratatui::layout::Alignment::Center)
-        .style(Style::default().bg(BG_DARK));
-    frame.render_widget(selector_para, selector_area);
-
-    if app.bodies_subtab == crate::app::BodiesSubTab::Orrery {
-        draw_orrery(frame, app, content_area);
-        
-        // Render inspector right pane if split-screen is active
-        if show_inspect {
-            draw_inspector(frame, app, main_chunks[1]);
-        }
-        return;
-    }
-
-    let table_area = content_area;
-
-    // Build table rows from display order
-    let rows: Vec<Row> = app
-        .body_display_order
-        .iter()
-        .enumerate()
-        .map(|(i, &(body_id, depth))| {
-            let body = app.bodies.get(&body_id);
-            let indent = "  ".repeat(depth as usize);
-
-            match body {
-                Some(b) => {
-                    let type_color = body_type_color(b.body_type);
-                    let is_selected = i == app.selected_body_index;
-
-                    // Name with hierarchy indentation
-                    let name = format!("{}{}", indent, b.short_name);
-
-                    // Body type label
-                    let body_type_str = format_body_type(b.body_type);
-
-                    // Atmosphere (shortened)
-                    let atmo = b
-                        .atmosphere
-                        .as_deref()
-                        .unwrap_or("—")
-                        .to_string();
-
-                    // Gravity
-                    let gravity_str = b.gravity.map(|g| format!("{:.2} G", g)).unwrap_or_else(|| "—".into());
-
-                    // Temp
-                    let temp_str = b.temperature.map(|t| format!("{:.0} K", t)).unwrap_or_else(|| "—".into());
-
-                    // EDSM discoverer
-                    let discoverer_str = if b.was_discovered { "CMDR" } else { "—" };
-
-                    // Distance from arrival
-                    let dist = b
-                        .distance_ls
-                        .map(|d| {
-                            if d >= 10_000.0 {
-                                format!("{:.0}", d)
-                            } else if d >= 100.0 {
-                                format!("{:.1}", d)
-                            } else {
-                                format!("{:.2}", d)
-                            }
-                        })
-                        .unwrap_or_else(|| "—".into());
-
-                    // Scan state icon
-                    let scan = b.scan_state.icon().to_string();
-
-                    // Value display — show mapped_value for DSS'd bodies
-                    let value = format_body_value(b);
-
-                    // Bio/Geo signal counts
-                    let bio = if b.bio_signals > 0 {
-                        b.bio_signals.to_string()
-                    } else {
-                        "—".into()
-                    };
-                    let geo = if b.geo_signals > 0 {
-                        b.geo_signals.to_string()
-                    } else {
-                        "—".into()
-                    };
-
-                    // First discovery/mapping indicators
-                    let first = format_first_indicators(b);
-
-                    let row_style = if is_selected {
-                        Style::default().fg(type_color).bg(HIGHLIGHT_BG)
-                    } else {
-                        Style::default().fg(type_color)
-                    };
-
-                    let mut cells = vec![name, body_type_str];
-
-                    if app.column_settings.show_atmosphere {
-                        cells.push(atmo);
-                    }
-                    if app.column_settings.show_gravity {
-                        cells.push(gravity_str);
-                    }
-                    if app.column_settings.show_temperature {
-                        cells.push(temp_str);
-                    }
-                    if app.column_settings.show_discoverer {
-                        cells.push(discoverer_str.to_string());
-                    }
-
-                    cells.extend(vec![dist, scan, value, bio, geo, first]);
-
-                    Row::new(cells).style(row_style)
-                }
-                None => {
-                    let style = if i == app.selected_body_index {
-                        Style::default().fg(ELITE_DIM).bg(HIGHLIGHT_BG)
-                    } else {
-                        Style::default().fg(ELITE_DIM)
-                    };
-
-                    let mut cells = vec![format!("{}?", indent), "?".into()];
-
-                    if app.column_settings.show_atmosphere {
-                        cells.push("—".into());
-                    }
-                    if app.column_settings.show_gravity {
-                        cells.push("—".into());
-                    }
-                    if app.column_settings.show_temperature {
-                        cells.push("—".into());
-                    }
-                    if app.column_settings.show_discoverer {
-                        cells.push("—".into());
-                    }
-
-                    cells.extend(vec![
-                        "—".into(),
-                        "—".into(),
-                        "○".into(),
-                        "—".into(),
-                        "—".into(),
-                        "—".into(),
-                        "".into(),
-                    ]);
-
-                    Row::new(cells).style(style)
-                }
-            }
-        })
-        .collect();
-
-    let mut header_cells = vec!["Name", "Type"];
-    let mut widths = vec![Constraint::Min(16), Constraint::Length(8)];
-
-    if app.column_settings.show_atmosphere {
-        header_cells.push("Atmosphere");
-        widths.push(Constraint::Length(14));
-    }
-    if app.column_settings.show_gravity {
-        header_cells.push("Gravity");
-        widths.push(Constraint::Length(8));
-    }
-    if app.column_settings.show_temperature {
-        header_cells.push("Temp(K)");
-        widths.push(Constraint::Length(8));
-    }
-    if app.column_settings.show_discoverer {
-        header_cells.push("Discoverer");
-        widths.push(Constraint::Length(14));
-    }
-
-    header_cells.extend(vec!["Dist(Ls)", "Scan", "Value(cr)", "Bio", "Geo", ""]);
-    widths.extend(vec![
-        Constraint::Length(9),
-        Constraint::Length(4),
-        Constraint::Length(11),
-        Constraint::Length(4),
-        Constraint::Length(4),
-        Constraint::Length(5),
-    ]);
-
-    let header = Row::new(header_cells)
-        .style(
-            Style::default()
-                .fg(ELITE_ORANGE)
-                .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
-        )
-        .bottom_margin(0);
-
-    let table = Table::new(rows, widths)
-        .header(header)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(tab_title("Bodies", Tab::Bodies, app.active_tab))
-                .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
-        )
-        .row_highlight_style(Style::default().bg(HIGHLIGHT_BG))
-        .style(Style::default().bg(BG_DARK));
-
-    // Use StatefulWidget for scrollable selection
-    let mut table_state = TableState::default().with_selected(Some(app.selected_body_index));
-    frame.render_stateful_widget(table, table_area, &mut table_state);
-
-    // Scrollbar for large systems
-    if app.body_display_order.len() > (table_area.height as usize).saturating_sub(4) {
-        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-            .begin_symbol(None)
-            .end_symbol(None)
-            .track_symbol(Some("│"))
-            .thumb_symbol("█");
-
-        let mut scrollbar_state = ScrollbarState::new(app.body_display_order.len())
-            .position(app.selected_body_index);
-
-        frame.render_stateful_widget(
-            scrollbar,
-            table_area.inner(ratatui::layout::Margin {
-                vertical: 1,
-                horizontal: 0,
-            }),
-            &mut scrollbar_state,
-        );
-    }
-
-    // Render inspector right pane
-    if show_inspect {
-        draw_inspector(frame, app, main_chunks[1]);
-    }
-}
-
-// ── Inspector panel ──────────────────────────────────────────────
-
-fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
-    if app.body_display_order.is_empty() {
-        return;
-    }
-    let (body_id, _) = app.body_display_order[app.selected_body_index];
-    let body = match app.bodies.get(&body_id) {
-        Some(b) => b,
-        None => return,
-    };
-
-    let binding = format_body_type(body.body_type);
-    let mut lines = vec![
-        Line::from(vec![
-            Span::styled("Class: ", Style::default().fg(ELITE_DIM)),
-            Span::styled(
-                body.planet_class.as_deref().unwrap_or(binding.as_str()),
-                Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD)
-            ),
-        ]),
-    ];
-
-    if body.body_type == BodyType::Planet || body.body_type == BodyType::Moon {
-        lines.push(Line::from(vec![
-            Span::styled("Landable: ", Style::default().fg(ELITE_DIM)),
-            Span::styled(if body.landable { "YES 🚀" } else { "NO" }, Style::default().fg(if body.landable { COLOR_STAR } else { ELITE_DIM })),
-        ]));
-        
-        let gravity_text = body.gravity.map(|g| format!("{:.2} G", g)).unwrap_or_else(|| "—".into());
-        lines.push(Line::from(vec![
-            Span::styled("Gravity:  ", Style::default().fg(ELITE_DIM)),
-            Span::styled(gravity_text, Style::default().fg(ELITE_ORANGE)),
-        ]));
-
-        let temp_text = body.temperature.map(|t| format!("{:.0} K ({:.0}°C)", t, t - 273.15)).unwrap_or_else(|| "—".into());
-        lines.push(Line::from(vec![
-            Span::styled("Temp:     ", Style::default().fg(ELITE_DIM)),
-            Span::styled(temp_text, Style::default().fg(ELITE_ORANGE)),
-        ]));
-
-        let atmo_text = body.atmosphere.as_deref().unwrap_or("None");
-        lines.push(Line::from(vec![
-            Span::styled("Atmo:     ", Style::default().fg(ELITE_DIM)),
-            Span::styled(atmo_text, Style::default().fg(ELITE_ORANGE)),
-        ]));
-    }
-
-    if let Some(cache) = app.edsm_cache.get(&app.system.name) {
-        lines.push(Line::from(""));
-        lines.push(Line::from(Span::styled("── EDSM TELEMETRY ──", Style::default().fg(ELITE_DIM))));
-        if let Some(ref cmdr) = cache.discoverer {
-            lines.push(Line::from(vec![
-                Span::styled("CMDR:     ", Style::default().fg(ELITE_DIM)),
-                Span::styled(cmdr, Style::default().fg(COLOR_STAR)),
-            ]));
-        }
-        lines.push(Line::from(vec![
-            Span::styled("Value:    ", Style::default().fg(ELITE_DIM)),
-            Span::styled(format!("{} cr", format_credits(cache.estimated_value_mapped)), Style::default().fg(COLOR_VALUE_HIGH)),
-        ]));
-    }
-
-    lines.push(Line::from(""));
-    lines.push(Line::from(Span::styled("── EXOBIOLOGY PREDICTIONS ──", Style::default().fg(ELITE_DIM))));
-    if body.bio_signals > 0 && body.landable {
-        let primary_star_id = app.system.primary_star_id.unwrap_or(0);
-        let primary_star = app.bodies.get(&primary_star_id).and_then(|b| b.star_class_enum.as_ref());
-        let predictions = predictor::predict_species(body, primary_star);
-
-        if predictions.is_empty() {
-            lines.push(Line::from(" No matching species boundaries"));
-        } else {
-            lines.push(Line::from(format!(" Signals: {} detected", body.bio_signals)));
-            lines.push(Line::from(""));
-            let scan_key = format!("{}_{}", app.system.system_address, body.body_id);
-            let organic_scans = app.trip.organic_scans.get(&scan_key);
-
-            struct GroupedPrediction {
-                base_name: String,
-                genus: String,
-                reward: u64,
-                variants: Vec<String>,
-                active_variant: Option<String>,
-                active_progress: u8,
-                active_scanned: bool,
-            }
-
-            let mut grouped: Vec<GroupedPrediction> = Vec::new();
-
-            for variant in predictions {
-                let parts: Vec<&str> = variant.name.split(" - ").collect();
-                let base_name = parts[0].to_string();
-                let color = parts.get(1).map(|s| s.to_string()).unwrap_or_default();
-
-                let progress_key_full = format!("{}_{}_{}", app.system.system_address, body.body_id, variant.name);
-                let progress_val_full = app.trip.organic_progress.get(&progress_key_full).cloned().unwrap_or(0);
-
-                let progress_key_base = format!("{}_{}_{}", app.system.system_address, body.body_id, base_name);
-                let progress_val_base = app.trip.organic_progress.get(&progress_key_base).cloned().unwrap_or(0);
-
-                let progress_val = std::cmp::max(progress_val_full, progress_val_base);
-
-                let has_scanned = organic_scans.map(|s| {
-                    s.contains(&variant.name.to_string()) || s.contains(&base_name)
-                }).unwrap_or(false);
-
-                if let Some(g) = grouped.iter_mut().find(|g| g.base_name == base_name) {
-                    if !color.is_empty() && !g.variants.contains(&color) {
-                        g.variants.push(color);
-                    }
-                    if progress_val > g.active_progress {
-                        g.active_progress = progress_val;
-                        g.active_variant = Some(variant.name.to_string());
-                    }
-                    if has_scanned {
-                        g.active_scanned = true;
-                        g.active_variant = Some(variant.name.to_string());
-                    }
-                } else {
-                    grouped.push(GroupedPrediction {
-                        base_name: base_name.clone(),
-                        genus: variant.genus.to_string(),
-                        reward: variant.reward,
-                        variants: if color.is_empty() { vec![] } else { vec![color] },
-                        active_variant: if progress_val > 0 || has_scanned { Some(variant.name.to_string()) } else { None },
-                        active_progress: progress_val,
-                        active_scanned: has_scanned,
-                    });
-                }
-            }
-
-            // Exobiology rule: A planet can never have more than one species of the same Genus.
-            // If the player has active progress or has scanned any species of a genus, filter out all other species of that genus.
-            let active_genuses: Vec<String> = grouped.iter()
-                .filter(|g| g.active_progress > 0 || g.active_scanned)
-                .map(|g| g.genus.clone())
-                .collect();
-
-            if !active_genuses.is_empty() {
-                grouped.retain(|g| {
-                    if active_genuses.contains(&g.genus) {
-                        g.active_progress > 0 || g.active_scanned
-                    } else {
-                        true
-                    }
-                });
-            }
-
-            // Sort grouped predictions alphabetically by base name
-            grouped.sort_by(|a, b| a.base_name.cmp(&b.base_name));
-
-            for g in grouped {
-                if g.active_scanned || g.active_progress == 3 {
-                    lines.push(Line::from(vec![
-                        Span::styled(format!(" R ▸ {} ", g.active_variant.as_deref().unwrap_or(&g.base_name)), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
-                        Span::styled("[Completed]", Style::default().fg(COLOR_BIO)),
-                    ]));
-                } else if g.active_progress > 0 {
-                    let sep_str = min_separation_for_genus(&g.genus)
-                        .map(|d| format!(" | {}m", d))
-                        .unwrap_or_default();
-                    lines.push(Line::from(vec![
-                        Span::styled(format!(" R ▸ {} ", g.active_variant.as_deref().unwrap_or(&g.base_name)), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
-                        Span::styled(format!("[Scanned {}/3{}]", g.active_progress, sep_str), Style::default().fg(COLOR_FIRST).add_modifier(Modifier::BOLD)),
-                    ]));
-
-                    // Render tracked sample locations under the active species
-                    let location_key = format!("{}_{}_{}", app.system.system_address, body.body_id, g.base_name);
-                    if let Some(locs) = app.trip.organic_locations.get(&location_key) {
-                        for (i, loc) in locs.iter().enumerate() {
-                            let is_last = i == locs.len() - 1;
-                            let prefix = if is_last { "   └─ " } else { "   ├─ " };
-
-                            let dist_str = if let (Some(cur_lat), Some(cur_lon), Some(rad)) = (app.last_latitude, app.last_longitude, body.radius) {
-                                let dist_m = calculate_haversine_distance(loc.latitude, loc.longitude, cur_lat, cur_lon, rad);
-                                if dist_m >= 1000.0 {
-                                    format!(" ({:.2} km)", dist_m / 1000.0)
-                                } else {
-                                    format!(" ({:.0} m)", dist_m)
-                                }
-                            } else {
-                                "".to_string()
-                            };
-
-                            lines.push(Line::from(vec![
-                                Span::styled(prefix, Style::default().fg(ELITE_DIM)),
-                                Span::styled(format!("Location [{}/3]: ", i + 1), Style::default().fg(ELITE_DIM)),
-                                Span::styled(format!("{:.4}°, {:.4}°", loc.latitude, loc.longitude), Style::default().fg(COLOR_VALUE_HIGH)),
-                                Span::styled(dist_str, Style::default().fg(COLOR_FIRST).add_modifier(Modifier::BOLD)),
-                            ]));
-                        }
-                    }
-                } else {
-                    let variants_str = if g.variants.is_empty() {
-                        "".to_string()
-                    } else {
-                        format!(" ({})", g.variants.join("/"))
-                    };
-                    let sep_span = min_separation_for_genus(&g.genus)
-                        .map(|d| Span::styled(format!(" [{}m]", d), Style::default().fg(ELITE_DIM)))
-                        .unwrap_or_else(|| Span::raw(""));
-                    lines.push(Line::from(vec![
-                        Span::styled(format!(" ▸ {}{} ", g.base_name, variants_str), Style::default().fg(ELITE_ORANGE)),
-                        Span::styled(format!(": {} cr (First)", format_credits(g.reward * 5)), Style::default().fg(COLOR_FIRST)),
-                        sep_span,
-                    ]));
-                }
-            }
-        }
-    } else if body.bio_signals > 0 {
-        lines.push(Line::from(" Not landable (exobiology locked)"));
-    } else {
-        lines.push(Line::from(" No bio signals reported"));
-    }
-
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title(format!(" Telemetry: {} ", body.short_name))
-        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK));
-
-    let paragraph = Paragraph::new(lines)
-        .block(block)
-        .style(Style::default().bg(BG_DARK));
-
-    frame.render_widget(paragraph, area);
-}
-
-// ── Plotted NavRoute tab ─────────────────────────────────────────
-
-fn draw_route(frame: &mut Frame, app: &App, area: Rect) {
-    let route = match &app.plotted_route {
-        Some(r) if !r.route.is_empty() => r,
-        _ => {
-            let content = Paragraph::new(" No plotted navigation route\n Waypoints will sync in real-time when plotted in-game")
-                .style(Style::default().fg(ELITE_DIM).bg(BG_DARK))
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title(tab_title("Route", Tab::Route, app.active_tab))
-                        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
-                );
-            frame.render_widget(content, area);
-            return;
-        }
-    };
-
-    let rows: Vec<Row> = route.route.iter().enumerate().map(|(i, entry)| {
-        let scoopable = matches!(entry.star_class.chars().next(), Some('O') | Some('B') | Some('A') | Some('F') | Some('G') | Some('K') | Some('M'));
-        let scoop_str = if scoopable { "⛽" } else { "—" };
-
-        let cache = app.edsm_cache.get(&entry.star_system);
-        
-        let value_str = cache.map(|c| format_credits(c.estimated_value_mapped)).unwrap_or_else(|| "—".into());
-        let discoverer_str = cache.and_then(|c| c.discoverer.as_deref()).unwrap_or("—");
-
-        // Badges
-        let mut badges = String::new();
-        if let Some(c) = cache {
-            if c.valuable_bodies > 0 {
-                badges.push_str(&format!("💰x{} ", c.valuable_bodies));
-            }
-            if c.terraformable_bodies > 0 {
-                badges.push_str(&format!("🌍x{} ", c.terraformable_bodies));
-            }
-            if c.landable_bodies > 0 {
-                badges.push_str(&format!("🚀x{} ", c.landable_bodies));
-            }
-        }
-
-        let is_current = entry.star_system == app.system.name;
-        let style = if is_current {
-            Style::default().fg(COLOR_STAR).bg(HIGHLIGHT_BG)
-        } else {
-            Style::default().fg(ELITE_ORANGE)
-        };
-
-        Row::new(vec![
-            format!(" #{}", i + 1),
-            entry.star_system.clone(),
-            format!("{} {}", entry.star_class, scoop_str),
-            value_str,
-            discoverer_str.to_string(),
-            badges,
-        ])
-        .style(style)
-    }).collect();
-
-    let header = Row::new(vec![
-        " Jump", "Star System", "Star Class", "EDSM Value(cr)", "EDSM Discoverer", "Badges",
-    ])
-    .style(
-        Style::default()
-            .fg(ELITE_ORANGE)
-            .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
-    );
-
-    let widths = [
-        Constraint::Length(7),
-        Constraint::Min(18),
-        Constraint::Length(12),
-        Constraint::Length(15),
-        Constraint::Length(16),
-        Constraint::Min(20),
-    ];
-
-    let table = Table::new(rows, widths)
-        .header(header)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(tab_title("Route Exploration", Tab::Route, app.active_tab))
-                .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
-        )
-        .style(Style::default().bg(BG_DARK));
-
-    frame.render_widget(table, area);
-}
-
-// ── History / Trip Codex tab ─────────────────────────────────────
-
-fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Min(0),   // Codex view content
-            Constraint::Length(1), // Sub-tabs header at the bottom
-        ])
-        .split(area);
-
-    let content_area = chunks[0];
-    let trip = &app.trip;
-
-    match app.active_codex_tab {
-        CodexTab::Overview => {
-            let stats = vec![
-                ("Systems Visited", trip.systems_visited.to_string(), ELITE_ORANGE),
-                ("Bodies Scanned (FSS)", trip.bodies_scanned_fss.to_string(), ELITE_ORANGE),
-                ("Bodies Mapped (DSS)", trip.bodies_mapped_dss.to_string(), ELITE_ORANGE),
-                ("First Discoveries", trip.first_discoveries.to_string(), COLOR_FIRST),
-                ("First Mappings", trip.first_mappings.to_string(), COLOR_FIRST),
-                ("Bio Signals Detected", trip.bio_detected.to_string(), COLOR_BIO),
-                ("Bio Analysed", trip.bio_analysed.to_string(), COLOR_BIO),
-                (
-                    "Total Value",
-                    format!("{} cr", format_credits(trip.total_value)),
-                    if trip.total_value >= HIGH_VALUE_THRESHOLD {
-                        COLOR_VALUE_HIGH
-                    } else {
-                        ELITE_ORANGE
-                    },
-                ),
-            ];
-
-            let rows: Vec<Row> = stats
-                .into_iter()
-                .map(|(label, value, color)| {
-                    Row::new(vec![
-                        Span::styled(format!("  {}", label), Style::default().fg(ELITE_DIM)),
-                        Span::styled(value, Style::default().fg(color)),
-                    ])
-                })
-                .collect();
-
-            let widths = [Constraint::Length(25), Constraint::Min(15)];
-            let table_stats = Table::new(rows, widths)
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title(tab_title("Trip Statistics", Tab::History, app.active_tab))
-                        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
-                )
-                .style(Style::default().bg(BG_DARK));
-
-            let mut entries: Vec<(&String, &u32)> = trip.biological_codex.iter().collect();
-            entries.sort_by(|a, b| b.1.cmp(a.1).then_with(|| a.0.cmp(b.0)));
-            let rows_bio: Vec<Row> = entries.iter().map(|(species, count)| {
-                Row::new(vec![
-                    (*species).clone(),
-                    count.to_string(),
-                ]).style(Style::default().fg(COLOR_BIO))
-            }).collect();
-
-            let header_bio = Row::new(vec!["Species Name", "Analyses Completed"])
-                .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
-
-            let total_rows_bio = rows_bio.len();
-            let widths_bio = [Constraint::Length(35), Constraint::Min(10)];
-            let table_bio = Table::new(rows_bio, widths_bio)
-                .header(header_bio)
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title(tab_title("Biological Codex", Tab::History, app.active_tab))
-                        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
-                )
-                .row_highlight_style(Style::default().bg(HIGHLIGHT_BG))
-                .style(Style::default().bg(BG_DARK));
-
-            let split_chunks = Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-                .split(content_area);
-
-            frame.render_widget(table_stats, split_chunks[0]);
-
-            let mut state_bio = TableState::default().with_selected(Some(app.selected_codex_index));
-            frame.render_stateful_widget(table_bio, split_chunks[1], &mut state_bio);
-
-            if total_rows_bio > (split_chunks[1].height as usize).saturating_sub(4) {
-                let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                    .begin_symbol(None)
-                    .end_symbol(None)
-                    .track_symbol(Some("│"))
-                    .thumb_symbol("█");
-                let mut scrollbar_state = ScrollbarState::new(total_rows_bio).position(app.selected_codex_index);
-                frame.render_stateful_widget(
-                    scrollbar,
-                    split_chunks[1].inner(ratatui::layout::Margin { vertical: 1, horizontal: 0 }),
-                    &mut scrollbar_state,
-                );
-            }
-        }
-        CodexTab::Stellar => {
-            struct MainClassGroup {
-                main_class: String,
-                total_visits: u32,
-                subtypes: Vec<(String, u32)>,
-            }
-
-            let mut groups: std::collections::HashMap<String, MainClassGroup> = std::collections::HashMap::new();
-
-            for (subtype, count) in &trip.stellar_codex {
-                let main_class = get_main_class(subtype);
-                let group = groups.entry(main_class.clone()).or_insert_with(|| MainClassGroup {
-                    main_class: main_class.clone(),
-                    total_visits: 0,
-                    subtypes: Vec::new(),
-                });
-                group.total_visits += count;
-                group.subtypes.push((subtype.clone(), *count));
-            }
-
-            let mut group_list: Vec<MainClassGroup> = groups.into_values().collect();
-            group_list.sort_by(|a, b| b.total_visits.cmp(&a.total_visits).then_with(|| a.main_class.cmp(&b.main_class)));
-
-            for group in &mut group_list {
-                group.subtypes.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
-            }
-
-            let mut stellar_rows = Vec::new();
-
-            for group in group_list {
-                stellar_rows.push(
-                    Row::new(vec![
-                        group.main_class.clone(),
-                        group.total_visits.to_string(),
-                    ])
-                    .style(Style::default().fg(COLOR_STAR).add_modifier(Modifier::BOLD))
-                );
-
-                let has_redundant_single_child = group.subtypes.len() == 1 && group.subtypes[0].0 == group.main_class;
-                if !has_redundant_single_child {
-                    let len = group.subtypes.len();
-                    for (i, (subtype, count)) in group.subtypes.iter().enumerate() {
-                        let is_last = i == len - 1;
-                        let prefix = if is_last { "  └─ " } else { "  ├─ " };
-                        stellar_rows.push(
-                            Row::new(vec![
-                                format!("{}{}", prefix, subtype),
-                                count.to_string(),
-                            ])
-                            .style(Style::default().fg(ELITE_DIM))
-                        );
-                    }
-                }
-            }
-
-            // Group our entries and aggregate sub-attributes for Planetary Codex
-            struct PlanetCodexGrouped {
-                planet_class: String,
-                total_scans: u32,
-                landable_count: u32,
-                terraformable_count: u32,
-                ringed_count: u32,
-                life_count: u32,
-            }
-
-            let mut grouped: std::collections::HashMap<String, PlanetCodexGrouped> = std::collections::HashMap::new();
-            for (key, count) in &trip.planetary_codex {
-                let parts: Vec<&str> = key.split('|').collect();
-                let planet_class = parts[0].to_string();
-                let is_landable = parts.contains(&"L");
-                let is_terraformable = parts.contains(&"T");
-                let has_rings = parts.contains(&"R");
-                let has_life = parts.contains(&"B");
-
-                let entry = grouped.entry(planet_class.clone()).or_insert_with(|| PlanetCodexGrouped {
-                    planet_class: planet_class.clone(),
-                    total_scans: 0,
-                    landable_count: 0,
-                    terraformable_count: 0,
-                    ringed_count: 0,
-                    life_count: 0,
-                });
-
-                entry.total_scans += count;
-                if is_landable {
-                    entry.landable_count += count;
-                }
-                if is_terraformable {
-                    entry.terraformable_count += count;
-                }
-                if has_rings {
-                    entry.ringed_count += count;
-                }
-                if has_life {
-                    entry.life_count += count;
-                }
-            }
-
-            let mut rare_list = Vec::new();
-            let mut terrestrial_list = Vec::new();
-            let mut gas_list = Vec::new();
-
-            for entry in grouped.into_values() {
-                let cat = crate::app::get_planet_category(&entry.planet_class);
-                if cat == "Rare Worlds" {
-                    rare_list.push(entry);
-                } else if cat == "Gas Giants" {
-                    gas_list.push(entry);
-                } else {
-                    terrestrial_list.push(entry);
-                }
-            }
-
-            rare_list.sort_by(|a, b| b.total_scans.cmp(&a.total_scans).then_with(|| a.planet_class.cmp(&b.planet_class)));
-            terrestrial_list.sort_by(|a, b| b.total_scans.cmp(&a.total_scans).then_with(|| a.planet_class.cmp(&b.planet_class)));
-            gas_list.sort_by(|a, b| b.total_scans.cmp(&a.total_scans).then_with(|| a.planet_class.cmp(&b.planet_class)));
-
-            let mut planetary_rows = Vec::new();
-
-            let categories = [
-                ("Rare Worlds", rare_list, COLOR_VALUE_HIGH),
-                ("Terrestrial Worlds", terrestrial_list, COLOR_PLANET),
-                ("Gas Giants", gas_list, COLOR_STAR),
-            ];
-
-            for (cat_name, list, cat_color) in categories {
-                if !list.is_empty() {
-                    let cat_total: u32 = list.iter().map(|e| e.total_scans).sum();
-                    planetary_rows.push(
-                        Row::new(vec![
-                            cat_name.to_string(),
-                            cat_total.to_string(),
-                        ])
-                        .style(Style::default().fg(cat_color).add_modifier(Modifier::BOLD))
-                    );
-
-                    let len = list.len();
-                    for (i, entry) in list.iter().enumerate() {
-                        let is_last = i == len - 1;
-                        let prefix = if is_last { "  └─ " } else { "  ├─ " };
-
-                        let mut badges = Vec::new();
-                        if entry.landable_count > 0 {
-                            badges.push(format!("🚀x{}", entry.landable_count));
-                        }
-                        if entry.terraformable_count > 0 {
-                            badges.push(format!("🌍x{}", entry.terraformable_count));
-                        }
-                        if entry.ringed_count > 0 {
-                            badges.push(format!("🪐x{}", entry.ringed_count));
-                        }
-                        if entry.life_count > 0 {
-                            badges.push(format!("🌿x{}", entry.life_count));
-                        }
-
-                        let badges_str = if badges.is_empty() {
-                            "".to_string()
-                        } else {
-                            format!("  ({})", badges.join(" │ "))
-                        };
-
-                        planetary_rows.push(
-                            Row::new(vec![
-                                format!("{}{}{}", prefix, entry.planet_class, badges_str),
-                                entry.total_scans.to_string(),
-                            ])
-                            .style(Style::default().fg(ELITE_DIM))
-                        );
-                    }
-                }
-            }
-
-            let total_stellar = stellar_rows.len();
-            let total_planetary = planetary_rows.len();
-
-            let split_chunks = Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints([Constraint::Percentage(45), Constraint::Percentage(55)])
-                .split(content_area);
-
-            // Draw Stellar Codex on Left
-            let header_stellar = Row::new(vec!["Primary Star Class", "Visits"])
-                .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
-
-            let table_stellar = Table::new(stellar_rows, [Constraint::Length(30), Constraint::Min(10)])
-                .header(header_stellar)
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title(tab_title("Stellar Codex", Tab::History, app.active_tab))
-                        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
-                )
-                .row_highlight_style(Style::default().bg(HIGHLIGHT_BG))
-                .style(Style::default().bg(BG_DARK));
-
-            let selected_stellar = if total_stellar > 0 { Some(app.selected_codex_index % total_stellar) } else { None };
-            let mut state_stellar = TableState::default().with_selected(selected_stellar);
-            frame.render_stateful_widget(table_stellar, split_chunks[0], &mut state_stellar);
-
-            if total_stellar > (split_chunks[0].height as usize).saturating_sub(4) {
-                let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                    .begin_symbol(None)
-                    .end_symbol(None)
-                    .track_symbol(Some("│"))
-                    .thumb_symbol("█");
-                let mut scrollbar_state = ScrollbarState::new(total_stellar).position(selected_stellar.unwrap_or(0));
-                frame.render_stateful_widget(
-                    scrollbar,
-                    split_chunks[0].inner(ratatui::layout::Margin { vertical: 1, horizontal: 0 }),
-                    &mut scrollbar_state,
-                );
-            }
-
-            // Draw Planetary Codex on Right
-            let header_planetary = Row::new(vec!["Planet Class Hierarchy", "Scans"])
-                .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
-
-            let table_planetary = Table::new(planetary_rows, [Constraint::Length(42), Constraint::Min(10)])
-                .header(header_planetary)
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title(tab_title("Planetary Codex", Tab::History, app.active_tab))
-                        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
-                )
-                .row_highlight_style(Style::default().bg(HIGHLIGHT_BG))
-                .style(Style::default().bg(BG_DARK));
-
-            let selected_planetary = if total_planetary > 0 { Some(app.selected_codex_index % total_planetary) } else { None };
-            let mut state_planetary = TableState::default().with_selected(selected_planetary);
-            frame.render_stateful_widget(table_planetary, split_chunks[1], &mut state_planetary);
-
-            if total_planetary > (split_chunks[1].height as usize).saturating_sub(4) {
-                let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                    .begin_symbol(None)
-                    .end_symbol(None)
-                    .track_symbol(Some("│"))
-                    .thumb_symbol("█");
-                let mut scrollbar_state = ScrollbarState::new(total_planetary).position(selected_planetary.unwrap_or(0));
-                frame.render_stateful_widget(
-                    scrollbar,
-                    split_chunks[1].inner(ratatui::layout::Margin { vertical: 1, horizontal: 0 }),
-                    &mut scrollbar_state,
-                );
-            }
-        }
-    }
-
-    // Draw Codex conjoined sub-tabs at the bottom
-    let sub_tabs = Line::from(vec![
-        Span::styled(" Overview & Biology ", Style::default().fg(if app.active_codex_tab == CodexTab::Overview { COLOR_STAR } else { ELITE_DIM }).add_modifier(if app.active_codex_tab == CodexTab::Overview { Modifier::UNDERLINED | Modifier::BOLD } else { Modifier::empty() })),
-        Span::styled(" │ ", Style::default().fg(ELITE_DIM)),
-        Span::styled(" Stellar & Planetary ", Style::default().fg(if app.active_codex_tab == CodexTab::Stellar { COLOR_STAR } else { ELITE_DIM }).add_modifier(if app.active_codex_tab == CodexTab::Stellar { Modifier::UNDERLINED | Modifier::BOLD } else { Modifier::empty() })),
-    ]);
-    frame.render_widget(Paragraph::new(sub_tabs).style(Style::default().bg(BG_DARK)).alignment(ratatui::layout::Alignment::Center), chunks[1]);
-}
-
 // ── Column Settings Overlay ──────────────────────────────────────
 
 fn draw_settings_overlay(frame: &mut Frame, app: &App) {
@@ -1496,7 +185,13 @@ fn draw_status_bar(frame: &mut Frame, app: &App, area: Rect) {
         msg.clone()
     } else {
         match app.active_tab {
-            Tab::Bodies => "q: quit │ Tab/1/2/3: switch │ ↑↓: navigate │ s: settings │ i: toggle inspector │ ?: help".to_string(),
+            Tab::Bodies => {
+                if app.bodies_subtab == crate::app::BodiesSubTab::Orrery {
+                    "q: quit │ Tab/1/2/3: switch │ ↑↓: navigate │ -/+/PgUp/PgDown: speed │ ?: help".to_string()
+                } else {
+                    "q: quit │ Tab/1/2/3: switch │ ↑↓: navigate │ s: settings │ i: toggle inspector │ ?: help".to_string()
+                }
+            }
             Tab::History => "q: quit │ Tab/1/2/3: switch │ ←→/a/d: sub-tabs │ Ctrl+R: reset trip │ ?: help".to_string(),
             Tab::Route => "q: quit │ Tab/1/2/3: switch │ ?: help".to_string(),
         }
@@ -1585,7 +280,7 @@ fn draw_help_overlay(frame: &mut Frame) {
 // ── Helpers ──────────────────────────────────────────────────────
 
 /// Format a tab title with active indicator and number key hint.
-fn tab_title(name: &str, tab: Tab, active: Tab) -> String {
+pub fn tab_title(name: &str, tab: Tab, active: Tab) -> String {
     let num = match tab {
         Tab::Bodies => "1",
         Tab::History => "2",
@@ -1599,7 +294,7 @@ fn tab_title(name: &str, tab: Tab, active: Tab) -> String {
 }
 
 /// Color for a body type.
-fn body_type_color(bt: BodyType) -> Color {
+pub fn body_type_color(bt: BodyType) -> Color {
     match bt {
         BodyType::Star => COLOR_STAR,
         BodyType::Planet => COLOR_PLANET,
@@ -1610,7 +305,7 @@ fn body_type_color(bt: BodyType) -> Color {
 }
 
 /// Format a body type for display.
-fn format_body_type(bt: BodyType) -> String {
+pub fn format_body_type(bt: BodyType) -> String {
     match bt {
         BodyType::Star => "Star".into(),
         BodyType::Planet => "Planet".into(),
@@ -1622,7 +317,7 @@ fn format_body_type(bt: BodyType) -> String {
 
 /// Format the value display for a body.
 /// Shows mapped_value for DSS'd bodies, FSS value otherwise.
-fn format_body_value(b: &crate::model::Body) -> String {
+pub fn format_body_value(b: &crate::model::Body) -> String {
     if b.scan_state >= ScanState::DSSMapped && b.mapped_value > 0 {
         format_credits(b.mapped_value)
     } else if b.calculated_value > 0 {
@@ -1633,7 +328,7 @@ fn format_body_value(b: &crate::model::Body) -> String {
 }
 
 /// Format first discovery / first mapping indicators.
-fn format_first_indicators(b: &crate::model::Body) -> String {
+pub fn format_first_indicators(b: &crate::model::Body) -> String {
     let mut indicators = String::new();
     if !b.was_discovered {
         indicators.push('◆'); // First discovery
@@ -1645,7 +340,7 @@ fn format_first_indicators(b: &crate::model::Body) -> String {
 }
 
 /// Get the minimum colonial separation distance (in meters) for an exobiology genus.
-fn min_separation_for_genus(genus: &str) -> Option<u32> {
+pub fn min_separation_for_genus(genus: &str) -> Option<u32> {
     match genus.to_lowercase().as_str() {
         "aleoida" => Some(150),
         "bacterium" => Some(500),
@@ -1667,7 +362,7 @@ fn min_separation_for_genus(genus: &str) -> Option<u32> {
 }
 
 /// Extract base star class from subclass/luminosity string (e.g. "F" from "F9 VAB", "DA" from "DA2").
-fn get_main_class(subtype: &str) -> String {
+pub fn get_main_class(subtype: &str) -> String {
     let mut prefix = String::new();
     for c in subtype.chars() {
         if c.is_ascii_digit() || c == ' ' {
@@ -1683,7 +378,7 @@ fn get_main_class(subtype: &str) -> String {
 }
 
 /// Format credits with thousands separators.
-fn format_credits(value: u64) -> String {
+pub fn format_credits(value: u64) -> String {
     if value == 0 {
         return "0".into();
     }
@@ -1699,7 +394,7 @@ fn format_credits(value: u64) -> String {
 }
 
 /// Calculate the Great-Circle distance in meters between two planetary coordinates using the Haversine formula.
-fn calculate_haversine_distance(lat1: f64, lon1: f64, lat2: f64, lon2: f64, radius: f64) -> f64 {
+pub fn calculate_haversine_distance(lat1: f64, lon1: f64, lat2: f64, lon2: f64, radius: f64) -> f64 {
     let d_lat = (lat2 - lat1).to_radians();
     let d_lon = (lon2 - lon1).to_radians();
     let r_lat1 = lat1.to_radians();
@@ -1715,6 +410,7 @@ fn calculate_haversine_distance(lat1: f64, lon1: f64, lat2: f64, lon2: f64, radi
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::app::CodexTab;
     use crate::model::{Body, BodyType, ScanState, System};
     use ratatui::backend::TestBackend;
     use ratatui::Terminal;

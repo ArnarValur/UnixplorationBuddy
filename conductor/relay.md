@@ -4,6 +4,13 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-29 22:22
+- **Session:** Real-Time Keplerian Orrery TUI View Complete
+- **Tracks touched:** None (free-form candy additions)
+- **Status:** Complete! Implemented a real-time, animated 3D Keplerian Orrery map inside the TUI's **Bodies** tab. Mapped speed controls layout-independently (`PageUp`/`PageDown`, `-`/`+`/`=`) for Icelandic/European keyboards, resolved multi-star scaling coordinate explosions, and enhanced visual contrast for transparent terminal backgrounds (dim copper orbits, light-grey labels). Modularized the monolithic TUI view `src/ui/mod.rs` into submodules (`orrery`, `bodies`, `inspector`, `route`, `history`). Verified clean warning-free compilation and 98/98 passing unit tests.
+- **Decisions:** ADR-0009 (Real-Time TUI 3D Keplerian Orrery Visualization), ADR-0010 (Orrery Scale Normalization in Multi-Star Systems)
+- **Next:** Manual verification of live exobiology coordinate tracking or initiation of next-gen exploration tracks.
+
 ## 2026-05-29 20:10
 - **Session:** Layout & Exobiology Telemetry Refinements
 - **Tracks touched:** None (free-form refinements)

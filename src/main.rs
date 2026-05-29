@@ -237,10 +237,10 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                                     app.bodies_subtab = app::BodiesSubTab::Orrery;
                                 }
                             }
-                            KeyCode::Char('[') if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Orrery => {
+                            KeyCode::Char('[') | KeyCode::Char('-') | KeyCode::PageDown if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Orrery => {
                                 app.sim_speed = (app.sim_speed / 2.0).max(0.125);
                             }
-                            KeyCode::Char(']') if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Orrery => {
+                            KeyCode::Char(']') | KeyCode::Char('+') | KeyCode::Char('=') | KeyCode::PageUp if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Orrery => {
                                 app.sim_speed = (app.sim_speed * 2.0).min(1024.0);
                             }
                             KeyCode::Char('?') => app.show_help = true,
