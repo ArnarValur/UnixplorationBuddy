@@ -4,6 +4,13 @@ Timestamped entries for context continuity between sessions.
 
 ---
 
+## 2026-05-29 20:10
+- **Session:** Layout & Exobiology Telemetry Refinements
+- **Tracks touched:** None (free-form refinements)
+- **Status:** Complete! Expanded right telemetry column to 40%, sorted predicted exobiology species alphabetically (A-Z), integrated Canonn minimum colonial separation lookup for all 15 Odyssey genera, conjoined History subviews into two dense side-by-side dashboards, and repositioned the subtabs bar to the bottom to eliminate visual glitches. All 97 tests pass green.
+- **Decisions:** None (layout and lookup telemetry are logged under Pulse)
+- **Next:** Manual verification of conjoined layouts, alphabetical lists, and separation distance rendering during active exploration.
+
 ## 2026-05-27 22:05
 - **Session:** Overhauled the Planetary Codex to support category grouping (Rare, Terrestrial, Gas Giants) and status badges (🚀, 🌍, 🪐, 🌿) with backward-compatible key-encoding life tracking.
 - **Tracks touched:** None (free-form / grill spec completion)
