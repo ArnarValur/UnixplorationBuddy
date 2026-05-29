@@ -144,8 +144,8 @@ fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
         Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
-                Constraint::Percentage(70),
-                Constraint::Percentage(30),
+                Constraint::Percentage(60),
+                Constraint::Percentage(40),
             ])
             .split(area)
     } else {
@@ -520,8 +520,8 @@ fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
                 });
             }
 
-            // Sort grouped predictions descending by reward
-            grouped.sort_by(|a, b| b.reward.cmp(&a.reward));
+            // Sort grouped predictions alphabetically by base name
+            grouped.sort_by(|a, b| a.base_name.cmp(&b.base_name));
 
             for g in grouped {
                 if g.active_scanned || g.active_progress == 3 {
@@ -530,9 +530,12 @@ fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
                         Span::styled("[Completed]", Style::default().fg(COLOR_BIO)),
                     ]));
                 } else if g.active_progress > 0 {
+                    let sep_str = min_separation_for_genus(&g.genus)
+                        .map(|d| format!(" | {}m", d))
+                        .unwrap_or_default();
                     lines.push(Line::from(vec![
                         Span::styled(format!(" R ▸ {} ", g.active_variant.as_deref().unwrap_or(&g.base_name)), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
-                        Span::styled(format!("[Scanned {}/3]", g.active_progress), Style::default().fg(COLOR_FIRST).add_modifier(Modifier::BOLD)),
+                        Span::styled(format!("[Scanned {}/3{}]", g.active_progress, sep_str), Style::default().fg(COLOR_FIRST).add_modifier(Modifier::BOLD)),
                     ]));
 
                     // Render tracked sample locations under the active species
@@ -567,9 +570,13 @@ fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
                     } else {
                         format!(" ({})", g.variants.join("/"))
                     };
+                    let sep_span = min_separation_for_genus(&g.genus)
+                        .map(|d| Span::styled(format!(" [{}m]", d), Style::default().fg(ELITE_DIM)))
+                        .unwrap_or_else(|| Span::raw(""));
                     lines.push(Line::from(vec![
                         Span::styled(format!(" ▸ {}{} ", g.base_name, variants_str), Style::default().fg(ELITE_ORANGE)),
                         Span::styled(format!(": {} cr (First)", format_credits(g.reward * 5)), Style::default().fg(COLOR_FIRST)),
+                        sep_span,
                     ]));
                 }
             }
@@ -1245,6 +1252,28 @@ fn format_first_indicators(b: &crate::model::Body) -> String {
     indicators
 }
 
+/// Get the minimum colonial separation distance (in meters) for an exobiology genus.
+fn min_separation_for_genus(genus: &str) -> Option<u32> {
+    match genus.to_lowercase().as_str() {
+        "aleoida" => Some(150),
+        "bacterium" => Some(500),
+        "cactoida" => Some(300),
+        "clypeus" => Some(150),
+        "concha" => Some(150),
+        "electricae" => Some(1000),
+        "fonticulua" => Some(500),
+        "frutexa" => Some(150),
+        "fumerola" => Some(100),
+        "fungoida" => Some(300),
+        "osseus" => Some(800),
+        "recepta" => Some(150),
+        "stratum" => Some(500),
+        "tubus" => Some(800),
+        "tussock" => Some(200),
+        _ => None,
+    }
+}
+
 /// Extract base star class from subclass/luminosity string (e.g. "F" from "F9 VAB", "DA" from "DA2").
 fn get_main_class(subtype: &str) -> String {
     let mut prefix = String::new();
@@ -1446,7 +1475,7 @@ mod tests {
             body.radius = Some(1000000.0); // 1000 km planet
         }
         let output_progress1 = render_to_string(&app, 180, 25);
-        assert!(output_progress1.contains("[Scanned 1/3]"), "Should show progress scanned 1/3");
+        assert!(output_progress1.contains("[Scanned 1/3 | 150m]"), "Should show progress scanned 1/3 | 150m");
         assert!(output_progress1.contains("Location [1/3]:"), "Should show Location [1/3] tree row");
         assert!(output_progress1.contains("-10.2345°, 140.5678°"), "Should show sample coordinates");
         assert!(output_progress1.contains("m)"), "Should show real-time Haversine distance");
@@ -1479,7 +1508,7 @@ mod tests {
 
         app.rebuild_display_order();
 
-        let output = render_to_string(&app, 120, 12);
+        let output = render_to_string(&app, 180, 12);
         assert!(
             output.contains("Star"),
             "Should show Star body type.\nOutput:\n{output}"
