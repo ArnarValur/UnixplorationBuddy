@@ -1,7 +1,7 @@
 # Pulse — Current Project State
 
-**Last Updated:** 2026-05-27 22:05
-**Session Focus:** Overhauled the Planetary Codex to support category grouping (Rare, Terrestrial, Gas Giants) and status badges (🚀, 🌍, 🪐, 🌿) with backward-compatible key-encoding life tracking.
+**Last Updated:** 2026-05-29 19:56
+**Session Focus:** Expanded right TUI pane to 40%, sorted predicted exobiology species alphabetically, and integrated minimum colonial separation distances.
 
 ## 🚀 Active Tracks
 
@@ -9,6 +9,7 @@ _None._
 
 ## ✅ Recently Completed
 
+- **Exobiology Telemetry & Layout Refinements (2026-05-29):** Expanded the TUI right-pane inspector to 40% (shrinking Name column footprint on left), mapped all 15 Odyssey genera to their minimum colonial separation distances, sorted predicted species alphabetically (A-Z) for quick pilot lookup, and formatted active sampling progress to show `[Scanned i/3 | Dm]` and predictions as `[Dm]`. Verified with passing unit tests. All 97 tests pass green.
 - **Hierarchical Planetary Codex & Badges (2026-05-27):** Overhauled `src/model/body.rs`, `src/app.rs`, `src/journal.rs`, and `src/ui/mod.rs` to structure scanned worlds into three distinct category groups. Implemented backward-compatible key encoding (`PlanetClass|L|T|R|B`) to track landables, terraformables, rings, and life-bearing counts trip-wide in `trip.json` with zero database migrations. Added green leaf `🌿` life badges, DNA/coordinates, and dynamic category sum rows. Verified with robust unit tests. All 97 tests pass green.
 - **Dynamic Primary Star Discovery (2026-05-27):** Overhauled `src/model/system.rs` and `src/journal.rs` to extract the arrival star's `body_id` dynamically from journal `FSDJump` and `Location` events. Replaced all hardcoded `body_id == 0` checks in the `Stellar Codex` and `Exobiology Predictor` with dynamic lookups. Fully resolves missing codex counts and exobiology predictor failures in multi-star binary/trinary systems.
 - **Transient Live Notification Footer (2026-05-27):** Implemented live, dynamic status notifications in the TUI footer upon FSD jump, FSS scan, and DSS mapping completions. Configured crossterm input polling to instantly dismiss transient status messages and restore the default keybindings bar upon any key press, resolving stale startup replay footers.
@@ -33,6 +34,7 @@ _None._
 
 ## 🧠 Session Memory
 
+- _2026-05-29_ — Expanded right pane to 40%, sorted exobio predictions alphabetically, and integrated genus separation distances. _(operational)_
 - _2026-05-27_ — Overhauled Planetary Codex to use categories and status badges (🚀, 🌍, 🪐, 🌿) with composite key encoding. _(operational)_
 - _2026-05-27_ — Overhauled primary star index detection to dynamically resolve arrival star's BodyID from jump/location events, fixing Stellar Codex and Biologist. _(operational)_
 - _2026-05-27_ — Set transient status notifications for FSDJump, Scan, and SAAScanComplete. _(operational)_
