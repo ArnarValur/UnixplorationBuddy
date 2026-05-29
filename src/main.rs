@@ -123,6 +123,11 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
     }
 
     loop {
+        // Increment Keplerian simulation clock when in Orrery tab (driving animation frames)
+        if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Orrery {
+            app.sim_time += 0.1 * app.sim_speed;
+        }
+
         terminal.draw(|frame| ui::draw(frame, &app))?;
 
         // Drain any pending journal events (non-blocking)
@@ -182,8 +187,8 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
             }
         }
 
-        // Poll for keyboard events
-        if event::poll(Duration::from_millis(250))? {
+        // Poll for keyboard events (faster 100ms ticks for smooth orbit graphics)
+        if event::poll(Duration::from_millis(100))? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
                     // Any key press clears transient status messages
@@ -218,11 +223,25 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                                     app.select_next_body();
                                 }
                             }
-                            KeyCode::Left | KeyCode::Char('a') | KeyCode::Char('A') if app.active_tab == app::Tab::History => {
-                                app.prev_codex_tab();
+                            KeyCode::Left | KeyCode::Char('a') | KeyCode::Char('A') => {
+                                if app.active_tab == app::Tab::History {
+                                    app.prev_codex_tab();
+                                } else if app.active_tab == app::Tab::Bodies {
+                                    app.bodies_subtab = app::BodiesSubTab::Table;
+                                }
                             }
-                            KeyCode::Right | KeyCode::Char('d') | KeyCode::Char('D') if app.active_tab == app::Tab::History => {
-                                app.next_codex_tab();
+                            KeyCode::Right | KeyCode::Char('d') | KeyCode::Char('D') => {
+                                if app.active_tab == app::Tab::History {
+                                    app.next_codex_tab();
+                                } else if app.active_tab == app::Tab::Bodies {
+                                    app.bodies_subtab = app::BodiesSubTab::Orrery;
+                                }
+                            }
+                            KeyCode::Char('[') if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Orrery => {
+                                app.sim_speed = (app.sim_speed / 2.0).max(0.125);
+                            }
+                            KeyCode::Char(']') if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Orrery => {
+                                app.sim_speed = (app.sim_speed * 2.0).min(1024.0);
                             }
                             KeyCode::Char('?') => app.show_help = true,
                             KeyCode::Char('r')

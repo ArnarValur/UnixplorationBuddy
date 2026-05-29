@@ -541,6 +541,17 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     body.star_class_enum = Some(star.star_type.clone());
                     body.temperature = Some(star.surface_temperature as f64);
 
+                    // Parse orbital mechanics elements if in a binary system (has orbit_info)
+                    if let Some(ref orbit) = star.orbit_info {
+                        body.semi_major_axis = Some(orbit.semi_major_axis as f64);
+                        body.eccentricity = Some(orbit.eccentricity as f64);
+                        body.inclination = Some(orbit.orbital_inclination as f64);
+                        body.periapsis = Some(orbit.periapsis as f64);
+                        body.ascending_node = orbit.ascending_node.map(|v| v as f64);
+                        body.orbital_period = Some(orbit.orbital_period as f64);
+                        body.mean_anomaly = orbit.mean_anomaly.map(|v| v as f64);
+                    }
+
                     let is_primary = if let Some(pid) = app.system.primary_star_id {
                         body_id == pid
                     } else {
@@ -588,6 +599,15 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     body.radius = Some(planet.radius as f64);
                     body.landable = planet.landable;
                     body.ringed = !planet.rings.is_empty();
+
+                    // Parse Keplerian orbital elements for TUI Orrery simulation
+                    body.semi_major_axis = Some(planet.orbit_info.semi_major_axis as f64);
+                    body.eccentricity = Some(planet.orbit_info.eccentricity as f64);
+                    body.inclination = Some(planet.orbit_info.orbital_inclination as f64);
+                    body.periapsis = Some(planet.orbit_info.periapsis as f64);
+                    body.ascending_node = planet.orbit_info.ascending_node.map(|v| v as f64);
+                    body.orbital_period = Some(planet.orbit_info.orbital_period as f64);
+                    body.mean_anomaly = planet.orbit_info.mean_anomaly.map(|v| v as f64);
 
                     if track_trip && is_new_body {
                         let mut key = format!("{}", planet.planet_class);
@@ -1160,6 +1180,15 @@ mod tests {
         assert!((body.gravity.unwrap() - (34.01046 / 9.80665)).abs() < 0.0001);
         assert!((body.temperature.unwrap() - 2282.107422).abs() < 0.0001);
         assert!(!body.landable);
+
+        // Verify Keplerian orbital parameter parsing (using f32 precision values)
+        assert!((body.semi_major_axis.unwrap() - 37443051520.0).abs() < 1.0);
+        assert!((body.eccentricity.unwrap() - 0.057579).abs() < 0.0001);
+        assert!((body.inclination.unwrap() - (-2.784278)).abs() < 0.0001);
+        assert!((body.periapsis.unwrap() - 115.153042).abs() < 0.0001);
+        assert!((body.orbital_period.unwrap() - 48399392.0).abs() < 1.0);
+        assert!((body.mean_anomaly.unwrap() - 30.528101).abs() < 0.0001);
+        assert!((body.ascending_node.unwrap() - (-28.509869)).abs() < 0.0001);
     }
 
     // ---------------------------------------------------------------

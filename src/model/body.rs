@@ -94,6 +94,14 @@ pub struct Body {
     pub ringed: bool,
     /// Biological genuses reported by SAA scan.
     pub bio_genuses: Vec<String>,
+    // Keplerian orbital elements for TUI Orrery simulation
+    pub semi_major_axis: Option<f64>,
+    pub eccentricity: Option<f64>,
+    pub inclination: Option<f64>,
+    pub periapsis: Option<f64>,
+    pub ascending_node: Option<f64>,
+    pub orbital_period: Option<f64>,
+    pub mean_anomaly: Option<f64>,
 }
 
 impl Body {
@@ -129,6 +137,13 @@ impl Body {
             landable: false,
             ringed: false,
             bio_genuses: Vec::new(),
+            semi_major_axis: None,
+            eccentricity: None,
+            inclination: None,
+            periapsis: None,
+            ascending_node: None,
+            orbital_period: None,
+            mean_anomaly: None,
         }
     }
 }

@@ -31,6 +31,19 @@ impl Default for CodexTab {
     }
 }
 
+/// Which sub-tab in the Bodies view is active.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BodiesSubTab {
+    Table,
+    Orrery,
+}
+
+impl Default for BodiesSubTab {
+    fn default() -> Self {
+        BodiesSubTab::Table
+    }
+}
+
 /// Dynamic column rendering settings toggled via the settings overlay.
 #[derive(Debug, Clone)]
 pub struct ColumnSettings {
@@ -105,6 +118,12 @@ pub struct App {
     pub last_longitude: Option<f64>,
     /// Real-time planetary heading from Status.json.
     pub last_heading: Option<f64>,
+    /// Sub-tab inside the Bodies view (System Map table vs Orrery canvas).
+    pub bodies_subtab: BodiesSubTab,
+    /// Simulated time value driving the Keplerian Orrery.
+    pub sim_time: f64,
+    /// Simulated time progression speed multiplier.
+    pub sim_speed: f64,
 }
 
 impl App {
@@ -131,6 +150,9 @@ impl App {
             last_latitude: None,
             last_longitude: None,
             last_heading: None,
+            bodies_subtab: BodiesSubTab::default(),
+            sim_time: 0.0,
+            sim_speed: 1.0,
         }
     }
 
@@ -352,5 +374,13 @@ mod tests {
         // Unique planet classes: "High metal content body", "Earth-like World", "Rocky body" (3 classes)
         // Total rows = 2 + 3 = 5
         assert_eq!(app.max_codex_rows(), 5);
+    }
+
+    #[test]
+    fn test_orrery_subtab_defaults() {
+        let app = App::new();
+        assert_eq!(app.bodies_subtab, BodiesSubTab::Table);
+        assert_eq!(app.sim_time, 0.0);
+        assert_eq!(app.sim_speed, 1.0);
     }
 }
