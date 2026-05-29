@@ -14,7 +14,10 @@ All tracks organized by domain. Each track links to its dedicated folder.
 
 ## Active Tracks
 
-_None._
+- [~] **System Orrery TUI View**
+  - *Type:* feature | *Domain:* core | *Status:* active
+  - *Link:* [tracks/core/system_orrery_view_20260529/](./tracks/core/system_orrery_view_20260529/)
+
 
 
 ## Completed Tracks
