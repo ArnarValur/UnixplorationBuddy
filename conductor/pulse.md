@@ -1,7 +1,7 @@
 # Pulse — Current Project State
 
-**Last Updated:** 2026-05-29 20:07
-**Session Focus:** Conjoined History subtabs into side-by-side dashboards (Overview + Biology, Stellar + Planetary) and moved subtabs selector to the bottom.
+**Last Updated:** 2026-05-29 20:55
+**Session Focus:** Implemented a real-time, animated 3D Keplerian Orrery System Map inside the Bodies tab using a Canvas widget, Braille graphics, and logarithmic compression.
 
 ## 🚀 Active Tracks
 
@@ -9,6 +9,7 @@ _None._
 
 ## ✅ Recently Completed
 
+- **3D Keplerian Orrery TUI View (2026-05-29):** Implemented a real-time, animated 3D simulated Keplerian Orrery System Map inside the TUI's **Bodies** tab. Accessible via a centered bottom selector bar toggling `System Map` (hierarchy table) and `Orrery Map` (animated canvas) with `a`/`d` or `Left`/`Right` keys. Features numerical Newton-Raphson solvers for eccentric anomaly convergence, hierarchical 3D scene-graph relative positioning, logarithmic orbital magnitude compression, and an isometric orthographic camera projection ($30^\circ$ pitch, $45^\circ$ yaw). Includes dynamic manual speed controls (`[`/`]`). All 98 unit tests compile and run green.
 - **Conjoined Codex Dashboards & Bottom Selector (2026-05-29):** Redefined `CodexTab` to conjoin the four old subviews into two premium side-by-side splits: "Overview & Biology" (50/50 horizontal split) and "Stellar & Planetary" (45/55 horizontal split). Both support synchronized Up/Down arrow scrolling. Repositioned the subtabs bar to the bottom and centered it using `Alignment::Center`, eliminating visual top-border glitches. Verified with all 97 unit tests passing green.
 - **Exobiology Telemetry & Layout Refinements (2026-05-29):** Expanded the TUI right-pane inspector to 40% (shrinking Name column footprint on left), mapped all 15 Odyssey genera to their minimum colonial separation distances, sorted predicted species alphabetically (A-Z) for quick pilot lookup, and formatted active sampling progress to show `[Scanned i/3 | Dm]` and predictions as `[Dm]`. Verified with passing unit tests. All 97 tests pass green.
 - **Hierarchical Planetary Codex & Badges (2026-05-27):** Overhauled `src/model/body.rs`, `src/app.rs`, `src/journal.rs`, and `src/ui/mod.rs` to structure scanned worlds into three distinct category groups. Implemented backward-compatible key encoding (`PlanetClass|L|T|R|B`) to track landables, terraformables, rings, and life-bearing counts trip-wide in `trip.json` with zero database migrations. Added green leaf `🌿` life badges, DNA/coordinates, and dynamic category sum rows. Verified with robust unit tests. All 97 tests pass green.

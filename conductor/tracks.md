@@ -14,13 +14,14 @@ All tracks organized by domain. Each track links to its dedicated folder.
 
 ## Active Tracks
 
-- [~] **System Orrery TUI View**
-  - *Type:* feature | *Domain:* core | *Status:* active
-  - *Link:* [tracks/core/system_orrery_view_20260529/](./tracks/core/system_orrery_view_20260529/)
-
+_None._
 
 
 ## Completed Tracks
+
+- [x] **System Orrery TUI View** (3fd794c)
+  - *Type:* feature | *Domain:* core | *Status:* completed
+  - *Link:* [tracks/core/system_orrery_view_20260529/](./tracks/core/system_orrery_view_20260529/)
 
 - [x] **Phase 4 — Automatic Tab Transitions**
   - *Type:* feature | *Domain:* core | *Status:* completed
