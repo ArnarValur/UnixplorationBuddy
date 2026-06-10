@@ -15,7 +15,7 @@ pub fn draw_route(frame: &mut Frame, app: &App, area: Rect) {
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .title(tab_title("Route", Tab::Route, app.active_tab))
+                        .title(tab_title("Route", Tab::Bodies, app.active_tab))
                         .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
                 );
             frame.render_widget(content, area);
@@ -87,7 +87,7 @@ pub fn draw_route(frame: &mut Frame, app: &App, area: Rect) {
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title(tab_title("Route Exploration", Tab::Route, app.active_tab))
+                .title(tab_title("Route Exploration", Tab::Bodies, app.active_tab))
                 .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
         )
         .style(Style::default().bg(BG_DARK));

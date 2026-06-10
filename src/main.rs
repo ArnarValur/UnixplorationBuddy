@@ -4,17 +4,20 @@ mod app;
 mod journal;
 mod model;
 mod persistence;
+mod state;
 mod ui;
 
 use std::io;
 use std::time::Duration;
 
-use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
+use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEventKind, EnableMouseCapture, DisableMouseCapture};
+use ratatui::crossterm::execute;
 use ratatui::DefaultTerminal;
 
 use app::App;
 use journal::JournalUpdate;
 use persistence::TripPersistence;
+use state::StatePersistence;
 
 fn main() -> io::Result<()> {
     // Parse CLI args
@@ -32,7 +35,11 @@ fn main() -> io::Result<()> {
 
     // Initialize terminal
     let mut terminal = ratatui::init();
+    // Enable mouse capture for scroll support
+    execute!(io::stdout(), EnableMouseCapture)?;
     let result = run(&mut terminal, &journal_dir);
+    // Disable mouse capture before restoring terminal
+    let _ = execute!(io::stdout(), DisableMouseCapture);
     ratatui::restore();
     result
 }
@@ -59,25 +66,61 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
         }
     }
 
+    // State snapshot persistence (instant cold start)
+    let state_persistence = match StatePersistence::new() {
+        Ok(p) => Some(p),
+        Err(e) => {
+            app.status_message = Some(format!("Warning: state persistence disabled: {e}"));
+            None
+        }
+    };
+
+    // Load saved state snapshot for instant display
+    let skip_info = if let Some(ref sp) = state_persistence {
+        if let Some(snapshot) = sp.load() {
+            app.system = snapshot.system;
+            app.bodies = snapshot.bodies;
+            app.body_display_order = snapshot.body_display_order;
+            // Show instantly
+            terminal.draw(|frame| ui::draw(frame, &app))?;
+            // Prepare skip info for replay
+            snapshot.last_journal_file.map(|f| (f, snapshot.last_journal_event_count))
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
     // Show loading indicator during journal replay
-    app.status_message = Some("Replaying journal files...".to_string());
+    app.status_message = Some("Catching up on journal...".to_string());
     terminal.draw(|frame| ui::draw(frame, &app))?;
 
-    // Replay existing journal files to reconstruct state
-    match journal::replay_session(&mut app, journal_dir) {
-        Ok(count) => {
+    // Replay journal files, skipping already-processed events
+    let skip_ref = skip_info.as_ref().map(|(f, c)| (f.as_str(), *c));
+    let mut last_journal_file: Option<String> = None;
+    let mut last_file_event_count: u32 = 0;
+    match journal::replay_session(&mut app, journal_dir, skip_ref) {
+        Ok(result) => {
+            last_journal_file = result.last_journal_file;
+            last_file_event_count = result.last_file_event_count;
             let body_count = app.bodies.len();
             let system = if app.system.name.is_empty() {
                 "no system".to_string()
             } else {
                 app.system.name.clone()
             };
+            let skipped = if skip_info.is_some() { " (resumed)" } else { "" };
             app.status_message = Some(format!(
-                "Replayed {count} events — {system}, {body_count} bodies — watching for new activity",
+                "Replayed {count} events{skipped} — {system}, {body_count} bodies — watching for new activity",
+                count = result.event_count,
             ));
         }
         Err(e) => {
             app.status_message = Some(format!("Warning: {e}"));
+            if let Some(ref e_str) = app.status_message {
+                eprintln!("{e_str}");
+            }
         }
     }
 
@@ -123,11 +166,6 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
     }
 
     loop {
-        // Increment Keplerian simulation clock when in Orrery tab (driving animation frames)
-        if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Orrery {
-            app.sim_time += 0.1 * app.sim_speed;
-        }
-
         terminal.draw(|frame| ui::draw(frame, &app))?;
 
         // Drain any pending journal events (non-blocking)
@@ -189,8 +227,9 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
 
         // Poll for keyboard events (faster 100ms ticks for smooth orbit graphics)
         if event::poll(Duration::from_millis(100))? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press {
+            let ev = event::read()?;
+            match ev {
+                Event::Key(key) if key.kind == KeyEventKind::Press => {
                     // Any key press clears transient status messages
                     app.status_message = None;
 
@@ -208,7 +247,6 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                             KeyCode::Tab => app.next_tab(),
                             KeyCode::Char('1') => app.active_tab = app::Tab::Bodies,
                             KeyCode::Char('2') => app.active_tab = app::Tab::History,
-                            KeyCode::Char('3') => app.active_tab = app::Tab::Route,
                             KeyCode::Up => {
                                 if app.active_tab == app::Tab::History {
                                     app.select_previous_codex_row();
@@ -234,14 +272,8 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                                 if app.active_tab == app::Tab::History {
                                     app.next_codex_tab();
                                 } else if app.active_tab == app::Tab::Bodies {
-                                    app.bodies_subtab = app::BodiesSubTab::Orrery;
+                                    app.bodies_subtab = app::BodiesSubTab::Route;
                                 }
-                            }
-                            KeyCode::Char('[') | KeyCode::Char('-') | KeyCode::PageDown if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Orrery => {
-                                app.sim_speed = (app.sim_speed / 2.0).max(0.125);
-                            }
-                            KeyCode::Char(']') | KeyCode::Char('+') | KeyCode::Char('=') | KeyCode::PageUp if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Orrery => {
-                                app.sim_speed = (app.sim_speed * 2.0).min(1024.0);
                             }
                             KeyCode::Char('?') => app.show_help = true,
                             KeyCode::Char('r')
@@ -262,6 +294,26 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                         }
                     }
                 }
+                Event::Mouse(mouse) => {
+                    match mouse.kind {
+                        MouseEventKind::ScrollUp => {
+                            if app.active_tab == app::Tab::History {
+                                app.select_previous_codex_row();
+                            } else {
+                                app.select_previous_body();
+                            }
+                        }
+                        MouseEventKind::ScrollDown => {
+                            if app.active_tab == app::Tab::History {
+                                app.select_next_codex_row();
+                            } else {
+                                app.select_next_body();
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                _ => {}
             }
         }
 
@@ -270,6 +322,19 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
             if let Some(ref mut p) = trip_persistence {
                 if let Some(err) = p.force_save(&app.trip) {
                     eprintln!("Warning: final trip save failed: {err}");
+                }
+            }
+            // Save state snapshot for instant cold start
+            if let Some(ref sp) = state_persistence {
+                let snapshot = state::StateSnapshot {
+                    system: app.system.clone(),
+                    bodies: app.bodies.clone(),
+                    body_display_order: app.body_display_order.clone(),
+                    last_journal_file: last_journal_file.clone(),
+                    last_journal_event_count: last_file_event_count,
+                };
+                if let Err(err) = sp.save(&snapshot) {
+                    eprintln!("Warning: state snapshot save failed: {err}");
                 }
             }
             break;

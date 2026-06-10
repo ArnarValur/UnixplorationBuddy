@@ -22,7 +22,7 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
         None => return,
     };
 
-    let binding = format_body_type(body.body_type);
+    let binding = format_body_type(body);
     let mut lines = vec![
         Line::from(vec![
             Span::styled("Class: ", Style::default().fg(ELITE_DIM)),

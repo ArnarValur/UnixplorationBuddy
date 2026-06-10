@@ -1,6 +1,6 @@
 /// A star system — the top-level container.
 /// Identified by name from journal FSDJump events.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct System {
     pub name: String,
     pub system_address: u64,
@@ -8,6 +8,8 @@ pub struct System {
     pub body_count_total: u32,
     pub total_value: u64,
     pub primary_star_id: Option<u32>,
+    pub star_pos: Option<[f64; 3]>,
+    pub region: Option<String>,
 }
 
 impl System {

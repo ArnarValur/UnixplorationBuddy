@@ -9,7 +9,6 @@ use crate::model::{Body, BodyHierarchy, System, Trip, NavRoute};
 pub enum Tab {
     Bodies,
     History,
-    Route,
 }
 
 impl Default for Tab {
@@ -35,7 +34,7 @@ impl Default for CodexTab {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BodiesSubTab {
     Table,
-    Orrery,
+    Route,
 }
 
 impl Default for BodiesSubTab {
@@ -118,12 +117,8 @@ pub struct App {
     pub last_longitude: Option<f64>,
     /// Real-time planetary heading from Status.json.
     pub last_heading: Option<f64>,
-    /// Sub-tab inside the Bodies view (System Map table vs Orrery canvas).
+    /// Sub-tab inside the Bodies view (System Map table vs Route).
     pub bodies_subtab: BodiesSubTab,
-    /// Simulated time value driving the Keplerian Orrery.
-    pub sim_time: f64,
-    /// Simulated time progression speed multiplier.
-    pub sim_speed: f64,
 }
 
 impl App {
@@ -151,8 +146,6 @@ impl App {
             last_longitude: None,
             last_heading: None,
             bodies_subtab: BodiesSubTab::default(),
-            sim_time: 0.0,
-            sim_speed: 1.0,
         }
     }
 
@@ -165,8 +158,7 @@ impl App {
     pub fn next_tab(&mut self) {
         self.active_tab = match self.active_tab {
             Tab::Bodies => Tab::History,
-            Tab::History => Tab::Route,
-            Tab::Route => Tab::Bodies,
+            Tab::History => Tab::Bodies,
         };
     }
 
@@ -377,10 +369,8 @@ mod tests {
     }
 
     #[test]
-    fn test_orrery_subtab_defaults() {
+    fn test_bodies_subtab_defaults() {
         let app = App::new();
         assert_eq!(app.bodies_subtab, BodiesSubTab::Table);
-        assert_eq!(app.sim_time, 0.0);
-        assert_eq!(app.sim_speed, 1.0);
     }
 }

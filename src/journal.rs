@@ -49,9 +49,23 @@ pub fn discover_journal_dir(explicit_path: Option<&str>) -> Result<PathBuf, Stri
     }
 }
 
+/// Result of a journal replay, used for state snapshot persistence.
+pub struct ReplayResult {
+    /// Total number of events processed.
+    pub event_count: u32,
+    /// Basename of the last journal file processed.
+    pub last_journal_file: Option<String>,
+    /// Events processed in the last journal file.
+    pub last_file_event_count: u32,
+}
+
 /// Replay all journal files from the directory, processing events to build current state.
-/// Returns the number of events processed.
-pub fn replay_session(app: &mut App, journal_dir: &Path) -> Result<u32, String> {
+/// If `skip` is provided, skips events that were already processed in a previous session.
+pub fn replay_session(
+    app: &mut App,
+    journal_dir: &Path,
+    skip: Option<(&str, u32)>, // (last_journal_file_basename, events_processed_in_that_file)
+) -> Result<ReplayResult, String> {
     let log_dir = LogDir::new(journal_dir.to_path_buf());
     let logs = log_dir
         .journal_logs_oldest_first()
@@ -64,32 +78,75 @@ pub fn replay_session(app: &mut App, journal_dir: &Path) -> Result<u32, String> 
         ));
     }
 
-    let mut event_count: u32 = 0;
+    let mut total_event_count: u32 = 0;
+    let mut last_journal_file: Option<String> = None;
+    let mut last_file_event_count: u32 = 0;
 
     for log_file in &logs {
+        let file_name = log_file
+            .path()
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("")
+            .to_string();
+
+        // Determine how many events to skip in this file
+        let skip_count = if let Some((skip_file, skip_events)) = skip {
+            if file_name < skip_file.to_string() {
+                // Entire file already processed — skip it completely
+                u32::MAX
+            } else if file_name == skip_file {
+                // Partially processed — skip the already-seen events
+                skip_events
+            } else {
+                0
+            }
+        } else {
+            0
+        };
+
         let reader = log_file
             .create_blocking_reader()
             .map_err(|e| format!("Failed to open journal file: {e}"))?;
 
+        let mut file_event_idx: u32 = 0;
+        let mut file_events_processed: u32 = 0;
+
         for entry_result in reader {
+            file_event_idx += 1;
+
+            if file_event_idx <= skip_count {
+                continue;
+            }
+
             match entry_result {
                 Ok(event) => {
                     process_event(app, &event, false);
-                    event_count += 1;
+                    total_event_count += 1;
+                    file_events_processed += 1;
                 }
                 Err(e) => {
                     // Log parse errors but don't halt — some events may be
                     // unsupported by the crate's current version.
                     eprintln!("Warning: skipping unparseable journal entry: {e}");
+                    file_events_processed += 1;
                 }
             }
         }
+
+        last_journal_file = Some(file_name);
+        // Total events in this file = skipped + processed
+        last_file_event_count = skip_count.min(file_event_idx) + file_events_processed;
     }
 
     // Rebuild display hierarchy after processing all events.
     app.rebuild_display_order();
 
-    Ok(event_count)
+    Ok(ReplayResult {
+        event_count: total_event_count,
+        last_journal_file,
+        last_file_event_count,
+    })
 }
 
 /// Event type sent from the live watcher thread to the main event loop.
@@ -461,14 +518,18 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                 app.trip.total_value += app.system.total_value;
                 app.trip.systems_visited += 1;
 
-                // Automatic transition back to Bodies view upon system arrival
+                // Automatic transition back to Bodies Table view upon system arrival
                 app.active_tab = crate::app::Tab::Bodies;
+                app.bodies_subtab = crate::app::BodiesSubTab::Table;
             }
 
             let sys_name = e.system_info.star_system.clone();
             let sys_addr = e.system_info.system_address;
             let mut sys = System::new(sys_name, sys_addr);
             sys.primary_star_id = Some(u32::from(e.system_info.body_id));
+            let pos = [e.system_info.star_pos[0] as f64, e.system_info.star_pos[1] as f64, e.system_info.star_pos[2] as f64];
+            sys.star_pos = Some(pos);
+            // TODO: exact region lookup — see relay.md postit
             app.system = sys;
             app.bodies.clear();
             app.body_display_order.clear();
@@ -487,6 +548,9 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
             if app.system.system_address != sys_addr {
                 let mut sys = System::new(sys_name, sys_addr);
                 sys.primary_star_id = Some(u32::from(e.location_info.body_id));
+                let pos = [e.location_info.star_pos[0] as f64, e.location_info.star_pos[1] as f64, e.location_info.star_pos[2] as f64];
+                sys.star_pos = Some(pos);
+                // TODO: exact region lookup — see relay.md postit
                 app.system = sys;
                 app.bodies.clear();
                 app.body_display_order.clear();
@@ -852,7 +916,8 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                 if let ed_journals::logs::start_jump_event::StartJumpType::Hyperspace { .. } = &e.jump {
                     if let Some(ref r) = app.plotted_route {
                         if !r.route.is_empty() {
-                            app.active_tab = crate::app::Tab::Route;
+                            app.active_tab = crate::app::Tab::Bodies;
+                            app.bodies_subtab = crate::app::BodiesSubTab::Route;
                         }
                     }
                 }
@@ -1063,24 +1128,27 @@ mod tests {
         process_event(&mut app, &event, false); // replay = false
         assert_eq!(app.active_tab, crate::app::Tab::Bodies);
 
-        // Plotted route is present and we are in live mode -> should switch to Route tab!
+        // Plotted route is present and we are in live mode -> should switch to Route subtab!
         process_event(&mut app, &event, true); // live = true
-        assert_eq!(app.active_tab, crate::app::Tab::Route);
+        assert_eq!(app.active_tab, crate::app::Tab::Bodies);
+        assert_eq!(app.bodies_subtab, crate::app::BodiesSubTab::Route);
     }
 
     #[test]
     fn fsdjump_transitions_tab_back_to_bodies_only_when_live() {
         let mut app = App::new();
-        app.active_tab = crate::app::Tab::Route;
+        app.active_tab = crate::app::Tab::Bodies;
+        app.bodies_subtab = crate::app::BodiesSubTab::Route;
         let event = parse_event(FSDJUMP_JSON);
 
-        // Replay: should not transition
+        // Replay: should not transition (stays in Bodies tab, subtab unchanged)
         process_event(&mut app, &event, false);
-        assert_eq!(app.active_tab, crate::app::Tab::Route);
+        assert_eq!(app.active_tab, crate::app::Tab::Bodies);
 
-        // Live: should transition back to Bodies!
+        // Live: should transition back to Bodies Table subtab!
         process_event(&mut app, &event, true);
         assert_eq!(app.active_tab, crate::app::Tab::Bodies);
+        assert_eq!(app.bodies_subtab, crate::app::BodiesSubTab::Table);
     }
 
     // ---------------------------------------------------------------

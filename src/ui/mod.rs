@@ -13,7 +13,6 @@ use crate::app::{App, Tab};
 use crate::model::{BodyType, ScanState};
 
 // Register submodules
-pub mod orrery;
 pub mod bodies;
 pub mod inspector;
 pub mod route;
@@ -64,7 +63,6 @@ pub fn draw(frame: &mut Frame, app: &App) {
     match app.active_tab {
         Tab::Bodies => bodies::draw_bodies(frame, app, chunks[1]),
         Tab::History => history::draw_history(frame, app, chunks[1]),
-        Tab::Route => route::draw_route(frame, app, chunks[1]),
     }
 
     draw_status_bar(frame, app, chunks[2]);
@@ -99,14 +97,25 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
         format!("{}", app.system.body_count_discovered)
     };
 
-    let header = Line::from(vec![
+    let mut spans = vec![
         Span::styled(
             format!(" {} ", system_name),
             Style::default()
                 .fg(ELITE_ORANGE)
                 .add_modifier(Modifier::BOLD),
         ),
-        Span::styled("│ ", Style::default().fg(ELITE_DIM)),
+    ];
+
+    if let Some(ref region) = app.system.region {
+        spans.push(Span::styled("│ ", Style::default().fg(ELITE_DIM)));
+        spans.push(Span::styled(
+            region.clone(),
+            Style::default().fg(ELITE_DIM),
+        ));
+    }
+
+    spans.extend(vec![
+        Span::styled(" │ ", Style::default().fg(ELITE_DIM)),
         Span::styled(
             format!("{} bodies", body_progress),
             Style::default().fg(ELITE_ORANGE),
@@ -122,6 +131,8 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
                 }),
         ),
     ]);
+
+    let header = Line::from(spans);
 
     let widget = Paragraph::new(header).style(Style::default().bg(BG_DARK));
     frame.render_widget(widget, area);
@@ -186,14 +197,9 @@ fn draw_status_bar(frame: &mut Frame, app: &App, area: Rect) {
     } else {
         match app.active_tab {
             Tab::Bodies => {
-                if app.bodies_subtab == crate::app::BodiesSubTab::Orrery {
-                    "q: quit │ Tab/1/2/3: switch │ ↑↓: navigate │ -/+/PgUp/PgDown: speed │ ?: help".to_string()
-                } else {
-                    "q: quit │ Tab/1/2/3: switch │ ↑↓: navigate │ s: settings │ i: toggle inspector │ ?: help".to_string()
-                }
+                "q: quit │ Tab/1/2: switch │ ←→/a/d: sub-tabs │ Ctrl+R: reset trip │ ?: help".to_string()
             }
-            Tab::History => "q: quit │ Tab/1/2/3: switch │ ←→/a/d: sub-tabs │ Ctrl+R: reset trip │ ?: help".to_string(),
-            Tab::Route => "q: quit │ Tab/1/2/3: switch │ ?: help".to_string(),
+            Tab::History => "q: quit │ Tab/1/2: switch │ ←→/a/d: sub-tabs │ Ctrl+R: reset trip │ ?: help".to_string(),
         }
     };
 
@@ -284,7 +290,6 @@ pub fn tab_title(name: &str, tab: Tab, active: Tab) -> String {
     let num = match tab {
         Tab::Bodies => "1",
         Tab::History => "2",
-        Tab::Route => "3",
     };
     if tab == active {
         format!(" ▸ [{}] {} ", num, name)
@@ -304,15 +309,91 @@ pub fn body_type_color(bt: BodyType) -> Color {
     }
 }
 
-/// Format a body type for display.
-pub fn format_body_type(bt: BodyType) -> String {
-    match bt {
-        BodyType::Star => "Star".into(),
-        BodyType::Planet => "Planet".into(),
-        BodyType::Moon => "Moon".into(),
+/// Format a body type for display, using detailed planet class or star type when available.
+pub fn format_body_type(body: &crate::model::Body) -> String {
+    match body.body_type {
+        BodyType::Star => {
+            if let Some(ref st) = body.star_type {
+                format!("Star ({})", st)
+            } else {
+                "Star".into()
+            }
+        }
+        BodyType::Planet | BodyType::Moon => {
+            if let Some(ref pc) = body.planet_class {
+                short_planet_class(pc)
+            } else if body.body_type == BodyType::Moon {
+                "Moon".into()
+            } else {
+                "Planet".into()
+            }
+        }
         BodyType::BeltCluster => "Belt".into(),
         BodyType::Unknown => "?".into(),
     }
+}
+
+/// Map verbose journal planet class strings to short TUI labels.
+fn short_planet_class(pc: &str) -> String {
+    match pc.to_lowercase().as_str() {
+        "earthlike body" | "earth-like body" => "Earth-like",
+        "water world" => "Water World",
+        "ammonia world" => "Ammonia",
+        "high metal content body" => "HMC",
+        "metal rich body" => "Metal Rich",
+        "rocky body" => "Rocky",
+        "rocky ice body" => "Rocky Ice",
+        "icy body" => "Icy",
+        "sudarsky class i gas giant" => "Gas Giant I",
+        "sudarsky class ii gas giant" => "Gas Giant II",
+        "sudarsky class iii gas giant" => "Gas Giant III",
+        "sudarsky class iv gas giant" => "Gas Giant IV",
+        "sudarsky class v gas giant" => "Gas Giant V",
+        "gas giant with water based life" => "GG Water Life",
+        "gas giant with ammonia based life" => "GG Amm. Life",
+        "helium rich gas giant" => "He-Rich GG",
+        "helium gas giant" => "Helium GG",
+        "water giant" => "Water Giant",
+        "water giant with life" => "Water Giant+",
+        _ => return pc.to_string(),
+    }.into()
+}
+
+/// Map journal atmosphere strings to compact chemical formulas.
+pub fn format_atmosphere(raw: &str) -> String {
+    // Strip common prefixes like "Thin ", "Thick ", "Hot thin ", "Hot thick "
+    let stripped = raw
+        .trim_start_matches("Hot ")
+        .trim_start_matches("Thin ")
+        .trim_start_matches("Thick ");
+    let formula = match stripped.to_lowercase().as_str() {
+        "carbon dioxide" | "carbondioxide" => "CO\u{2082}",
+        "sulfur dioxide" | "sulphur dioxide" | "sulfurdioxide" | "sulphurdioxide" => "SO\u{2082}",
+        "water" => "H\u{2082}O",
+        "ammonia" => "NH\u{2083}",
+        "nitrogen" => "N\u{2082}",
+        "oxygen" => "O\u{2082}",
+        "methane" => "CH\u{2084}",
+        "argon" => "Ar",
+        "helium" => "He",
+        "hydrogen" => "H\u{2082}",
+        "neon" => "Ne",
+        "silicate vapour" | "silicatevapour" => "SiO\u{2082}",
+        "metallic vapour" | "metallicvapour" => "Metal",
+        "carbon dioxide atmosphere" | "carbondioxideatmosphere" => "CO\u{2082}",
+        _ => return raw.to_string(),
+    };
+    // Re-add prefix if present
+    let prefix = if raw.starts_with("Hot ") {
+        "Hot "
+    } else if raw.starts_with("Thin ") || raw.starts_with("Hot thin ") {
+        ""
+    } else if raw.starts_with("Thick ") || raw.starts_with("Hot thick ") {
+        "Thick "
+    } else {
+        ""
+    };
+    format!("{}{}", prefix, formula)
 }
 
 /// Format the value display for a body.
@@ -676,7 +757,7 @@ mod tests {
         let app = App::new(); // Default tab is Bodies
         let output = render_to_string(&app, 80, 5);
         assert!(
-            output.contains("quit") && output.contains("navigate"),
+            output.contains("quit") && output.contains("sub-tabs"),
             "Status bar should show keybinding hints.\nOutput:\n{output}"
         );
     }

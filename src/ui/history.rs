@@ -250,9 +250,10 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
 
                     let len = list.len();
                     for (i, entry) in list.iter().enumerate() {
-                        let is_last = i == len - 1;
-                        let prefix = if is_last { "  └─ " } else { "  ├─ " };
+                        let is_last_entry = i == len - 1;
+                        let prefix = if is_last_entry { "  └─ " } else { "  ├─ " };
 
+                        // Collect sub-attributes for indented child rows
                         let mut badges = Vec::new();
                         if entry.landable_count > 0 {
                             badges.push(format!("🚀x{}", entry.landable_count));
@@ -280,6 +281,34 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                             ])
                             .style(Style::default().fg(ELITE_DIM))
                         );
+
+                        // Sub-attribute rows (indented under the planet type)
+                        let connector = if is_last_entry { "     " } else { "  │  " };
+                        let mut sub_attrs: Vec<(&str, u32)> = Vec::new();
+                        if entry.ringed_count > 0 {
+                            sub_attrs.push(("Ringed", entry.ringed_count));
+                        }
+                        if entry.terraformable_count > 0 {
+                            sub_attrs.push(("Terraformable", entry.terraformable_count));
+                        }
+                        if entry.landable_count > 0 {
+                            sub_attrs.push(("Landable", entry.landable_count));
+                        }
+                        if entry.life_count > 0 {
+                            sub_attrs.push(("Has Life", entry.life_count));
+                        }
+
+                        let sub_len = sub_attrs.len();
+                        for (j, (label, count)) in sub_attrs.iter().enumerate() {
+                            let sub_prefix = if j == sub_len - 1 { "└─ " } else { "├─ " };
+                            planetary_rows.push(
+                                Row::new(vec![
+                                    format!("{}  {}{}", connector, sub_prefix, label),
+                                    count.to_string(),
+                                ])
+                                .style(Style::default().fg(ELITE_DIM))
+                            );
+                        }
                     }
                 }
             }

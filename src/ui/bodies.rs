@@ -5,7 +5,7 @@ use ratatui::widgets::{Block, Borders, Paragraph, Row, Scrollbar, ScrollbarOrien
 use ratatui::Frame;
 
 use crate::app::{App, Tab};
-use super::{ELITE_ORANGE, ELITE_DIM, BG_DARK, HIGHLIGHT_BG, body_type_color, format_body_type, format_body_value, format_first_indicators, tab_title};
+use super::{ELITE_ORANGE, ELITE_DIM, BG_DARK, HIGHLIGHT_BG, body_type_color, format_body_type, format_body_value, format_first_indicators, format_atmosphere, tab_title};
 
 /// Bodies tab — hierarchical, scrollable body table with color-coded types.
 pub fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
@@ -54,21 +54,21 @@ pub fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
     // Center-aligned subtab bar at the bottom
     let (tab1_prefix, tab2_prefix) = match app.bodies_subtab {
         crate::app::BodiesSubTab::Table => ("● ", "○ "),
-        crate::app::BodiesSubTab::Orrery => ("○ ", "● "),
+        crate::app::BodiesSubTab::Route => ("○ ", "● "),
     };
 
     let selector_spans = vec![
         Span::styled(format!("{}{}", tab1_prefix, "System Map"), Style::default().fg(if app.bodies_subtab == crate::app::BodiesSubTab::Table { ELITE_ORANGE } else { ELITE_DIM })),
         Span::styled("   │   ", Style::default().fg(ELITE_DIM)),
-        Span::styled(format!("{}{}", tab2_prefix, "Orrery Map"), Style::default().fg(if app.bodies_subtab == crate::app::BodiesSubTab::Orrery { ELITE_ORANGE } else { ELITE_DIM })),
+        Span::styled(format!("{}{}", tab2_prefix, "Route"), Style::default().fg(if app.bodies_subtab == crate::app::BodiesSubTab::Route { ELITE_ORANGE } else { ELITE_DIM })),
     ];
     let selector_para = Paragraph::new(Line::from(selector_spans))
         .alignment(ratatui::layout::Alignment::Center)
         .style(Style::default().bg(BG_DARK));
     frame.render_widget(selector_para, selector_area);
 
-    if app.bodies_subtab == crate::app::BodiesSubTab::Orrery {
-        super::orrery::draw_orrery(frame, app, content_area);
+    if app.bodies_subtab == crate::app::BodiesSubTab::Route {
+        super::route::draw_route(frame, app, content_area);
         
         // Render inspector right pane if split-screen is active
         if show_inspect {
@@ -97,14 +97,14 @@ pub fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
                     let name = format!("{}{}", indent, b.short_name);
 
                     // Body type label
-                    let body_type_str = format_body_type(b.body_type);
+                    let body_type_str = format_body_type(b);
 
-                    // Atmosphere (shortened)
+                    // Atmosphere (chemical formula)
                     let atmo = b
                         .atmosphere
                         .as_deref()
-                        .unwrap_or("—")
-                        .to_string();
+                        .map(|a| format_atmosphere(a))
+                        .unwrap_or_else(|| "—".into());
 
                     // Gravity
                     let gravity_str = b.gravity.map(|g| format!("{:.2} G", g)).unwrap_or_else(|| "—".into());
@@ -112,8 +112,8 @@ pub fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
                     // Temp
                     let temp_str = b.temperature.map(|t| format!("{:.0} K", t)).unwrap_or_else(|| "—".into());
 
-                    // EDSM discoverer
-                    let discoverer_str = if b.was_discovered { "CMDR" } else { "—" };
+                    // Discovered flag
+                    let discoverer_str = if b.was_discovered { "✓" } else { "—" };
 
                     // Distance from arrival
                     let dist = b
@@ -214,11 +214,11 @@ pub fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
         .collect();
 
     let mut header_cells = vec!["Name", "Type"];
-    let mut widths = vec![Constraint::Min(16), Constraint::Length(8)];
+    let mut widths = vec![Constraint::Min(16), Constraint::Length(14)];
 
     if app.column_settings.show_atmosphere {
-        header_cells.push("Atmosphere");
-        widths.push(Constraint::Length(14));
+        header_cells.push("Atmo");
+        widths.push(Constraint::Length(10));
     }
     if app.column_settings.show_gravity {
         header_cells.push("Gravity");
@@ -229,8 +229,8 @@ pub fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
         widths.push(Constraint::Length(8));
     }
     if app.column_settings.show_discoverer {
-        header_cells.push("Discoverer");
-        widths.push(Constraint::Length(14));
+        header_cells.push("Disc");
+        widths.push(Constraint::Length(6));
     }
 
     header_cells.extend(vec!["Dist(Ls)", "Scan", "Value(cr)", "Bio", "Geo", ""]);

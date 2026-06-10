@@ -1,7 +1,7 @@
 use ed_journals::galaxy::{PlanetClass, StarClass};
 
 /// Discovery progression of a body.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
 pub enum ScanState {
     Unseen,
     #[allow(dead_code)]
@@ -29,7 +29,7 @@ impl Default for ScanState {
 }
 
 /// Classification of a celestial object.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum BodyType {
     Star,
     Planet,
@@ -45,7 +45,7 @@ impl Default for BodyType {
 }
 
 /// A celestial object within a system.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Body {
     pub body_id: u32,
     #[allow(dead_code)]
