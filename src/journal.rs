@@ -711,6 +711,11 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     body.orbital_period = Some(planet.orbit_info.orbital_period as f64);
                     body.mean_anomaly = planet.orbit_info.mean_anomaly.map(|v| v as f64);
 
+                    // Physical properties for enriched telemetry
+                    body.rotational_period = Some(planet.rotation_period as f64);
+                    body.axial_tilt = Some(planet.axial_tilt as f64);
+                    body.tidal_lock = planet.tidal_lock;
+
                     if track_trip && is_new_body {
                         let mut key = format!("{}", planet.planet_class);
                         if planet.landable {

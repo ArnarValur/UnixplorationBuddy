@@ -108,6 +108,12 @@ pub struct Body {
     pub ascending_node: Option<f64>,
     pub orbital_period: Option<f64>,
     pub mean_anomaly: Option<f64>,
+    /// Rotational period in seconds.
+    pub rotational_period: Option<f64>,
+    /// Axial tilt in radians.
+    pub axial_tilt: Option<f64>,
+    /// Whether the body is tidally locked.
+    pub tidal_lock: bool,
 }
 
 impl Body {
@@ -153,6 +159,9 @@ impl Body {
             ascending_node: None,
             orbital_period: None,
             mean_anomaly: None,
+            rotational_period: None,
+            axial_tilt: None,
+            tidal_lock: false,
         }
     }
 }

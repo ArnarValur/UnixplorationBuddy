@@ -9,7 +9,7 @@ use crate::model::BodyType;
 use crate::model::biology::{colors, predictor};
 use super::{
     ELITE_ORANGE, ELITE_DIM, BG_DARK, COLOR_STAR, COLOR_BIO, COLOR_FIRST, COLOR_VALUE_HIGH,
-    format_body_type, format_credits, min_separation_for_genus, calculate_haversine_distance,
+    format_body_type, format_credits, format_number, min_separation_for_genus, calculate_haversine_distance,
 };
 
 pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
@@ -38,7 +38,23 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
             Span::styled("Landable: ", Style::default().fg(ELITE_DIM)),
             Span::styled(if body.landable { "YES 🚀" } else { "NO" }, Style::default().fg(if body.landable { COLOR_STAR } else { ELITE_DIM })),
         ]));
-        
+
+        // ── Physical Properties ──
+        if let Some(mass) = body.mass {
+            lines.push(Line::from(vec![
+                Span::styled("Mass:     ", Style::default().fg(ELITE_DIM)),
+                Span::styled(format!("{:.4} EM", mass), Style::default().fg(ELITE_ORANGE)),
+            ]));
+        }
+
+        if let Some(radius) = body.radius {
+            let radius_km = radius / 1000.0;
+            lines.push(Line::from(vec![
+                Span::styled("Radius:   ", Style::default().fg(ELITE_DIM)),
+                Span::styled(format!("{} km", format_number(radius_km)), Style::default().fg(ELITE_ORANGE)),
+            ]));
+        }
+
         let gravity_text = body.gravity.map(|g| format!("{:.2} G", g)).unwrap_or_else(|| "—".into());
         lines.push(Line::from(vec![
             Span::styled("Gravity:  ", Style::default().fg(ELITE_DIM)),
@@ -51,11 +67,82 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
             Span::styled(temp_text, Style::default().fg(ELITE_ORANGE)),
         ]));
 
+        if let Some(pressure) = body.pressure_atm {
+            lines.push(Line::from(vec![
+                Span::styled("Pressure: ", Style::default().fg(ELITE_DIM)),
+                Span::styled(format!("{:.2} atm", pressure), Style::default().fg(ELITE_ORANGE)),
+            ]));
+        }
+
         let atmo_text = body.atmosphere.as_deref().unwrap_or("None");
         lines.push(Line::from(vec![
             Span::styled("Atmo:     ", Style::default().fg(ELITE_DIM)),
             Span::styled(atmo_text, Style::default().fg(ELITE_ORANGE)),
         ]));
+
+        let volc_text = body.volcanism.as_deref().unwrap_or("No Volcanism");
+        lines.push(Line::from(vec![
+            Span::styled("Volcanism:", Style::default().fg(ELITE_DIM)),
+            Span::styled(format!(" {}", volc_text), Style::default().fg(ELITE_ORANGE)),
+        ]));
+
+        // ── Orbital Properties ──
+        lines.push(Line::from(Span::styled("── Orbital ──", Style::default().fg(ELITE_DIM))));
+
+        if let Some(period) = body.orbital_period {
+            let days = period / 86400.0;
+            lines.push(Line::from(vec![
+                Span::styled("Orbit:    ", Style::default().fg(ELITE_DIM)),
+                Span::styled(format!("{:.1} D", days), Style::default().fg(ELITE_ORANGE)),
+            ]));
+        }
+
+        if let Some(sma) = body.semi_major_axis {
+            let au = sma / 149_597_870_700.0;
+            lines.push(Line::from(vec![
+                Span::styled("SMA:      ", Style::default().fg(ELITE_DIM)),
+                Span::styled(format!("{:.2} AU", au), Style::default().fg(ELITE_ORANGE)),
+            ]));
+        }
+
+        if let Some(ecc) = body.eccentricity {
+            lines.push(Line::from(vec![
+                Span::styled("Ecc:      ", Style::default().fg(ELITE_DIM)),
+                Span::styled(format!("{:.4}", ecc), Style::default().fg(ELITE_ORANGE)),
+            ]));
+        }
+
+        if let Some(inc) = body.inclination {
+            lines.push(Line::from(vec![
+                Span::styled("Inc:      ", Style::default().fg(ELITE_DIM)),
+                Span::styled(format!("{:.2}°", inc), Style::default().fg(ELITE_ORANGE)),
+            ]));
+        }
+
+        if let Some(peri) = body.periapsis {
+            lines.push(Line::from(vec![
+                Span::styled("Periapsis:", Style::default().fg(ELITE_DIM)),
+                Span::styled(format!(" {:.2}°", peri), Style::default().fg(ELITE_ORANGE)),
+            ]));
+        }
+
+        if let Some(rot) = body.rotational_period {
+            let days = rot / 86400.0;
+            let tidal = if body.tidal_lock { " (Tidally Locked)" } else { "" };
+            lines.push(Line::from(vec![
+                Span::styled("Rotation: ", Style::default().fg(ELITE_DIM)),
+                Span::styled(format!("{:.1} D", days), Style::default().fg(ELITE_ORANGE)),
+                Span::styled(tidal, Style::default().fg(ELITE_DIM)),
+            ]));
+        }
+
+        if let Some(tilt) = body.axial_tilt {
+            let degrees = tilt.to_degrees();
+            lines.push(Line::from(vec![
+                Span::styled("Tilt:     ", Style::default().fg(ELITE_DIM)),
+                Span::styled(format!("{:.2}°", degrees), Style::default().fg(ELITE_ORANGE)),
+            ]));
+        }
     }
 
     if let Some(cache) = app.edsm_cache.get(&app.system.name) {

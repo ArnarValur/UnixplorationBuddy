@@ -474,6 +474,11 @@ pub fn format_credits(value: u64) -> String {
     result.chars().rev().collect()
 }
 
+/// Format a floating-point number with thousands separators, no decimals.
+pub fn format_number(value: f64) -> String {
+    format_credits(value.round() as u64)
+}
+
 /// Calculate the Great-Circle distance in meters between two planetary coordinates using the Haversine formula.
 pub fn calculate_haversine_distance(lat1: f64, lon1: f64, lat2: f64, lon2: f64, radius: f64) -> f64 {
     let d_lat = (lat2 - lat1).to_radians();
