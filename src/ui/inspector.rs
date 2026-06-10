@@ -78,7 +78,7 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
     if body.bio_signals > 0 && body.landable {
         let primary_star_id = app.system.primary_star_id.unwrap_or(0);
         let primary_star = app.bodies.get(&primary_star_id).and_then(|b| b.star_class_enum.as_ref());
-        let predictions = predictor::predict_species(body, primary_star);
+        let predictions = predictor::predict_species(body, primary_star, app.system.region_id);
 
         if predictions.is_empty() {
             lines.push(Line::from(" No matching species boundaries"));

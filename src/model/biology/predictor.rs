@@ -117,8 +117,10 @@ pub fn match_star_class(canonn_star: &str, system_star: &StarClass) -> bool {
     }
 }
 
+use crate::model::biology::region_constraints;
+
 /// Checks if a single species variant is physically capable of spawning on the given body.
-pub fn match_variant(variant: &SpeciesVariant, body: &Body, primary_star: Option<&StarClass>) -> bool {
+pub fn match_variant(variant: &SpeciesVariant, body: &Body, primary_star: Option<&StarClass>, region_id: Option<u8>) -> bool {
     // 1. Must be landable
     if !body.landable {
         return false;
@@ -233,11 +235,16 @@ pub fn match_variant(variant: &SpeciesVariant, body: &Body, primary_star: Option
         }
     }
 
+    // 9. Region constraint filtering
+    if !region_constraints::check_region(variant.name, region_id) {
+        return false;
+    }
+
     true
 }
 
 /// Evaluates body telemetry against the static dataset and returns all matching exobiology species.
-pub fn predict_species(body: &Body, primary_star: Option<&StarClass>) -> Vec<SpeciesVariant> {
+pub fn predict_species(body: &Body, primary_star: Option<&StarClass>, region_id: Option<u8>) -> Vec<SpeciesVariant> {
     // Only predict if body actually has biological signals reported
     if body.bio_signals == 0 || !body.landable {
         return Vec::new();
@@ -245,7 +252,7 @@ pub fn predict_species(body: &Body, primary_star: Option<&StarClass>) -> Vec<Spe
 
     let mut matches: Vec<SpeciesVariant> = DATASET
         .iter()
-        .filter(|v| match_variant(v, body, primary_star))
+        .filter(|v| match_variant(v, body, primary_star, region_id))
         .cloned()
         .collect();
 
@@ -355,14 +362,14 @@ mod tests {
         };
 
         // Standard match should succeed
-        assert!(match_variant(&variant, &body, Some(&StarClass::M)));
+        assert!(match_variant(&variant, &body, Some(&StarClass::M), None));
 
         // Mismatched star should fail
-        assert!(!match_variant(&variant, &body, Some(&StarClass::K)));
+        assert!(!match_variant(&variant, &body, Some(&StarClass::K), None));
 
         // Gravity out of bounds should fail
         body.gravity = Some(0.30);
-        assert!(!match_variant(&variant, &body, Some(&StarClass::M)));
+        assert!(!match_variant(&variant, &body, Some(&StarClass::M), None));
     }
 
     #[test]
@@ -381,7 +388,7 @@ mod tests {
 
         // Strict matching would fail completely because of gravity and temperature.
         // But with bio_genuses set, the relaxed fallback should kick in and find Aleoida variants!
-        let predictions = predict_species(&body, Some(&StarClass::M));
+        let predictions = predict_species(&body, Some(&StarClass::M), None);
         assert!(!predictions.is_empty(), "Relaxed fallback should predict species even if bounds fail");
         assert_eq!(predictions[0].genus, "Aleoida");
     }
@@ -470,11 +477,11 @@ mod tests {
         };
 
         // Body with no volcanism should match "No volcanism" rule
-        assert!(match_variant(&variant, &body, None));
+        assert!(match_variant(&variant, &body, None, None));
 
         // Body WITH volcanism should NOT match "No volcanism" only rule
         body.volcanism = Some("minor metallic magma".to_string());
-        assert!(!match_variant(&variant, &body, None));
+        assert!(!match_variant(&variant, &body, None, None));
     }
 
     #[test]
@@ -502,15 +509,15 @@ mod tests {
 
         // No volcanism should fail
         body.volcanism = None;
-        assert!(!match_variant(&variant, &body, None));
+        assert!(!match_variant(&variant, &body, None, None));
 
         // Matching volcanism should pass
         body.volcanism = Some("minor metallic magma".to_string());
-        assert!(match_variant(&variant, &body, None));
+        assert!(match_variant(&variant, &body, None, None));
 
         // Non-matching volcanism should fail
         body.volcanism = Some("water geysers".to_string());
-        assert!(!match_variant(&variant, &body, None));
+        assert!(!match_variant(&variant, &body, None, None));
     }
 
     #[test]
@@ -539,14 +546,14 @@ mod tests {
         };
 
         // Pressure in range should match
-        assert!(match_variant(&variant, &body, None));
+        assert!(match_variant(&variant, &body, None, None));
 
         // Pressure out of range should fail
         body.pressure_atm = Some(0.20);
-        assert!(!match_variant(&variant, &body, None));
+        assert!(!match_variant(&variant, &body, None, None));
 
         // Pressure below minimum should fail
         body.pressure_atm = Some(0.005);
-        assert!(!match_variant(&variant, &body, None));
+        assert!(!match_variant(&variant, &body, None, None));
     }
 }

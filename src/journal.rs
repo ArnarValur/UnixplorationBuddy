@@ -531,6 +531,7 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
             sys.star_pos = Some(pos);
             if let Some(r) = crate::model::find_region(pos[0], pos[1], pos[2]) {
                 sys.region = Some(r.name.to_string());
+                sys.region_id = Some(r.id);
             }
             app.system = sys;
             app.bodies.clear();
@@ -554,6 +555,7 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                 sys.star_pos = Some(pos);
                 if let Some(r) = crate::model::find_region(pos[0], pos[1], pos[2]) {
                     sys.region = Some(r.name.to_string());
+                    sys.region_id = Some(r.id);
                 }
                 app.system = sys;
                 app.bodies.clear();

@@ -10,6 +10,8 @@ pub struct System {
     pub primary_star_id: Option<u32>,
     pub star_pos: Option<[f64; 3]>,
     pub region: Option<String>,
+    /// Galactic region ID (1-42) for bio prediction filtering.
+    pub region_id: Option<u8>,
 }
 
 impl System {
