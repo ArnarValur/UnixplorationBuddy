@@ -538,6 +538,7 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
             app.body_display_order.clear();
             app.selected_body_index = 0;
             app.system.body_count_discovered = 0;
+            app.current_primary_star_class = None;
 
             if track_trip {
                 app.status_message = Some(format!("Arrived in system: {}", app.system.name));
@@ -628,16 +629,26 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                         body_id == 0 || body.short_name.is_empty()
                     };
 
-                    if track_trip && is_new_body && is_primary {
-                        let star_type_str = format!("{}", star.star_type);
-                        let sub = star.subclass;
-                        let lum = format!("{}", star.luminosity).trim().to_uppercase();
-                        let star_class_str = if lum.is_empty() {
-                            format!("{}{}", star_type_str, sub)
-                        } else {
-                            format!("{}{} {}", star_type_str, sub, lum)
-                        };
-                        *app.trip.stellar_codex.entry(star_class_str).or_insert(0) += 1;
+                    // Build full star class string for codex tracking and highlight
+                    let star_type_str = format!("{}", star.star_type);
+                    let sub = star.subclass;
+                    let lum = format!("{}", star.luminosity).trim().to_uppercase();
+                    let star_class_str = if lum.is_empty() {
+                        format!("{}{}", star_type_str, sub)
+                    } else {
+                        format!("{}{} {}", star_type_str, sub, lum)
+                    };
+
+                    if is_primary {
+                        // Always set for Stellar Codex highlighting (even on replay)
+                        app.current_primary_star_class = Some(star_class_str.clone());
+
+                        if track_trip && is_new_body {
+                            *app.trip.stellar_codex.entry(star_class_str).or_insert(0) += 1;
+                        }
+                    } else if track_trip && is_new_body {
+                        // Track companion stars separately
+                        *app.trip.companion_stellar_codex.entry(star_class_str).or_insert(0) += 1;
                     }
 
                     let first_disc = !body.was_discovered;
@@ -934,6 +945,30 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
 
                     // Increment biological codex count
                     *app.trip.biological_codex.entry(species_name.clone()).or_insert(0) += 1;
+
+                    // Upgrade planetary codex key: |B → |B|C (confirmed life)
+                    // Only once per body — check if we've already upgraded via dedup key
+                    let body_id = u32::from(e.body);
+                    let dedup_key = format!("confirmed_{}_{}", e.system_address, body_id);
+                    if !app.trip.organic_progress.contains_key(&dedup_key) {
+                        app.trip.organic_progress.insert(dedup_key, 1);
+                        if let Some(body) = app.bodies.get(&body_id) {
+                            if let Some(ref pc) = body.planet_class {
+                                // Reconstruct the current key with |B
+                                let mut old_key = pc.clone();
+                                if body.landable { old_key.push_str("|L"); }
+                                if body.terraformable { old_key.push_str("|T"); }
+                                if body.ringed { old_key.push_str("|R"); }
+                                old_key.push_str("|B");
+
+                                if let Some(count) = app.trip.planetary_codex.remove(&old_key) {
+                                    let mut new_key = old_key.clone();
+                                    new_key.push_str("|C");
+                                    *app.trip.planetary_codex.entry(new_key).or_insert(0) += count;
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

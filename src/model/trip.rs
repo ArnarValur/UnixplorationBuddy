@@ -23,6 +23,8 @@ pub struct Trip {
     #[serde(default)]
     pub stellar_codex: std::collections::HashMap<String, u32>,
     #[serde(default)]
+    pub companion_stellar_codex: std::collections::HashMap<String, u32>,
+    #[serde(default)]
     pub planetary_codex: std::collections::HashMap<String, u32>,
     #[serde(default)]
     pub biological_codex: std::collections::HashMap<String, u32>,

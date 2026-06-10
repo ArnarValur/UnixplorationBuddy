@@ -115,58 +115,120 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
         CodexTab::Stellar => {
             struct MainClassGroup {
                 main_class: String,
-                total_visits: u32,
-                subtypes: Vec<(String, u32)>,
+                total_primary: u32,
+                total_companion: u32,
+                subtypes: Vec<(String, u32, u32)>, // (subtype, primary_count, companion_count)
             }
 
             let mut groups: std::collections::HashMap<String, MainClassGroup> = std::collections::HashMap::new();
 
+            // Ingest primary stellar codex
             for (subtype, count) in &trip.stellar_codex {
                 let main_class = get_main_class(subtype);
                 let group = groups.entry(main_class.clone()).or_insert_with(|| MainClassGroup {
                     main_class: main_class.clone(),
-                    total_visits: 0,
+                    total_primary: 0,
+                    total_companion: 0,
                     subtypes: Vec::new(),
                 });
-                group.total_visits += count;
-                group.subtypes.push((subtype.clone(), *count));
+                group.total_primary += count;
+                if let Some(entry) = group.subtypes.iter_mut().find(|s| s.0 == *subtype) {
+                    entry.1 += count;
+                } else {
+                    group.subtypes.push((subtype.clone(), *count, 0));
+                }
             }
 
+            // Ingest companion stellar codex
+            for (subtype, count) in &trip.companion_stellar_codex {
+                let main_class = get_main_class(subtype);
+                let group = groups.entry(main_class.clone()).or_insert_with(|| MainClassGroup {
+                    main_class: main_class.clone(),
+                    total_primary: 0,
+                    total_companion: 0,
+                    subtypes: Vec::new(),
+                });
+                group.total_companion += count;
+                if let Some(entry) = group.subtypes.iter_mut().find(|s| s.0 == *subtype) {
+                    entry.2 += count;
+                } else {
+                    group.subtypes.push((subtype.clone(), 0, *count));
+                }
+            }
+
+            // Sort groups by total (primary + companion) descending
             let mut group_list: Vec<MainClassGroup> = groups.into_values().collect();
-            group_list.sort_by(|a, b| b.total_visits.cmp(&a.total_visits).then_with(|| a.main_class.cmp(&b.main_class)));
+            group_list.sort_by(|a, b| {
+                let total_a = a.total_primary + a.total_companion;
+                let total_b = b.total_primary + b.total_companion;
+                total_b.cmp(&total_a).then_with(|| a.main_class.cmp(&b.main_class))
+            });
 
             for group in &mut group_list {
                 group.subtypes.sort_by(|a, b| {
-                    // Extract numeric subclass (e.g. "M3 VA" -> 3, "B8 IIIAB" -> 8)
                     let num_a = a.0.chars().skip_while(|c| !c.is_ascii_digit()).take_while(|c| c.is_ascii_digit()).collect::<String>().parse::<u32>().unwrap_or(u32::MAX);
                     let num_b = b.0.chars().skip_while(|c| !c.is_ascii_digit()).take_while(|c| c.is_ascii_digit()).collect::<String>().parse::<u32>().unwrap_or(u32::MAX);
                     num_a.cmp(&num_b).then_with(|| a.0.cmp(&b.0))
                 });
             }
 
+            // Resolve current primary star class for highlighting
+            let current_main = app.current_primary_star_class.as_ref().map(|s| get_main_class(s));
+            let current_full = app.current_primary_star_class.as_deref();
+
             let mut stellar_rows = Vec::new();
 
             for group in group_list {
+                let is_current_group = current_main.as_deref() == Some(group.main_class.as_str());
+
+                let parent_style = if is_current_group {
+                    Style::default().fg(COLOR_STAR).add_modifier(Modifier::BOLD | Modifier::UNDERLINED)
+                } else {
+                    Style::default().fg(COLOR_STAR).add_modifier(Modifier::BOLD)
+                };
+
+                let companion_str = if group.total_companion > 0 {
+                    group.total_companion.to_string()
+                } else {
+                    "—".to_string()
+                };
+
                 stellar_rows.push(
                     Row::new(vec![
                         group.main_class.clone(),
-                        group.total_visits.to_string(),
+                        group.total_primary.to_string(),
+                        companion_str,
                     ])
-                    .style(Style::default().fg(COLOR_STAR).add_modifier(Modifier::BOLD))
+                    .style(parent_style)
                 );
 
                 let has_redundant_single_child = group.subtypes.len() == 1 && group.subtypes[0].0 == group.main_class;
                 if !has_redundant_single_child {
                     let len = group.subtypes.len();
-                    for (i, (subtype, count)) in group.subtypes.iter().enumerate() {
+                    for (i, (subtype, primary, companion)) in group.subtypes.iter().enumerate() {
                         let is_last = i == len - 1;
                         let prefix = if is_last { "  └─ " } else { "  ├─ " };
+
+                        let is_current_subtype = current_full == Some(subtype.as_str());
+                        let (label, style) = if is_current_subtype {
+                            (format!("{}{} ►", prefix, subtype), Style::default().fg(COLOR_STAR))
+                        } else {
+                            (format!("{}{}", prefix, subtype), Style::default().fg(ELITE_DIM))
+                        };
+
+                        let comp_str = if *companion > 0 {
+                            companion.to_string()
+                        } else {
+                            "—".to_string()
+                        };
+
                         stellar_rows.push(
                             Row::new(vec![
-                                format!("{}{}", prefix, subtype),
-                                count.to_string(),
+                                label,
+                                primary.to_string(),
+                                comp_str,
                             ])
-                            .style(Style::default().fg(ELITE_DIM))
+                            .style(style)
                         );
                     }
                 }
@@ -179,7 +241,8 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 landable_count: u32,
                 terraformable_count: u32,
                 ringed_count: u32,
-                life_count: u32,
+                bio_signal_count: u32,
+                confirmed_life_count: u32,
             }
 
             let mut grouped: std::collections::HashMap<String, PlanetCodexGrouped> = std::collections::HashMap::new();
@@ -189,7 +252,8 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 let is_landable = parts.contains(&"L");
                 let is_terraformable = parts.contains(&"T");
                 let has_rings = parts.contains(&"R");
-                let has_life = parts.contains(&"B");
+                let has_bio_signals = parts.contains(&"B");
+                let has_confirmed_life = parts.contains(&"C");
 
                 let entry = grouped.entry(planet_class.clone()).or_insert_with(|| PlanetCodexGrouped {
                     planet_class: planet_class.clone(),
@@ -197,7 +261,8 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                     landable_count: 0,
                     terraformable_count: 0,
                     ringed_count: 0,
-                    life_count: 0,
+                    bio_signal_count: 0,
+                    confirmed_life_count: 0,
                 });
 
                 entry.total_scans += count;
@@ -210,8 +275,11 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 if has_rings {
                     entry.ringed_count += count;
                 }
-                if has_life {
-                    entry.life_count += count;
+                if has_bio_signals {
+                    entry.bio_signal_count += count;
+                }
+                if has_confirmed_life {
+                    entry.confirmed_life_count += count;
                 }
             }
 
@@ -269,8 +337,8 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                         if entry.ringed_count > 0 {
                             badges.push(format!("🪐x{}", entry.ringed_count));
                         }
-                        if entry.life_count > 0 {
-                            badges.push(format!("🌿x{}", entry.life_count));
+                        if entry.bio_signal_count > 0 {
+                            badges.push(format!("🌿x{}", entry.bio_signal_count));
                         }
 
                         let badges_str = if badges.is_empty() {
@@ -289,29 +357,33 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
 
                         // Sub-attribute rows (indented under the planet type)
                         let connector = if is_last_entry { "     " } else { "  │  " };
-                        let mut sub_attrs: Vec<(&str, u32)> = Vec::new();
+                        let mut sub_attrs: Vec<(&str, u32, bool)> = Vec::new();
                         if entry.ringed_count > 0 {
-                            sub_attrs.push(("Ringed", entry.ringed_count));
+                            sub_attrs.push(("Ringed", entry.ringed_count, false));
                         }
                         if entry.terraformable_count > 0 {
-                            sub_attrs.push(("Terraformable", entry.terraformable_count));
+                            sub_attrs.push(("Terraformable", entry.terraformable_count, false));
                         }
                         if entry.landable_count > 0 {
-                            sub_attrs.push(("Landable", entry.landable_count));
+                            sub_attrs.push(("Landable", entry.landable_count, false));
                         }
-                        if entry.life_count > 0 {
-                            sub_attrs.push(("Has Life", entry.life_count));
+                        if entry.bio_signal_count > 0 {
+                            sub_attrs.push(("Bio Signals", entry.bio_signal_count, false));
+                        }
+                        if entry.confirmed_life_count > 0 {
+                            sub_attrs.push(("Confirmed Life", entry.confirmed_life_count, true));
                         }
 
                         let sub_len = sub_attrs.len();
-                        for (j, (label, count)) in sub_attrs.iter().enumerate() {
+                        for (j, (label, count, is_bio)) in sub_attrs.iter().enumerate() {
                             let sub_prefix = if j == sub_len - 1 { "└─ " } else { "├─ " };
+                            let sub_color = if *is_bio { COLOR_BIO } else { ELITE_DIM };
                             planetary_rows.push(
                                 Row::new(vec![
                                     format!("{}  {}{}", connector, sub_prefix, label),
                                     count.to_string(),
                                 ])
-                                .style(Style::default().fg(ELITE_DIM))
+                                .style(Style::default().fg(sub_color))
                             );
                         }
                     }
@@ -327,10 +399,10 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 .split(content_area);
 
             // Draw Stellar Codex on Left
-            let header_stellar = Row::new(vec!["Primary Star Class", "Visits"])
+            let header_stellar = Row::new(vec!["Star Class", "Primary", "Comp."])
                 .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
 
-            let table_stellar = Table::new(stellar_rows, [Constraint::Length(30), Constraint::Min(10)])
+            let table_stellar = Table::new(stellar_rows, [Constraint::Length(22), Constraint::Length(8), Constraint::Min(6)])
                 .header(header_stellar)
                 .block(
                     Block::default()

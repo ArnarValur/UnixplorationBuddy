@@ -123,6 +123,9 @@ pub struct App {
     pub last_heading: Option<f64>,
     /// Sub-tab inside the Bodies view (System Map table vs Route).
     pub bodies_subtab: BodiesSubTab,
+    /// Full star class string of the current system's primary star (e.g. "B9 VAB").
+    /// Set on primary star Scan, cleared on FSDJump. Used to highlight the active row in the Stellar Codex.
+    pub current_primary_star_class: Option<String>,
 }
 
 impl App {
@@ -152,6 +155,7 @@ impl App {
             last_longitude: None,
             last_heading: None,
             bodies_subtab: BodiesSubTab::default(),
+            current_primary_star_class: None,
         }
     }
 
@@ -190,9 +194,12 @@ impl App {
     }
 
     /// Calculate the maximum number of rows in the stellar codex panel.
+    /// Accounts for both primary and companion star classes.
     pub fn max_stellar_rows(&self) -> usize {
-        let mut groups: HashMap<String, Vec<String>> = HashMap::new();
-        for subtype in self.trip.stellar_codex.keys() {
+        let mut groups: HashMap<String, std::collections::HashSet<String>> = HashMap::new();
+
+        // Collect subtypes from both primary and companion codices
+        for subtype in self.trip.stellar_codex.keys().chain(self.trip.companion_stellar_codex.keys()) {
             let mut main_class = String::new();
             for c in subtype.chars() {
                 if c.is_ascii_digit() || c == ' ' {
@@ -203,13 +210,13 @@ impl App {
             if main_class.is_empty() {
                 main_class = subtype.clone();
             }
-            groups.entry(main_class).or_insert_with(Vec::new).push(subtype.clone());
+            groups.entry(main_class).or_default().insert(subtype.clone());
         }
 
         let mut stellar_rows = 0;
         for (main_class, subtypes) in groups {
             stellar_rows += 1; // main class row
-            let has_redundant_single_child = subtypes.len() == 1 && subtypes[0] == main_class;
+            let has_redundant_single_child = subtypes.len() == 1 && subtypes.contains(&main_class);
             if !has_redundant_single_child {
                 stellar_rows += subtypes.len();
             }
@@ -221,20 +228,21 @@ impl App {
     /// Counts category headers + planet class rows + sub-attribute rows.
     pub fn max_planetary_rows(&self) -> usize {
         // Aggregate unique planet classes and their sub-attribute flags
-        let mut class_flags: HashMap<String, (bool, bool, bool, bool)> = HashMap::new();
+        let mut class_flags: HashMap<String, (bool, bool, bool, bool, bool)> = HashMap::new();
         for key in self.trip.planetary_codex.keys() {
             let parts: Vec<&str> = key.split('|').collect();
             let planet_class = parts[0].to_string();
-            let entry = class_flags.entry(planet_class).or_insert((false, false, false, false));
+            let entry = class_flags.entry(planet_class).or_insert((false, false, false, false, false));
             if parts.contains(&"R") { entry.0 = true; }
             if parts.contains(&"T") { entry.1 = true; }
             if parts.contains(&"L") { entry.2 = true; }
             if parts.contains(&"B") { entry.3 = true; }
+            if parts.contains(&"C") { entry.4 = true; }
         }
 
         let mut categories = std::collections::HashSet::new();
         let mut rows = 0usize;
-        for (planet_class, (has_r, has_t, has_l, has_b)) in &class_flags {
+        for (planet_class, (has_r, has_t, has_l, has_b, has_c)) in &class_flags {
             categories.insert(get_planet_category(planet_class));
             rows += 1; // planet class row
             // sub-attribute rows
@@ -242,6 +250,7 @@ impl App {
             if *has_t { rows += 1; }
             if *has_l { rows += 1; }
             if *has_b { rows += 1; }
+            if *has_c { rows += 1; }
         }
         rows += categories.len(); // category header rows
         rows
