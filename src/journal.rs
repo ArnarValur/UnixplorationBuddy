@@ -529,7 +529,9 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
             sys.primary_star_id = Some(u32::from(e.system_info.body_id));
             let pos = [e.system_info.star_pos[0] as f64, e.system_info.star_pos[1] as f64, e.system_info.star_pos[2] as f64];
             sys.star_pos = Some(pos);
-            // TODO: exact region lookup — see relay.md postit
+            if let Some(r) = crate::model::find_region(pos[0], pos[1], pos[2]) {
+                sys.region = Some(r.name.to_string());
+            }
             app.system = sys;
             app.bodies.clear();
             app.body_display_order.clear();
@@ -550,7 +552,9 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                 sys.primary_star_id = Some(u32::from(e.location_info.body_id));
                 let pos = [e.location_info.star_pos[0] as f64, e.location_info.star_pos[1] as f64, e.location_info.star_pos[2] as f64];
                 sys.star_pos = Some(pos);
-                // TODO: exact region lookup — see relay.md postit
+                if let Some(r) = crate::model::find_region(pos[0], pos[1], pos[2]) {
+                    sys.region = Some(r.name.to_string());
+                }
                 app.system = sys;
                 app.bodies.clear();
                 app.body_display_order.clear();
