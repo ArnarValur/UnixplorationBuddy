@@ -44,31 +44,76 @@ pub fn normalize_planet_class(pc: &str) -> String {
 /// Robustly checks if the system's primary star class matches a Canonn boundary star description.
 pub fn match_star_class(canonn_star: &str, system_star: &StarClass) -> bool {
     let norm_canonn = canonn_star.to_lowercase();
-    let debug_star = format!("{:?}", system_star).to_lowercase();
 
     match system_star {
-        StarClass::O if norm_canonn.contains("o (") || norm_canonn.contains("o-type") => true,
-        StarClass::B if norm_canonn.contains("b (") || norm_canonn.contains("b-type") => true,
-        StarClass::A if norm_canonn.contains("a (") || norm_canonn.contains("a-type") => true,
-        StarClass::F if norm_canonn.contains("f (") || norm_canonn.contains("f-type") => true,
-        StarClass::G if norm_canonn.contains("g (") || norm_canonn.contains("g-type") => true,
-        StarClass::K if norm_canonn.contains("k (") || norm_canonn.contains("k-type") => true,
-        StarClass::M if norm_canonn.contains("m (") || norm_canonn.contains("m-type") => true,
+        // Main sequence — match "X (" pattern to avoid false positives
+        StarClass::O if norm_canonn.contains("o (") || norm_canonn == "o-type" => true,
+        StarClass::B if norm_canonn.starts_with("b (") && !norm_canonn.contains("super giant") => true,
+        StarClass::A if norm_canonn.starts_with("a (") && !norm_canonn.contains("super giant") => true,
+        StarClass::F if norm_canonn.starts_with("f (") && !norm_canonn.contains("super giant") => true,
+        StarClass::G if norm_canonn.starts_with("g (") && !norm_canonn.contains("super giant") => true,
+        StarClass::K if norm_canonn.starts_with("k (") && !norm_canonn.contains("giant") => true,
+        StarClass::M if norm_canonn.starts_with("m (") && !norm_canonn.contains("giant") => true,
+
+        // Neutron / Black Hole
         StarClass::N if norm_canonn.contains("neutron") => true,
         StarClass::H | StarClass::SupermassiveBlackHole if norm_canonn.contains("black hole") => true,
-        StarClass::L | StarClass::T | StarClass::Y if norm_canonn.contains("brown dwarf") => true,
-        _ => {
-            // General fallback matching (e.g. Wolf-Rayet, Carbon stars, White dwarfs)
-            if norm_canonn.contains("white dwarf") && debug_star.starts_with('d') {
-                true
-            } else if norm_canonn.contains("wolf-rayet") && debug_star.starts_with('w') {
-                true
-            } else if norm_canonn.contains("carbon") && debug_star.starts_with('c') {
-                true
-            } else {
-                norm_canonn.contains(&debug_star) || debug_star.contains(&norm_canonn)
+
+        // Brown dwarfs — differentiate L, T, Y individually
+        StarClass::L if norm_canonn.starts_with("l (") => true,
+        StarClass::T if norm_canonn.starts_with("t (") && !norm_canonn.contains("t tauri") => true,
+        StarClass::Y if norm_canonn.starts_with("y (") => true,
+
+        // T Tauri
+        StarClass::TTS if norm_canonn.contains("t tauri") => true,
+
+        // Herbig Ae/Be
+        StarClass::Ae | StarClass::Be | StarClass::AeBe if norm_canonn.contains("herbig") => true,
+
+        // White Dwarfs — match specific subtypes from dataset strings like "White Dwarf (DA) Star"
+        StarClass::D | StarClass::DA | StarClass::DAB | StarClass::DAO |
+        StarClass::DAZ | StarClass::DAV | StarClass::DB | StarClass::DBZ |
+        StarClass::DBV | StarClass::DO | StarClass::DOV | StarClass::DQ |
+        StarClass::DC | StarClass::DCV | StarClass::DX => {
+            if !norm_canonn.contains("white dwarf") {
+                return false;
             }
+            // Extract subtype from dataset string: "White Dwarf (DA) Star" -> "DA"
+            if let Some(start) = norm_canonn.find('(') {
+                if let Some(end) = norm_canonn.find(')') {
+                    let dataset_subtype = &canonn_star[start + 1..end]; // preserve original case
+                    let system_subtype = format!("{:?}", system_star);
+                    return dataset_subtype == system_subtype;
+                }
+            }
+            // Bare "White Dwarf" with no subtype — match any
+            true
         }
+
+        // Supergiants — explicit matches
+        StarClass::ABlueWhiteSuperGiant if norm_canonn.contains("a (") && norm_canonn.contains("super giant") => true,
+        StarClass::BBlueWhiteSuperGiant if norm_canonn.contains("b (") && norm_canonn.contains("super giant") => true,
+        StarClass::FWhiteSuperGiant if norm_canonn.contains("f (") && norm_canonn.contains("super giant") => true,
+        StarClass::GWhiteSuperGiant if norm_canonn.contains("g (") && norm_canonn.contains("super giant") => true,
+        StarClass::MRedSuperGiant if norm_canonn.contains("m (") && norm_canonn.contains("super giant") => true,
+
+        // Giants
+        StarClass::MRedGiant if norm_canonn.contains("m (") && norm_canonn.contains("giant") && !norm_canonn.contains("super") => true,
+        StarClass::KOrangeGiant if norm_canonn.contains("k (") && norm_canonn.contains("giant") => true,
+
+        // Wolf-Rayet variants
+        StarClass::W | StarClass::WN | StarClass::WNC | StarClass::WC | StarClass::WO
+            if norm_canonn.contains("wolf-rayet") => true,
+
+        // Carbon star variants
+        StarClass::CS | StarClass::C | StarClass::CN | StarClass::CJ |
+        StarClass::CH | StarClass::CHd if norm_canonn.contains("carbon") || norm_canonn.contains("cn ") || norm_canonn.contains("cj ") => true,
+
+        // S-type / MS-type
+        StarClass::S if norm_canonn.contains("s-type") => true,
+        StarClass::MS if norm_canonn.contains("ms-type") => true,
+
+        _ => false,
     }
 }
 
@@ -133,6 +178,58 @@ pub fn match_variant(variant: &SpeciesVariant, body: &Body, primary_star: Option
         }
         if !matches_star {
             return false;
+        }
+    }
+
+    // 7. Volcanism filtering
+    //    Empty volcanism array = no constraint.
+    //    ["No volcanism"] = body must have no volcanism.
+    //    Other values = body must have volcanism matching at least one entry (substring).
+    if !variant.volcanism.is_empty() {
+        let has_no_volcanism_rule = variant.volcanism.iter().any(|v| {
+            let lv = v.to_lowercase();
+            lv == "no volcanism" || lv == "none"
+        });
+        let has_volcanism_rules: Vec<&str> = variant.volcanism.iter()
+            .filter(|v| {
+                let lv = v.to_lowercase();
+                lv != "no volcanism" && lv != "none"
+            })
+            .copied()
+            .collect();
+
+        match &body.volcanism {
+            None => {
+                // Body has no volcanism — only valid if "No volcanism" is in the list
+                if !has_no_volcanism_rule {
+                    return false;
+                }
+            }
+            Some(body_volc) => {
+                // Body HAS volcanism — check if it matches one of the non-"No volcanism" entries
+                if has_volcanism_rules.is_empty() {
+                    // Dataset only lists "No volcanism" but body has volcanism → fail
+                    return false;
+                }
+                let body_volc_lower = body_volc.to_lowercase();
+                let matches_any = has_volcanism_rules.iter().any(|rule| {
+                    let rule_lower = rule.to_lowercase();
+                    // Substring match: "minor metallic magma" matches body "minor metallic magma volcanism"
+                    body_volc_lower.contains(&rule_lower) || rule_lower.contains(&body_volc_lower)
+                });
+                if !matches_any && !has_no_volcanism_rule {
+                    return false;
+                }
+            }
+        }
+    }
+
+    // 8. Pressure filtering (in atm)
+    if variant.min_p > 0.0 || variant.max_p < f64::MAX {
+        if let Some(p) = body.pressure_atm {
+            if p < variant.min_p || p > variant.max_p {
+                return false;
+            }
         }
     }
 
@@ -287,5 +384,169 @@ mod tests {
         let predictions = predict_species(&body, Some(&StarClass::M));
         assert!(!predictions.is_empty(), "Relaxed fallback should predict species even if bounds fail");
         assert_eq!(predictions[0].genus, "Aleoida");
+    }
+
+    #[test]
+    fn test_brown_dwarf_differentiation() {
+        // L brown dwarf should match only "L (Brown dwarf) Star"
+        assert!(match_star_class("L (Brown dwarf) Star", &StarClass::L));
+        assert!(!match_star_class("T (Brown dwarf) Star", &StarClass::L));
+        assert!(!match_star_class("Y (Brown dwarf) Star", &StarClass::L));
+
+        // T brown dwarf should match only "T (Brown dwarf) Star"
+        assert!(match_star_class("T (Brown dwarf) Star", &StarClass::T));
+        assert!(!match_star_class("L (Brown dwarf) Star", &StarClass::T));
+        assert!(!match_star_class("Y (Brown dwarf) Star", &StarClass::T));
+
+        // Y brown dwarf should match only "Y (Brown dwarf) Star"
+        assert!(match_star_class("Y (Brown dwarf) Star", &StarClass::Y));
+        assert!(!match_star_class("L (Brown dwarf) Star", &StarClass::Y));
+        assert!(!match_star_class("T (Brown dwarf) Star", &StarClass::Y));
+    }
+
+    #[test]
+    fn test_white_dwarf_subtypes() {
+        // DA should match "White Dwarf (DA) Star" but not "White Dwarf (DB) Star"
+        assert!(match_star_class("White Dwarf (DA) Star", &StarClass::DA));
+        assert!(!match_star_class("White Dwarf (DB) Star", &StarClass::DA));
+        assert!(!match_star_class("White Dwarf (DC) Star", &StarClass::DA));
+
+        // DB should match "White Dwarf (DB) Star" only
+        assert!(match_star_class("White Dwarf (DB) Star", &StarClass::DB));
+        assert!(!match_star_class("White Dwarf (DA) Star", &StarClass::DB));
+
+        // DC should match "White Dwarf (DC) Star" only
+        assert!(match_star_class("White Dwarf (DC) Star", &StarClass::DC));
+        assert!(!match_star_class("White Dwarf (DA) Star", &StarClass::DC));
+
+        // DAZ should match "White Dwarf (DAZ) Star" only
+        assert!(match_star_class("White Dwarf (DAZ) Star", &StarClass::DAZ));
+        assert!(!match_star_class("White Dwarf (DA) Star", &StarClass::DAZ));
+    }
+
+    #[test]
+    fn test_supergiant_matching() {
+        // A supergiant should match "A (Blue-White super giant) Star"
+        assert!(match_star_class("A (Blue-White super giant) Star", &StarClass::ABlueWhiteSuperGiant));
+        // But should NOT match regular "A (Blue-White) Star"
+        assert!(!match_star_class("A (Blue-White) Star", &StarClass::ABlueWhiteSuperGiant));
+
+        // Regular A should NOT match supergiant
+        assert!(!match_star_class("A (Blue-White super giant) Star", &StarClass::A));
+
+        // B supergiant
+        assert!(match_star_class("B (Blue-White super giant) Star", &StarClass::BBlueWhiteSuperGiant));
+        assert!(!match_star_class("B (Blue-White) Star", &StarClass::BBlueWhiteSuperGiant));
+
+        // M Red giant vs M Red super giant vs M regular
+        assert!(match_star_class("M (Red giant) Star", &StarClass::MRedGiant));
+        assert!(!match_star_class("M (Red super giant) Star", &StarClass::MRedGiant));
+        assert!(match_star_class("M (Red super giant) Star", &StarClass::MRedSuperGiant));
+        assert!(!match_star_class("M (Red dwarf) Star", &StarClass::MRedGiant));
+    }
+
+    #[test]
+    fn test_volcanism_filtering_no_volcanism() {
+        let mut body = Body::new(1, "Test".into());
+        body.body_type = BodyType::Planet;
+        body.landable = true;
+        body.planet_class = Some("Rocky body".to_string());
+        body.atmosphere = Some("Thin Carbon dioxide".to_string());
+        body.gravity = Some(0.16);
+        body.temperature = Some(178.0);
+        body.volcanism = None; // No volcanism
+
+        let variant = SpeciesVariant {
+            name: "Test Species",
+            genus: "Aleoida",
+            reward: 1000,
+            atmosphere_types: &["Thin Carbon dioxide"],
+            bodies: &["Rocky body"],
+            primary_stars: &[],
+            min_g: 0.0, max_g: 10.0,
+            min_t: 0.0, max_t: 1000.0,
+            min_p: 0.0, max_p: 100.0,
+            volcanism: &["No volcanism"],
+        };
+
+        // Body with no volcanism should match "No volcanism" rule
+        assert!(match_variant(&variant, &body, None));
+
+        // Body WITH volcanism should NOT match "No volcanism" only rule
+        body.volcanism = Some("minor metallic magma".to_string());
+        assert!(!match_variant(&variant, &body, None));
+    }
+
+    #[test]
+    fn test_volcanism_filtering_requires_volcanism() {
+        let mut body = Body::new(1, "Test".into());
+        body.body_type = BodyType::Planet;
+        body.landable = true;
+        body.planet_class = Some("Rocky body".to_string());
+        body.atmosphere = Some("Thin Sulfur dioxide".to_string());
+        body.gravity = Some(0.16);
+        body.temperature = Some(400.0);
+
+        let variant = SpeciesVariant {
+            name: "Fumerola Test",
+            genus: "Fumerola",
+            reward: 1000,
+            atmosphere_types: &["Thin Sulfur dioxide"],
+            bodies: &["Rocky body"],
+            primary_stars: &[],
+            min_g: 0.0, max_g: 10.0,
+            min_t: 0.0, max_t: 1000.0,
+            min_p: 0.0, max_p: 100.0,
+            volcanism: &["Minor Metallic Magma", "Metallic Magma"],
+        };
+
+        // No volcanism should fail
+        body.volcanism = None;
+        assert!(!match_variant(&variant, &body, None));
+
+        // Matching volcanism should pass
+        body.volcanism = Some("minor metallic magma".to_string());
+        assert!(match_variant(&variant, &body, None));
+
+        // Non-matching volcanism should fail
+        body.volcanism = Some("water geysers".to_string());
+        assert!(!match_variant(&variant, &body, None));
+    }
+
+    #[test]
+    fn test_pressure_filtering() {
+        let mut body = Body::new(1, "Test".into());
+        body.body_type = BodyType::Planet;
+        body.landable = true;
+        body.planet_class = Some("Rocky body".to_string());
+        body.atmosphere = Some("Thin Carbon dioxide".to_string());
+        body.gravity = Some(0.16);
+        body.temperature = Some(178.0);
+        body.volcanism = None;
+        body.pressure_atm = Some(0.05); // 0.05 atm
+
+        let variant = SpeciesVariant {
+            name: "Test Species",
+            genus: "Aleoida",
+            reward: 1000,
+            atmosphere_types: &["Thin Carbon dioxide"],
+            bodies: &["Rocky body"],
+            primary_stars: &[],
+            min_g: 0.0, max_g: 10.0,
+            min_t: 0.0, max_t: 1000.0,
+            min_p: 0.01, max_p: 0.10,
+            volcanism: &["No volcanism"],
+        };
+
+        // Pressure in range should match
+        assert!(match_variant(&variant, &body, None));
+
+        // Pressure out of range should fail
+        body.pressure_atm = Some(0.20);
+        assert!(!match_variant(&variant, &body, None));
+
+        // Pressure below minimum should fail
+        body.pressure_atm = Some(0.005);
+        assert!(!match_variant(&variant, &body, None));
     }
 }
