@@ -103,8 +103,12 @@ pub struct App {
     pub edsm_cache: HashMap<String, EdsmSystemData>,
     /// Active sub-tab in Trip tab.
     pub active_codex_tab: CodexTab,
-    /// Selected row index in the active codex tab.
-    pub selected_codex_index: usize,
+    /// Selected row index in the stellar codex panel.
+    pub selected_stellar_index: usize,
+    /// Selected row index in the planetary codex panel.
+    pub selected_planetary_index: usize,
+    /// Whether the left panel is focused in the Stellar&Planetary codex view.
+    pub codex_focus_left: bool,
     /// Modular columns visibility toggles.
     pub column_settings: ColumnSettings,
     /// Whether the Settings overlay is currently visible.
@@ -138,7 +142,9 @@ impl App {
             plotted_route: None,
             edsm_cache: HashMap::new(),
             active_codex_tab: CodexTab::default(),
-            selected_codex_index: 0,
+            selected_stellar_index: 0,
+            selected_planetary_index: 0,
+            codex_focus_left: true,
             column_settings: ColumnSettings::default(),
             show_settings: false,
             show_inspector: false,
@@ -164,7 +170,6 @@ impl App {
 
     /// Cycle to the next codex sub-tab in the History view.
     pub fn next_codex_tab(&mut self) {
-        self.selected_codex_index = 0;
         self.active_codex_tab = match self.active_codex_tab {
             CodexTab::Overview => CodexTab::Stellar,
             CodexTab::Stellar => CodexTab::Overview,
@@ -173,76 +178,134 @@ impl App {
 
     /// Cycle to the previous codex sub-tab in the History view.
     pub fn prev_codex_tab(&mut self) {
-        self.selected_codex_index = 0;
         self.active_codex_tab = match self.active_codex_tab {
             CodexTab::Overview => CodexTab::Stellar,
             CodexTab::Stellar => CodexTab::Overview,
         };
     }
 
-    /// Calculate the maximum number of rows in the active codex tab.
-    pub fn max_codex_rows(&self) -> usize {
-        match self.active_codex_tab {
-            CodexTab::Overview => self.trip.biological_codex.len(),
-            CodexTab::Stellar => {
-                let mut groups: HashMap<String, Vec<String>> = HashMap::new();
-                for subtype in self.trip.stellar_codex.keys() {
-                    let mut main_class = String::new();
-                    for c in subtype.chars() {
-                        if c.is_ascii_digit() || c == ' ' {
-                            break;
-                        }
-                        main_class.push(c);
-                    }
-                    if main_class.is_empty() {
-                        main_class = subtype.clone();
-                    }
-                    groups.entry(main_class).or_insert_with(Vec::new).push(subtype.clone());
-                }
-                
-                let mut stellar_rows = 0;
-                for (main_class, subtypes) in groups {
-                    stellar_rows += 1; // main class row
-                    let has_redundant_single_child = subtypes.len() == 1 && subtypes[0] == main_class;
-                    if !has_redundant_single_child {
-                        stellar_rows += subtypes.len();
-                    }
-                }
+    /// Calculate the maximum number of rows in the biological codex.
+    pub fn max_bio_codex_rows(&self) -> usize {
+        self.trip.biological_codex.len()
+    }
 
-                let mut unique_classes = std::collections::HashSet::new();
-                for key in self.trip.planetary_codex.keys() {
-                    let parts: Vec<&str> = key.split('|').collect();
-                    unique_classes.insert(parts[0].to_string());
+    /// Calculate the maximum number of rows in the stellar codex panel.
+    pub fn max_stellar_rows(&self) -> usize {
+        let mut groups: HashMap<String, Vec<String>> = HashMap::new();
+        for subtype in self.trip.stellar_codex.keys() {
+            let mut main_class = String::new();
+            for c in subtype.chars() {
+                if c.is_ascii_digit() || c == ' ' {
+                    break;
                 }
+                main_class.push(c);
+            }
+            if main_class.is_empty() {
+                main_class = subtype.clone();
+            }
+            groups.entry(main_class).or_insert_with(Vec::new).push(subtype.clone());
+        }
 
-                let mut categories = std::collections::HashSet::new();
-                for planet_class in &unique_classes {
-                    categories.insert(get_planet_category(planet_class));
-                }
-
-                let planetary_rows = unique_classes.len() + categories.len();
-                std::cmp::max(stellar_rows, planetary_rows)
+        let mut stellar_rows = 0;
+        for (main_class, subtypes) in groups {
+            stellar_rows += 1; // main class row
+            let has_redundant_single_child = subtypes.len() == 1 && subtypes[0] == main_class;
+            if !has_redundant_single_child {
+                stellar_rows += subtypes.len();
             }
         }
+        stellar_rows
+    }
+
+    /// Calculate the maximum number of rows in the planetary codex panel.
+    /// Counts category headers + planet class rows + sub-attribute rows.
+    pub fn max_planetary_rows(&self) -> usize {
+        // Aggregate unique planet classes and their sub-attribute flags
+        let mut class_flags: HashMap<String, (bool, bool, bool, bool)> = HashMap::new();
+        for key in self.trip.planetary_codex.keys() {
+            let parts: Vec<&str> = key.split('|').collect();
+            let planet_class = parts[0].to_string();
+            let entry = class_flags.entry(planet_class).or_insert((false, false, false, false));
+            if parts.contains(&"R") { entry.0 = true; }
+            if parts.contains(&"T") { entry.1 = true; }
+            if parts.contains(&"L") { entry.2 = true; }
+            if parts.contains(&"B") { entry.3 = true; }
+        }
+
+        let mut categories = std::collections::HashSet::new();
+        let mut rows = 0usize;
+        for (planet_class, (has_r, has_t, has_l, has_b)) in &class_flags {
+            categories.insert(get_planet_category(planet_class));
+            rows += 1; // planet class row
+            // sub-attribute rows
+            if *has_r { rows += 1; }
+            if *has_t { rows += 1; }
+            if *has_l { rows += 1; }
+            if *has_b { rows += 1; }
+        }
+        rows += categories.len(); // category header rows
+        rows
     }
 
     /// Move selection down in the active codex.
     pub fn select_next_codex_row(&mut self) {
-        let max_rows = self.max_codex_rows();
-        if max_rows > 0 {
-            self.selected_codex_index = (self.selected_codex_index + 1) % max_rows;
+        match self.active_codex_tab {
+            CodexTab::Overview => {
+                let max = self.max_bio_codex_rows();
+                if max > 0 {
+                    self.selected_stellar_index = (self.selected_stellar_index + 1) % max;
+                }
+            }
+            CodexTab::Stellar => {
+                if self.codex_focus_left {
+                    let max_s = self.max_stellar_rows();
+                    if max_s > 0 {
+                        self.selected_stellar_index = (self.selected_stellar_index + 1) % max_s;
+                    }
+                } else {
+                    let max_p = self.max_planetary_rows();
+                    if max_p > 0 {
+                        self.selected_planetary_index = (self.selected_planetary_index + 1) % max_p;
+                    }
+                }
+            }
         }
     }
 
     /// Move selection up in the active codex.
     pub fn select_previous_codex_row(&mut self) {
-        let max_rows = self.max_codex_rows();
-        if max_rows > 0 {
-            self.selected_codex_index = if self.selected_codex_index == 0 {
-                max_rows - 1
-            } else {
-                self.selected_codex_index - 1
-            };
+        match self.active_codex_tab {
+            CodexTab::Overview => {
+                let max = self.max_bio_codex_rows();
+                if max > 0 {
+                    self.selected_stellar_index = if self.selected_stellar_index == 0 {
+                        max - 1
+                    } else {
+                        self.selected_stellar_index - 1
+                    };
+                }
+            }
+            CodexTab::Stellar => {
+                if self.codex_focus_left {
+                    let max_s = self.max_stellar_rows();
+                    if max_s > 0 {
+                        self.selected_stellar_index = if self.selected_stellar_index == 0 {
+                            max_s - 1
+                        } else {
+                            self.selected_stellar_index - 1
+                        };
+                    }
+                } else {
+                    let max_p = self.max_planetary_rows();
+                    if max_p > 0 {
+                        self.selected_planetary_index = if self.selected_planetary_index == 0 {
+                            max_p - 1
+                        } else {
+                            self.selected_planetary_index - 1
+                        };
+                    }
+                }
+            }
         }
     }
 
@@ -325,7 +388,7 @@ mod tests {
     fn test_codex_row_selection() {
         let mut app = App::new();
         app.active_codex_tab = CodexTab::Stellar;
-        assert_eq!(app.max_codex_rows(), 0);
+        assert_eq!(app.max_stellar_rows(), 0);
 
         // Populate mock stellar codex
         app.trip.stellar_codex.insert("F9 VAB".to_string(), 10);
@@ -334,16 +397,16 @@ mod tests {
 
         // F group has main F + 2 subtypes = 3 rows.
         // K group has main K (redundant single child) = 1 row.
-        // Total rows = 4.
-        assert_eq!(app.max_codex_rows(), 4);
+        // Total stellar rows = 4.
+        assert_eq!(app.max_stellar_rows(), 4);
 
-        assert_eq!(app.selected_codex_index, 0);
+        assert_eq!(app.selected_stellar_index, 0);
         app.select_next_codex_row();
-        assert_eq!(app.selected_codex_index, 1);
+        assert_eq!(app.selected_stellar_index, 1);
         app.select_previous_codex_row();
-        assert_eq!(app.selected_codex_index, 0);
+        assert_eq!(app.selected_stellar_index, 0);
         app.select_previous_codex_row();
-        assert_eq!(app.selected_codex_index, 3);
+        assert_eq!(app.selected_stellar_index, 3);
     }
 
     #[test]
@@ -354,7 +417,7 @@ mod tests {
 
         let mut app = App::new();
         app.active_codex_tab = CodexTab::Stellar;
-        assert_eq!(app.max_codex_rows(), 0);
+        assert_eq!(app.max_planetary_rows(), 0);
 
         // Ingest mock planetary codex data with sub-attribute flags encoded in keys
         app.trip.planetary_codex.insert("High metal content body|L".to_string(), 3);
@@ -362,10 +425,12 @@ mod tests {
         app.trip.planetary_codex.insert("Earth-like World|L".to_string(), 2);
         app.trip.planetary_codex.insert("Rocky body|L".to_string(), 5);
 
-        // Active categories: "Rare Worlds", "Terrestrial Worlds" (2 categories)
-        // Unique planet classes: "High metal content body", "Earth-like World", "Rocky body" (3 classes)
-        // Total rows = 2 + 3 = 5
-        assert_eq!(app.max_codex_rows(), 5);
+        // Categories: "Rare Worlds", "Terrestrial Worlds" = 2 header rows
+        // HMC: 1 class row + Ringed(1) + Terraformable(1) + Landable(1) = 4 rows
+        // Earth-like: 1 class row + Landable(1) = 2 rows
+        // Rocky body: 1 class row + Landable(1) = 2 rows
+        // Total = 2 + 4 + 2 + 2 = 10
+        assert_eq!(app.max_planetary_rows(), 10);
     }
 
     #[test]

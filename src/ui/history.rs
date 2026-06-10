@@ -95,7 +95,7 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
 
             frame.render_widget(table_stats, split_chunks[0]);
 
-            let mut state_bio = TableState::default().with_selected(Some(app.selected_codex_index));
+            let mut state_bio = TableState::default().with_selected(Some(app.selected_stellar_index));
             frame.render_stateful_widget(table_bio, split_chunks[1], &mut state_bio);
 
             if total_rows_bio > (split_chunks[1].height as usize).saturating_sub(4) {
@@ -104,7 +104,7 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                     .end_symbol(None)
                     .track_symbol(Some("│"))
                     .thumb_symbol("█");
-                let mut scrollbar_state = ScrollbarState::new(total_rows_bio).position(app.selected_codex_index);
+                let mut scrollbar_state = ScrollbarState::new(total_rows_bio).position(app.selected_stellar_index);
                 frame.render_stateful_widget(
                     scrollbar,
                     split_chunks[1].inner(ratatui::layout::Margin { vertical: 1, horizontal: 0 }),
@@ -336,7 +336,7 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 .row_highlight_style(Style::default().bg(HIGHLIGHT_BG))
                 .style(Style::default().bg(BG_DARK));
 
-            let selected_stellar = if total_stellar > 0 { Some(app.selected_codex_index % total_stellar) } else { None };
+            let selected_stellar = if total_stellar > 0 { Some(app.selected_stellar_index % total_stellar) } else { None };
             let mut state_stellar = TableState::default().with_selected(selected_stellar);
             frame.render_stateful_widget(table_stellar, split_chunks[0], &mut state_stellar);
 
@@ -369,7 +369,7 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 .row_highlight_style(Style::default().bg(HIGHLIGHT_BG))
                 .style(Style::default().bg(BG_DARK));
 
-            let selected_planetary = if total_planetary > 0 { Some(app.selected_codex_index % total_planetary) } else { None };
+            let selected_planetary = if total_planetary > 0 { Some(app.selected_planetary_index % total_planetary) } else { None };
             let mut state_planetary = TableState::default().with_selected(selected_planetary);
             frame.render_stateful_widget(table_planetary, split_chunks[1], &mut state_planetary);
 

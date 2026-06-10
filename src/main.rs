@@ -263,14 +263,26 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                             }
                             KeyCode::Left | KeyCode::Char('a') | KeyCode::Char('A') => {
                                 if app.active_tab == app::Tab::History {
-                                    app.prev_codex_tab();
+                                    if app.active_codex_tab == app::CodexTab::Stellar
+                                        && (key.code == KeyCode::Left)
+                                    {
+                                        app.codex_focus_left = true;
+                                    } else {
+                                        app.prev_codex_tab();
+                                    }
                                 } else if app.active_tab == app::Tab::Bodies {
                                     app.bodies_subtab = app::BodiesSubTab::Table;
                                 }
                             }
                             KeyCode::Right | KeyCode::Char('d') | KeyCode::Char('D') => {
                                 if app.active_tab == app::Tab::History {
-                                    app.next_codex_tab();
+                                    if app.active_codex_tab == app::CodexTab::Stellar
+                                        && (key.code == KeyCode::Right)
+                                    {
+                                        app.codex_focus_left = false;
+                                    } else {
+                                        app.next_codex_tab();
+                                    }
                                 } else if app.active_tab == app::Tab::Bodies {
                                     app.bodies_subtab = app::BodiesSubTab::Route;
                                 }
@@ -298,6 +310,12 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                     match mouse.kind {
                         MouseEventKind::ScrollUp => {
                             if app.active_tab == app::Tab::History {
+                                if app.active_codex_tab == app::CodexTab::Stellar {
+                                    // Use mouse column to determine panel
+                                    let term_width = terminal.size()?.width;
+                                    let mid = (term_width as f32 * 0.45) as u16;
+                                    app.codex_focus_left = mouse.column < mid;
+                                }
                                 app.select_previous_codex_row();
                             } else {
                                 app.select_previous_body();
@@ -305,6 +323,11 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                         }
                         MouseEventKind::ScrollDown => {
                             if app.active_tab == app::Tab::History {
+                                if app.active_codex_tab == app::CodexTab::Stellar {
+                                    let term_width = terminal.size()?.width;
+                                    let mid = (term_width as f32 * 0.45) as u16;
+                                    app.codex_focus_left = mouse.column < mid;
+                                }
                                 app.select_next_codex_row();
                             } else {
                                 app.select_next_body();
