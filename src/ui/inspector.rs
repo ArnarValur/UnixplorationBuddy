@@ -167,11 +167,19 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
                     colors::ColorMethod::Star => {
                         if let Some(color) = colors::resolve_star_color(&g.base_name, &star_debug) {
                             g.variants = vec![color.to_string()];
+                            // Fix active variant to use resolved color (base-name progress
+                            // key can match the wrong dataset variant)
+                            if g.active_variant.is_some() {
+                                g.active_variant = Some(format!("{} - {}", g.base_name, color));
+                            }
                         }
                     }
                     colors::ColorMethod::Element => {
                         if let Some(color) = colors::resolve_element_color(&g.base_name, &body.surface_materials) {
                             g.variants = vec![color.to_string()];
+                            if g.active_variant.is_some() {
+                                g.active_variant = Some(format!("{} - {}", g.base_name, color));
+                            }
                         } else if !body.surface_materials.is_empty() {
                             // Materials present but no match — leave variants as-is
                         } else {
