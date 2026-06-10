@@ -664,6 +664,27 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     body.landable = planet.landable;
                     body.ringed = !planet.rings.is_empty();
 
+                    // Volcanism — store as lowercase string for substring matching
+                    let volc_str = format!("{:?}", planet.volcanism.kind);
+                    if volc_str != "None" {
+                        body.volcanism = Some(volc_str.to_lowercase());
+                    } else {
+                        body.volcanism = None;
+                    }
+
+                    // Surface pressure — convert Pa to atm
+                    let pressure_pa = planet.surface_pressure as f64;
+                    if pressure_pa > 0.0 {
+                        body.pressure_atm = Some(pressure_pa / 101325.0);
+                    }
+
+                    // Surface materials
+                    if !planet.materials.is_empty() {
+                        body.surface_materials = planet.materials.iter()
+                            .map(|m| (format!("{:?}", m.name).to_lowercase(), m.percent as f64))
+                            .collect();
+                    }
+
                     // Parse Keplerian orbital elements for TUI Orrery simulation
                     body.semi_major_axis = Some(planet.orbit_info.semi_major_axis as f64);
                     body.eccentricity = Some(planet.orbit_info.eccentricity as f64);
@@ -1249,6 +1270,13 @@ mod tests {
         assert!((body.temperature.unwrap() - 2282.107422).abs() < 0.0001);
         assert!(!body.landable);
 
+        // Verify new exobiology fields
+        assert_eq!(body.volcanism.as_deref(), Some("silicatevapourgeysers"));
+        let expected_pressure_atm = 3268144640.0_f64 / 101325.0;
+        assert!((body.pressure_atm.unwrap() - expected_pressure_atm).abs() < 0.01);
+        // This planet has no Materials in the test JSON
+        assert!(body.surface_materials.is_empty());
+
         // Verify Keplerian orbital parameter parsing (using f32 precision values)
         assert!((body.semi_major_axis.unwrap() - 37443051520.0).abs() < 1.0);
         assert!((body.eccentricity.unwrap() - 0.057579).abs() < 0.0001);
@@ -1277,6 +1305,14 @@ mod tests {
         assert!((body.gravity.unwrap() - (1.113483 / 9.80665)).abs() < 0.0001);
         assert!((body.temperature.unwrap() - 352.186981).abs() < 0.0001);
         assert!(body.landable);
+
+        // Verify exobiology fields on moon
+        assert!(body.volcanism.is_none(), "Empty volcanism should be None");
+        assert!(body.pressure_atm.is_none(), "Zero pressure should be None");
+        assert!(!body.surface_materials.is_empty(), "Moon should have materials");
+        // The test JSON has iron at 19.464247%
+        assert_eq!(body.surface_materials[0].0, "iron");
+        assert!((body.surface_materials[0].1 - 19.464247).abs() < 0.001);
     }
 
     // ---------------------------------------------------------------

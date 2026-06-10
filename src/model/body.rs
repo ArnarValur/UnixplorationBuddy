@@ -94,6 +94,12 @@ pub struct Body {
     pub ringed: bool,
     /// Biological genuses reported by SAA scan.
     pub bio_genuses: Vec<String>,
+    /// Volcanism description string (e.g., "major silicate vapour geysers").
+    pub volcanism: Option<String>,
+    /// Surface pressure in atmospheres.
+    pub pressure_atm: Option<f64>,
+    /// Surface materials and their percentages.
+    pub surface_materials: Vec<(String, f64)>,
     // Keplerian orbital elements for TUI Orrery simulation
     pub semi_major_axis: Option<f64>,
     pub eccentricity: Option<f64>,
@@ -137,6 +143,9 @@ impl Body {
             landable: false,
             ringed: false,
             bio_genuses: Vec::new(),
+            volcanism: None,
+            pressure_atm: None,
+            surface_materials: Vec::new(),
             semi_major_axis: None,
             eccentricity: None,
             inclination: None,
