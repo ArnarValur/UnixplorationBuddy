@@ -136,7 +136,12 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
             group_list.sort_by(|a, b| b.total_visits.cmp(&a.total_visits).then_with(|| a.main_class.cmp(&b.main_class)));
 
             for group in &mut group_list {
-                group.subtypes.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+                group.subtypes.sort_by(|a, b| {
+                    // Extract numeric subclass (e.g. "M3 VA" -> 3, "B8 IIIAB" -> 8)
+                    let num_a = a.0.chars().skip_while(|c| !c.is_ascii_digit()).take_while(|c| c.is_ascii_digit()).collect::<String>().parse::<u32>().unwrap_or(u32::MAX);
+                    let num_b = b.0.chars().skip_while(|c| !c.is_ascii_digit()).take_while(|c| c.is_ascii_digit()).collect::<String>().parse::<u32>().unwrap_or(u32::MAX);
+                    num_a.cmp(&num_b).then_with(|| a.0.cmp(&b.0))
+                });
             }
 
             let mut stellar_rows = Vec::new();

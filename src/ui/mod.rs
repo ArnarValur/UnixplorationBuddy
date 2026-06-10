@@ -589,13 +589,13 @@ mod tests {
         assert!(output.contains("F"), "Stellar Codex should show main class F");
         assert!(output.contains("66"), "Stellar Codex should sum F visits (40+20+6=66)");
         
-        // Subtypes should be displayed with tree lines
-        assert!(output.contains("├─ F9 VAB"), "Should render child F9 VAB");
-        assert!(output.contains("40"), "Should show F9 VAB count");
+        // Subtypes should be displayed in numeric subclass order (F1, F2, F9)
         assert!(output.contains("├─ F1 VA"), "Should render child F1 VA");
         assert!(output.contains("20"), "Should show F1 VA count");
-        assert!(output.contains("└─ F2"), "Should render last child F2");
+        assert!(output.contains("├─ F2"), "Should render child F2");
         assert!(output.contains("6"), "Should show F2 count");
+        assert!(output.contains("└─ F9 VAB"), "Should render last child F9 VAB");
+        assert!(output.contains("40"), "Should show F9 VAB count");
 
         // TTS should be rendered as main class but not duplicated as child because subtype == main_class
         assert!(output.contains("TTS"), "Should show main class TTS");

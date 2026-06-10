@@ -86,6 +86,7 @@ pub fn region_in_group(region_id: u8, group_name: &str) -> bool {
 }
 
 /// Get all group names that a region ID belongs to.
+#[allow(dead_code)]
 pub fn region_groups(region_id: u8) -> Vec<&'static str> {
     REGION_GROUPS
         .iter()
@@ -95,6 +96,7 @@ pub fn region_groups(region_id: u8) -> Vec<&'static str> {
 }
 
 /// Get the region name for a given ID (1-42), or None for invalid/zero.
+#[allow(dead_code)]
 pub fn region_name(id: u8) -> Option<&'static str> {
     if id == 0 || id as usize >= REGION_NAMES.len() {
         return None;
