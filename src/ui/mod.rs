@@ -361,8 +361,19 @@ fn short_planet_class(pc: &str) -> String {
 
 /// Map journal atmosphere strings to compact chemical formulas.
 pub fn format_atmosphere(raw: &str) -> String {
-    // Strip common prefixes like "Thin ", "Thick ", "Hot thin ", "Hot thick "
-    let stripped = raw
+    // Normalize CamelCase enum Debug output (e.g. "HotThickCarbonDioxide")
+    // into spaced words ("Hot Thick Carbon Dioxide") before matching.
+    let mut spaced = String::with_capacity(raw.len() + 8);
+    for (i, ch) in raw.chars().enumerate() {
+        if i > 0 && ch.is_uppercase() {
+            spaced.push(' ');
+        }
+        spaced.push(ch);
+    }
+    let norm = spaced.trim();
+
+    // Strip common prefixes
+    let stripped = norm
         .trim_start_matches("Hot ")
         .trim_start_matches("Thin ")
         .trim_start_matches("Thick ");
@@ -381,15 +392,17 @@ pub fn format_atmosphere(raw: &str) -> String {
         "silicate vapour" | "silicatevapour" => "SiO\u{2082}",
         "metallic vapour" | "metallicvapour" => "Metal",
         "carbon dioxide atmosphere" | "carbondioxideatmosphere" => "CO\u{2082}",
-        _ => return raw.to_string(),
+        _ => return norm.to_string(),
     };
     // Re-add prefix if present
-    let prefix = if raw.starts_with("Hot ") {
-        "Hot "
-    } else if raw.starts_with("Thin ") || raw.starts_with("Hot thin ") {
-        ""
-    } else if raw.starts_with("Thick ") || raw.starts_with("Hot thick ") {
+    let prefix = if norm.starts_with("Hot Thick ") {
         "Thick "
+    } else if norm.starts_with("Hot Thin ") || norm.starts_with("Thin ") {
+        ""
+    } else if norm.starts_with("Thick ") {
+        "Thick "
+    } else if norm.starts_with("Hot ") {
+        "Hot "
     } else {
         ""
     };
