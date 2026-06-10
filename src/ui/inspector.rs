@@ -6,7 +6,7 @@ use ratatui::Frame;
 
 use crate::app::App;
 use crate::model::BodyType;
-use crate::model::biology::predictor;
+use crate::model::biology::{colors, predictor};
 use super::{
     ELITE_ORANGE, ELITE_DIM, BG_DARK, COLOR_STAR, COLOR_BIO, COLOR_FIRST, COLOR_VALUE_HIGH,
     format_body_type, format_credits, min_separation_for_genus, calculate_haversine_distance,
@@ -157,6 +157,31 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
                         true
                     }
                 });
+            }
+
+            // Resolve color variants using star class and materials
+            let star_debug = primary_star.map(|s| format!("{:?}", s)).unwrap_or_default();
+            for g in grouped.iter_mut() {
+                let method = colors::color_method(&g.base_name);
+                match method {
+                    colors::ColorMethod::Star => {
+                        if let Some(color) = colors::resolve_star_color(&g.base_name, &star_debug) {
+                            g.variants = vec![color.to_string()];
+                        }
+                    }
+                    colors::ColorMethod::Element => {
+                        if let Some(color) = colors::resolve_element_color(&g.base_name, &body.surface_materials) {
+                            g.variants = vec![color.to_string()];
+                        } else if !body.surface_materials.is_empty() {
+                            // Materials present but no match — leave variants as-is
+                        } else {
+                            g.variants = vec!["⚗ scan needed".to_string()];
+                        }
+                    }
+                    colors::ColorMethod::None => {
+                        g.variants.clear(); // No color variants
+                    }
+                }
             }
 
             // Sort grouped predictions alphabetically by base name
