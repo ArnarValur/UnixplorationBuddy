@@ -523,6 +523,13 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                 app.bodies_subtab = crate::app::BodiesSubTab::Table;
             }
 
+            // Cache departing system's bodies for back-navigation
+            if app.system.system_address != 0 && !app.bodies.is_empty() {
+                let cached_bodies = app.bodies.clone();
+                let cached_system = app.system.clone();
+                app.visited_systems.insert(app.system.system_address, (cached_system, cached_bodies));
+            }
+
             let sys_name = e.system_info.star_system.clone();
             let sys_addr = e.system_info.system_address;
             let mut sys = System::new(sys_name, sys_addr);
@@ -533,11 +540,23 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                 sys.region = Some(r.name.to_string());
                 sys.region_id = Some(r.id);
             }
-            app.system = sys;
-            app.bodies.clear();
-            app.body_display_order.clear();
+
+            // Check if we've visited this system before — restore cached bodies
+            if let Some((cached_sys, cached_bodies)) = app.visited_systems.remove(&sys_addr) {
+                sys.body_count_total = cached_sys.body_count_total;
+                sys.body_count_discovered = cached_bodies.len() as u32;
+                sys.total_value = cached_sys.total_value;
+                app.system = sys;
+                app.bodies = cached_bodies;
+                app.rebuild_display_order();
+            } else {
+                app.system = sys;
+                app.bodies.clear();
+                app.body_display_order.clear();
+                app.system.body_count_discovered = 0;
+            }
+
             app.selected_body_index = 0;
-            app.system.body_count_discovered = 0;
             app.current_primary_star_class = None;
 
             if track_trip {
@@ -1670,9 +1689,10 @@ mod tests {
         process_event(&mut app, &parse_event(SCAN_STAR_JSON), false);
         assert!(app.system.total_value > 0);
 
-        // Jump to new system — resets
-        process_event(&mut app, &parse_event(FSDJUMP_JSON), false);
-        assert_eq!(app.system.total_value, 0, "System value should reset on jump");
+        // Jump to a DIFFERENT system — resets value
+        let jump_other = r#"{ "timestamp":"2026-05-26T16:00:00Z", "event":"FSDJump", "Taxi":false, "Multicrew":false, "StarSystem":"Other System", "SystemAddress":999999, "StarPos":[0.0,0.0,0.0], "SystemAllegiance":"", "SystemEconomy":"$economy_None;", "SystemEconomy_Localised":"None", "SystemSecondEconomy":"$economy_None;", "SystemSecondEconomy_Localised":"None", "SystemGovernment":"$government_None;", "SystemGovernment_Localised":"None", "SystemSecurity":"$GAlAXY_MAP_INFO_state_anarchy;", "SystemSecurity_Localised":"Anarchy", "Population":0, "Body":"Other System", "BodyID":0, "BodyType":"Star", "JumpDist":10.0, "FuelUsed":1.0, "FuelLevel":15.0 }"#;
+        process_event(&mut app, &parse_event(jump_other), false);
+        assert_eq!(app.system.total_value, 0, "System value should reset on jump to new system");
     }
 
     // ---------------------------------------------------------------

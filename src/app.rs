@@ -126,6 +126,9 @@ pub struct App {
     /// Full star class string of the current system's primary star (e.g. "B9 VAB").
     /// Set on primary star Scan, cleared on FSDJump. Used to highlight the active row in the Stellar Codex.
     pub current_primary_star_class: Option<String>,
+    /// Cache of visited systems' bodies for back-navigation.
+    /// Keyed by system_address → (System, bodies HashMap).
+    pub visited_systems: HashMap<u64, (System, HashMap<u32, Body>)>,
 }
 
 impl App {
@@ -156,6 +159,7 @@ impl App {
             last_heading: None,
             bodies_subtab: BodiesSubTab::default(),
             current_primary_star_class: None,
+            visited_systems: HashMap::new(),
         }
     }
 
