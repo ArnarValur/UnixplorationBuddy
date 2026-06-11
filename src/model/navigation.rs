@@ -18,6 +18,8 @@ pub struct Destination {
 pub struct Status {
     pub timestamp: String,
     pub event: String,
+    #[serde(rename = "Flags", default)]
+    pub flags: u64,
     #[serde(rename = "Destination")]
     pub destination: Option<Destination>,
     #[serde(rename = "Latitude")]

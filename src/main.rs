@@ -185,6 +185,18 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                         app.last_longitude = status.longitude;
                         app.last_heading = status.heading;
 
+                        // FSD Charging (bit 17) — switch to Route tab early
+                        // Gives the commander time to review the route before jump
+                        const FSD_CHARGING: u64 = 1 << 17; // 131072
+                        if status.flags & FSD_CHARGING != 0 {
+                            if let Some(ref r) = app.plotted_route {
+                                if !r.route.is_empty() {
+                                    app.active_tab = app::Tab::Bodies;
+                                    app.bodies_subtab = app::BodiesSubTab::Route;
+                                }
+                            }
+                        }
+
                         if let Some(ref dest) = status.destination {
                             if dest.system == app.system.system_address {
                                 app.targeted_body_id = Some(dest.body);
