@@ -372,12 +372,21 @@ pub fn format_atmosphere(raw: &str) -> String {
     }
     let norm = spaced.trim();
 
-    // Strip common prefixes
+    // Strip prefix modifiers (Hot, Thin, Thick)
     let stripped = norm
         .trim_start_matches("Hot ")
         .trim_start_matches("Thin ")
         .trim_start_matches("Thick ");
-    let formula = match stripped.to_lowercase().as_str() {
+
+    // Strip suffix modifier (Rich)
+    let is_rich = stripped.ends_with(" Rich");
+    let core = if is_rich {
+        stripped.trim_end_matches(" Rich")
+    } else {
+        stripped
+    };
+
+    let formula = match core.to_lowercase().as_str() {
         "carbon dioxide" | "carbondioxide" => "CO\u{2082}",
         "sulfur dioxide" | "sulphur dioxide" | "sulfurdioxide" | "sulphurdioxide" => "SO\u{2082}",
         "water" => "H\u{2082}O",
@@ -394,6 +403,7 @@ pub fn format_atmosphere(raw: &str) -> String {
         "carbon dioxide atmosphere" | "carbondioxideatmosphere" => "CO\u{2082}",
         _ => return norm.to_string(),
     };
+
     // Re-add prefix if present
     let prefix = if norm.starts_with("Hot Thick ") {
         "Thick "
@@ -406,7 +416,48 @@ pub fn format_atmosphere(raw: &str) -> String {
     } else {
         ""
     };
-    format!("{}{}", prefix, formula)
+
+    let suffix = if is_rich { " Rich" } else { "" };
+
+    format!("{}{}{}", prefix, formula, suffix)
+}
+
+/// Format volcanism enum Debug output for human-readable display.
+/// Input is the lowercased Debug string (e.g. "silicatevapourgeysers", "majorwatermagma").
+/// Output is title-cased with spaces (e.g. "Silicate Vapour Geysers", "Major Water Magma").
+pub fn format_volcanism(raw: &str) -> String {
+    if raw.is_empty() {
+        return "No Volcanism".into();
+    }
+    // Known volcanism words to split on (ordered longest-first to avoid partial matches)
+    let words = [
+        "metallic", "silicate", "vapour", "geysers", "magma",
+        "water", "carbon", "dioxide", "nitrogen", "ammonia",
+        "methane", "iron", "rocky", "major", "minor",
+    ];
+    let mut remaining = raw.to_lowercase();
+    let mut parts: Vec<String> = Vec::new();
+    while !remaining.is_empty() {
+        let mut matched = false;
+        for word in &words {
+            if remaining.starts_with(word) {
+                let mut chars = word.chars();
+                let titled: String = chars.next().unwrap().to_uppercase().to_string() + &chars.as_str();
+                parts.push(titled);
+                remaining = remaining[word.len()..].to_string();
+                matched = true;
+                break;
+            }
+        }
+        if !matched {
+            // Unknown word — push remaining as-is with title case
+            let mut chars = remaining.chars();
+            let titled: String = chars.next().unwrap().to_uppercase().to_string() + &chars.as_str();
+            parts.push(titled);
+            break;
+        }
+    }
+    parts.join(" ")
 }
 
 /// Format the value display for a body.

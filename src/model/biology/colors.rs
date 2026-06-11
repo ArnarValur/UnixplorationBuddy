@@ -395,16 +395,22 @@ pub fn resolve_element_color(variant_name: &str, materials: &[(String, f64)]) ->
         _ => return None,
     };
 
-    // Find the first material on the body that has a color mapping
-    for (mat, _pct) in materials {
+    // Find the matching element with the lowest percentage (rarest wins)
+    let mut best_color: Option<&'static str> = None;
+    let mut best_pct: f64 = f64::MAX;
+
+    for (mat, pct) in materials {
         if let Some(sym) = element_symbol(mat) {
             if let Some(color) = lookup_color(table, sym) {
-                return Some(color);
+                if *pct < best_pct {
+                    best_pct = *pct;
+                    best_color = Some(color);
+                }
             }
         }
     }
 
-    None
+    best_color
 }
 
 /// Determine the color determination method for a species.
@@ -493,6 +499,13 @@ mod tests {
         let mats: Vec<(String, f64)> = vec![("cadmium".to_string(), 1.0)];
         assert_eq!(resolve_element_color("Fungoida Gelata", &mats), Some("Cyan"));
         assert_eq!(resolve_element_color("Fungoida Stabitis", &mats), Some("Blue"));
+
+        // Rarest element wins: Mo (1.2%) vs Hg (0.8%) → Hg → Lime
+        let multi_mats: Vec<(String, f64)> = vec![
+            ("molybdenum".to_string(), 1.2),
+            ("mercury".to_string(), 0.8),
+        ];
+        assert_eq!(resolve_element_color("Fungoida Gelata", &multi_mats), Some("Lime"));
     }
 
     #[test]

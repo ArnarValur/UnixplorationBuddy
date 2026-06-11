@@ -9,7 +9,7 @@ use crate::model::BodyType;
 use crate::model::biology::{colors, predictor};
 use super::{
     ELITE_ORANGE, ELITE_DIM, BG_DARK, COLOR_STAR, COLOR_BIO, COLOR_FIRST, COLOR_VALUE_HIGH,
-    format_body_type, format_credits, format_number, min_separation_for_genus, calculate_haversine_distance,
+    format_body_type, format_credits, format_number, format_volcanism, min_separation_for_genus, calculate_haversine_distance,
 };
 
 pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
@@ -80,7 +80,7 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
             Span::styled(atmo_text, Style::default().fg(ELITE_ORANGE)),
         ]));
 
-        let volc_text = body.volcanism.as_deref().unwrap_or("No Volcanism");
+        let volc_text = body.volcanism.as_deref().map(format_volcanism).unwrap_or_else(|| "No Volcanism".into());
         lines.push(Line::from(vec![
             Span::styled("Volcanism:", Style::default().fg(ELITE_DIM)),
             Span::styled(format!(" {}", volc_text), Style::default().fg(ELITE_ORANGE)),
@@ -282,8 +282,18 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
             // Sort grouped predictions alphabetically by base name
             grouped.sort_by(|a, b| a.base_name.cmp(&b.base_name));
 
+            let mut total_estimated: u64 = 0;
+            let mut total_earned: u64 = 0;
+            let species_count = grouped.len();
+            let mut completed_count: usize = 0;
+
             for g in grouped {
+                let first_discovery_value = g.reward * 5;
+                total_estimated += first_discovery_value;
+
                 if g.active_scanned || g.active_progress == 3 {
+                    completed_count += 1;
+                    total_earned += first_discovery_value;
                     lines.push(Line::from(vec![
                         Span::styled(format!(" R ▸ {} ", g.active_variant.as_deref().unwrap_or(&g.base_name)), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
                         Span::styled("[Completed]", Style::default().fg(COLOR_BIO)),
@@ -334,8 +344,33 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
                         .unwrap_or_else(|| Span::raw(""));
                     lines.push(Line::from(vec![
                         Span::styled(format!(" ▸ {}{} ", g.base_name, variants_str), Style::default().fg(ELITE_ORANGE)),
-                        Span::styled(format!(": {} cr (First)", format_credits(g.reward * 5)), Style::default().fg(COLOR_FIRST)),
+                        Span::styled(format!(": {} cr (First)", format_credits(first_discovery_value)), Style::default().fg(COLOR_FIRST)),
                         sep_span,
+                    ]));
+                }
+            }
+
+            // Bio value summary
+            if species_count > 0 {
+                lines.push(Line::from(Span::styled(" ─────────────────────────────────", Style::default().fg(ELITE_DIM))));
+                if completed_count == species_count {
+                    // All done — celebratory total
+                    lines.push(Line::from(vec![
+                        Span::styled(" Total earned: ", Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
+                        Span::styled(format!("{} cr ✓", format_credits(total_earned)), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
+                    ]));
+                } else if completed_count > 0 {
+                    // Partial progress — earned / estimated
+                    lines.push(Line::from(vec![
+                        Span::styled(" Earned: ", Style::default().fg(COLOR_FIRST)),
+                        Span::styled(format!("{} cr", format_credits(total_earned)), Style::default().fg(COLOR_FIRST).add_modifier(Modifier::BOLD)),
+                        Span::styled(format!(" / Est: {} cr", format_credits(total_estimated)), Style::default().fg(ELITE_DIM)),
+                    ]));
+                } else {
+                    // Nothing scanned yet — just estimate
+                    lines.push(Line::from(vec![
+                        Span::styled(" Est. total: ", Style::default().fg(ELITE_DIM)),
+                        Span::styled(format!("~{} cr", format_credits(total_estimated)), Style::default().fg(COLOR_FIRST)),
                     ]));
                 }
             }
