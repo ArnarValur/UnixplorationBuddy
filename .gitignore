@@ -18,5 +18,8 @@ Thumbs.db
 # Build-generated files
 src/model/biology/dataset.rs
 
+# API keys
+.env
+
 # Scratch files
 /scratch/
