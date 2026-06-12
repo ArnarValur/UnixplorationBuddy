@@ -3,6 +3,7 @@
 use std::collections::HashMap;
 
 use crate::model::{Body, BodyHierarchy, System, Trip, NavRoute, Anomaly};
+use crate::model::anomaly_jumponium::JumponiumResult;
 
 /// Which tab is currently active in the TUI.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -132,6 +133,8 @@ pub struct App {
     /// Detected anomalies/POIs for bodies in the current system.
     /// Recomputed after each Scan event.
     pub anomalies: HashMap<u32, Vec<Anomaly>>,
+    /// Jumponium / Green System status for the current system.
+    pub jumponium: Option<JumponiumResult>,
 }
 
 impl App {
@@ -164,6 +167,7 @@ impl App {
             current_primary_star_class: None,
             visited_systems: HashMap::new(),
             anomalies: HashMap::new(),
+            jumponium: None,
         }
     }
 

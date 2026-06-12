@@ -134,6 +134,15 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
         ),
     ]);
 
+    // Jumponium / Green System badge
+    if let Some(ref jumpo) = app.jumponium {
+        spans.push(Span::styled(" │ ", Style::default().fg(ELITE_DIM)));
+        spans.push(Span::styled(
+            format!("{} {}", jumpo.grade.icon(), jumpo.grade.label()),
+            Style::default().fg(COLOR_VALUE_HIGH).add_modifier(Modifier::BOLD),
+        ));
+    }
+
     let header = Line::from(spans);
 
     let widget = Paragraph::new(header).style(Style::default().bg(BG_DARK));
