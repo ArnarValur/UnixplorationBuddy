@@ -8,6 +8,13 @@ Timestamped entries for context continuity between sessions.
 
 _None._
 
+## 2026-06-12 14:16
+- **Session:** E2E anomaly validation in the field
+- **Tracks touched:** None
+- **Status:** First anomaly confirmed live: Extreme Tilt (164°) at `Flya Eom ES-A d1-1`. Header POI ticker + inspector rendering verified. CMDR exploring Errant Marches.
+- **Decisions:** None (all 3 ADRs recorded at prior checkpoint)
+- **Next:** Continue E2E testing. NavRoute mass code scanner. Ring data storage. Inspector jumponium drill-down.
+
 ## 2026-06-12 12:24
 - **Session:** POI anomaly detection engine + TUI integration
 - **Tracks touched:** None (free-form implementation from EDMC-Canonn shopping report)

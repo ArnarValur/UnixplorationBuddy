@@ -1,7 +1,7 @@
 # Pulse — Current Project State
 
-**Last Updated:** 2026-06-12 12:24
-**Session Focus:** POI anomaly detection engine + TUI integration
+**Last Updated:** 2026-06-12 14:16
+**Session Focus:** POI anomaly detection engine + TUI integration + E2E validation
 
 ## 🚀 Active Tracks
 
@@ -30,6 +30,7 @@ _None._
 - _2026-06-12_ — **Header bar repurposed** — Removed body count + credits. Now shows system name, region, jumponium badge, anomaly ticker (icon×count). Aligns with exploration-first UX. _(architectural, ADR-0014)_
 - _2026-06-12_ — **Neighborhood black hole scanning** — Investigated EDSM/Spansh APIs for nearby POI discovery. APIs are blind in deep unexplored space. Mass code heuristic (PG name → star type) noted as future track idea. No API can control in-game galaxy map. _(operational)_
 - _2026-06-12_ — **NavRoute mass code scanner idea** — Parse plotted route system names, flag mass code `g`/`h` systems as likely black holes/neutrons. Zero API calls, pure name math. Noted in hunting checklist future ideas. _(operational)_
+- _2026-06-12_ — **E2E validation: Extreme Tilt** — First anomaly confirmed in-game at `Flya Eom ES-A d1-1` body 1 (HMC, 164° axial tilt). Header POI ticker, inspector ANOMALIES/POI section both rendering correctly. _(operational)_
 
 ## 📋 Next Session Suggestions
 
