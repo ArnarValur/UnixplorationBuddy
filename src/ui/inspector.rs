@@ -186,21 +186,6 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
         }
     }
 
-    // ── EDSM Telemetry ──
-    if let Some(cache) = app.edsm_cache.get(&app.system.name) {
-        rest_lines.push(Line::from(""));
-        rest_lines.push(Line::from(Span::styled("── EDSM TELEMETRY ──", Style::default().fg(ELITE_DIM))));
-        if let Some(ref cmdr) = cache.discoverer {
-            rest_lines.push(Line::from(vec![
-                Span::styled("CMDR:     ", Style::default().fg(ELITE_DIM)),
-                Span::styled(cmdr, Style::default().fg(COLOR_STAR)),
-            ]));
-        }
-        rest_lines.push(Line::from(vec![
-            Span::styled("Value:    ", Style::default().fg(ELITE_DIM)),
-            Span::styled(format!("{} cr", format_credits(cache.estimated_value_mapped)), Style::default().fg(COLOR_VALUE_HIGH)),
-        ]));
-    }
 
     // ── Anomaly / POI Section ──
     if let Some(anomalies) = app.anomalies.get(&body_id) {
