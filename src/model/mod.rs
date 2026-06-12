@@ -8,6 +8,8 @@ pub mod trip;
 pub mod valuation;
 pub mod biology;
 pub mod anomaly;
+pub mod anomaly_extreme;
+pub mod anomaly_jumponium;
 
 
 pub use body::{Body, BodyType, ScanState};

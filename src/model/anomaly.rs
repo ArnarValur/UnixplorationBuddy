@@ -41,6 +41,16 @@ pub enum AnomalyKind {
     SatelliteStar,
     /// A body nested 3+ levels deep in the planet chain (moon of moon of moon).
     DeeplyNested { depth: u32 },
+
+    // --- Extreme body anomalies ---
+    /// Body with rotation period under 1 hour.
+    FastRotator,
+    /// Body with orbital inclination > 90° (orbiting backwards).
+    RetrogradeOrbit,
+    /// Body with eccentricity > 0.9 (extremely elongated orbit).
+    HighEccentricity,
+    /// Body with axial tilt > 90° (Uranus-like or inverted).
+    ExtremeTilt,
 }
 
 impl AnomalyKind {
@@ -54,6 +64,10 @@ impl AnomalyKind {
             AnomalyKind::Trojan => "♊",
             AnomalyKind::SatelliteStar => "🌟",
             AnomalyKind::DeeplyNested { .. } => "🌙",
+            AnomalyKind::FastRotator => "🌀",
+            AnomalyKind::RetrogradeOrbit => "🔄",
+            AnomalyKind::HighEccentricity => "📐",
+            AnomalyKind::ExtremeTilt => "🔀",
         }
     }
 
@@ -71,6 +85,10 @@ impl AnomalyKind {
                 4 => "Moon⁴",
                 _ => "Deep Moon",
             },
+            AnomalyKind::FastRotator => "Fast Rotator",
+            AnomalyKind::RetrogradeOrbit => "Retrograde Orbit",
+            AnomalyKind::HighEccentricity => "High Eccentricity",
+            AnomalyKind::ExtremeTilt => "Extreme Tilt",
         }
     }
 }
@@ -138,6 +156,12 @@ pub fn detect_anomalies(bodies: &HashMap<u32, Body>) -> HashMap<u32, Vec<Anomaly
     detect_trojans(bodies, &mut results);
     detect_satellite_stars(bodies, &mut results);
     detect_deeply_nested(bodies, &mut results);
+
+    // Extreme body anomalies
+    super::anomaly_extreme::detect_fast_rotators(bodies, &mut results);
+    super::anomaly_extreme::detect_retrograde_orbits(bodies, &mut results);
+    super::anomaly_extreme::detect_high_eccentricity(bodies, &mut results);
+    super::anomaly_extreme::detect_extreme_tilt(bodies, &mut results);
 
     results
 }
