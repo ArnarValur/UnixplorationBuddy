@@ -369,6 +369,33 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                                 Cell::from(Span::styled(entry.total_scans.to_string(), Style::default().fg(name_color))),
                             ])
                         );
+
+                        // Expanded view: add sub-attribute detail rows
+                        if app.planetary_codex_expanded {
+                            let continuation = if is_last_entry { "       " } else { "  │    " };
+                            let attrs: Vec<(&str, &str, u32, Style)> = vec![
+                                ("🪐", "Ringed", entry.ringed_count, Style::default().fg(ELITE_DIM)),
+                                ("🚀", "Landable", entry.landable_count, Style::default().fg(ELITE_DIM)),
+                                ("🌍", "Terraformable", entry.terraformable_count, Style::default().fg(COLOR_VALUE_HIGH)),
+                                ("🌿", "Bio Signals", entry.bio_signal_count, Style::default().fg(COLOR_BIO)),
+                                ("✅", "Confirmed Life", entry.confirmed_life_count, Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
+                            ];
+                            let non_zero: Vec<_> = attrs.into_iter().filter(|(_, _, count, _)| *count > 0).collect();
+                            let attr_len = non_zero.len();
+                            for (j, (icon, label, count, style)) in non_zero.into_iter().enumerate() {
+                                let is_last_attr = j == attr_len - 1;
+                                let attr_prefix = if is_last_attr { "└─ " } else { "├─ " };
+                                planetary_rows.push(
+                                    Row::new(vec![
+                                        Cell::from(Line::from(vec![
+                                            Span::styled(format!("{}{}", continuation, attr_prefix), Style::default().fg(ELITE_DIM)),
+                                            Span::styled(format!("{} {}: {}", icon, label, count), style),
+                                        ])),
+                                        Cell::from(""),
+                                    ])
+                                );
+                            }
+                        }
                     }
                 }
             }
@@ -423,7 +450,10 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .title(tab_title("Planetary Codex", Tab::History, app.active_tab))
+                        .title(tab_title(
+                            if app.planetary_codex_expanded { "Planetary Codex ▼" } else { "Planetary Codex ▶" },
+                            Tab::History, app.active_tab,
+                        ))
                         .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK)),
                 )
                 .row_highlight_style(Style::default().bg(HIGHLIGHT_BG))

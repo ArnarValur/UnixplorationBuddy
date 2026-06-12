@@ -312,6 +312,11 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                                     app.bodies_subtab = app::BodiesSubTab::Route;
                                 }
                             }
+                            KeyCode::Char('v') => {
+                                if app.active_tab == app::Tab::History && app.active_codex_tab == app::CodexTab::Stellar {
+                                    app.planetary_codex_expanded = !app.planetary_codex_expanded;
+                                }
+                            }
                             KeyCode::Char('?') => app.show_help = true,
                             KeyCode::Char('r')
                                 if key.modifiers.contains(KeyModifiers::CONTROL) =>

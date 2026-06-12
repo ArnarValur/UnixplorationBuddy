@@ -112,6 +112,8 @@ pub struct App {
     pub selected_planetary_index: usize,
     /// Whether the left panel is focused in the Stellar&Planetary codex view.
     pub codex_focus_left: bool,
+    /// Whether the planetary codex shows expanded sub-attribute rows.
+    pub planetary_codex_expanded: bool,
     /// Modular columns visibility toggles.
     pub column_settings: ColumnSettings,
     /// Whether the Settings overlay is currently visible.
@@ -162,6 +164,7 @@ impl App {
             selected_stellar_index: 0,
             selected_planetary_index: 0,
             codex_focus_left: true,
+            planetary_codex_expanded: false,
             column_settings: ColumnSettings::default(),
             show_settings: false,
             show_inspector: false,
@@ -244,16 +247,29 @@ impl App {
 
     /// Calculate the maximum number of rows in the planetary codex panel.
     /// Condensed layout: 1 row per planet class + 1 header per category.
+    /// Expanded layout adds sub-attribute rows (Ringed, Landable, Terraformable, Bio, Life).
     pub fn max_planetary_rows(&self) -> usize {
         let mut class_set: std::collections::HashSet<String> = std::collections::HashSet::new();
         let mut categories = std::collections::HashSet::new();
+        let mut class_attrs: std::collections::HashMap<String, std::collections::HashSet<String>> = std::collections::HashMap::new();
         for key in self.trip.planetary_codex.keys() {
             let parts: Vec<&str> = key.split('|').collect();
             let planet_class = parts[0].to_string();
             categories.insert(get_planet_category(&planet_class));
-            class_set.insert(planet_class);
+            class_set.insert(planet_class.clone());
+            if self.planetary_codex_expanded {
+                for part in &parts[1..] {
+                    class_attrs.entry(planet_class.clone()).or_default().insert(part.to_string());
+                }
+            }
         }
-        class_set.len() + categories.len()
+        let base = class_set.len() + categories.len();
+        if self.planetary_codex_expanded {
+            let sub_rows: usize = class_attrs.values().map(|attrs| attrs.len()).sum();
+            base + sub_rows
+        } else {
+            base
+        }
     }
 
     /// Move selection down in the active codex.
@@ -453,6 +469,10 @@ mod tests {
 
         // Condensed layout: 2 category headers + 3 planet classes = 5
         assert_eq!(app.max_planetary_rows(), 5);
+
+        // Expanded layout: 5 base + sub-attrs (HMC: L,T,R=3; ELW: L=1; Rocky: L=1) = 10
+        app.planetary_codex_expanded = true;
+        assert_eq!(app.max_planetary_rows(), 10);
     }
 
     #[test]
