@@ -690,7 +690,25 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                         BodyType::Planet
                     };
                     body.mass = Some(planet.mass_em as f64);
-                    body.atmosphere = Some(format!("{:?}", planet.atmosphere.kind));
+
+                    // Atmosphere — use composition for gas giants where kind is None
+                    let kind_str = format!("{:?}", planet.atmosphere.kind);
+                    if kind_str == "None" && !planet.atmosphere_composition.is_empty() {
+                        // Gas giants: build from composition (e.g., "73.7% H₂, 26.2% He")
+                        body.atmosphere = None; // No named atmosphere type
+                    } else if kind_str == "None" {
+                        body.atmosphere = None;
+                    } else {
+                        body.atmosphere = Some(kind_str);
+                    }
+
+                    // Store atmosphere composition for all bodies
+                    if !planet.atmosphere_composition.is_empty() {
+                        body.atmosphere_composition = planet.atmosphere_composition.iter()
+                            .map(|c| (format!("{:?}", c.name), c.percent as f64))
+                            .collect();
+                    }
+
                     body.terraformable = matches!(
                         planet.terraform_state,
                         ed_journals::galaxy::TerraformState::Terraformable

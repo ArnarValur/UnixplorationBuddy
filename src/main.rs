@@ -314,6 +314,12 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                                     }
                                 }
                             }
+                            KeyCode::PageUp => {
+                                app.inspector_scroll = app.inspector_scroll.saturating_sub(3);
+                            }
+                            KeyCode::PageDown => {
+                                app.inspector_scroll = app.inspector_scroll.saturating_add(3);
+                            }
                             _ => {}
                         }
                     }

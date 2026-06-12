@@ -426,10 +426,9 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
     }
 
     // ══════════════════════════════════════════════════════
-    // ── Render Layout ──
-    // ══════════════════════════════════════════════════════
     let header_h = header_lines.len() as u16;
     let bg = Style::default().bg(BG_DARK);
+    let rest_total = rest_lines.len() as u16;
 
     if is_planetary && !mat_lines.is_empty() {
         // Side-by-side: Physical (left) | Materials (right)
@@ -450,7 +449,15 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
 
         frame.render_widget(Paragraph::new(phys_lines).style(bg), cols[0]);
         frame.render_widget(Paragraph::new(mat_lines).style(bg), cols[1]);
-        frame.render_widget(Paragraph::new(rest_lines).style(bg), rows[2]);
+
+        let rest_h = rows[2].height;
+        let scroll = clamp_scroll(app.inspector_scroll, rest_total, rest_h);
+        let rest_para = Paragraph::new(rest_lines).scroll((scroll, 0)).style(bg);
+        frame.render_widget(rest_para, rows[2]);
+
+        if rest_total > rest_h {
+            render_scroll_hint(frame, rows[2], scroll, rest_total, rest_h);
+        }
     } else if is_planetary {
         // No materials — physical full-width, then rest
         let phys_h = phys_lines.len() as u16;
@@ -463,7 +470,15 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
 
         frame.render_widget(Paragraph::new(header_lines).style(bg), rows[0]);
         frame.render_widget(Paragraph::new(phys_lines).style(bg), rows[1]);
-        frame.render_widget(Paragraph::new(rest_lines).style(bg), rows[2]);
+
+        let rest_h = rows[2].height;
+        let scroll = clamp_scroll(app.inspector_scroll, rest_total, rest_h);
+        let rest_para = Paragraph::new(rest_lines).scroll((scroll, 0)).style(bg);
+        frame.render_widget(rest_para, rows[2]);
+
+        if rest_total > rest_h {
+            render_scroll_hint(frame, rows[2], scroll, rest_total, rest_h);
+        }
     } else {
         // Star / non-planetary — header + rest only
         let rows = Layout::vertical([
@@ -472,7 +487,49 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
         ]).split(inner);
 
         frame.render_widget(Paragraph::new(header_lines).style(bg), rows[0]);
-        frame.render_widget(Paragraph::new(rest_lines).style(bg), rows[1]);
+
+        let rest_h = rows[1].height;
+        let scroll = clamp_scroll(app.inspector_scroll, rest_total, rest_h);
+        let rest_para = Paragraph::new(rest_lines).scroll((scroll, 0)).style(bg);
+        frame.render_widget(rest_para, rows[1]);
+
+        if rest_total > rest_h {
+            render_scroll_hint(frame, rows[1], scroll, rest_total, rest_h);
+        }
+    }
+}
+
+/// Clamp scroll offset so it never scrolls past the last line of content.
+fn clamp_scroll(scroll: u16, content_lines: u16, viewport_h: u16) -> u16 {
+    if content_lines <= viewport_h {
+        0
+    } else {
+        scroll.min(content_lines.saturating_sub(viewport_h))
+    }
+}
+
+/// Render a dim scroll indicator in the bottom-right corner of the area.
+fn render_scroll_hint(frame: &mut Frame, area: Rect, scroll: u16, total: u16, viewport_h: u16) {
+    let max_scroll = total.saturating_sub(viewport_h);
+    let indicator = if scroll == 0 {
+        " ▼ PgDn "
+    } else if scroll >= max_scroll {
+        " ▲ PgUp "
+    } else {
+        " ▲▼ Pg "
+    };
+    let hint_w = indicator.len() as u16;
+    if area.width >= hint_w && area.height > 0 {
+        let hint_area = Rect::new(
+            area.x + area.width - hint_w,
+            area.y + area.height - 1,
+            hint_w,
+            1,
+        );
+        frame.render_widget(
+            Paragraph::new(Line::from(Span::styled(indicator, Style::default().fg(ELITE_DIM).bg(BG_DARK)))),
+            hint_area,
+        );
     }
 }
 

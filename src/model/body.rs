@@ -100,6 +100,8 @@ pub struct Body {
     pub pressure_atm: Option<f64>,
     /// Surface materials and their percentages.
     pub surface_materials: Vec<(String, f64)>,
+    /// Atmosphere composition and percentages (e.g., Hydrogen 73.7%, Helium 26.2%).
+    pub atmosphere_composition: Vec<(String, f64)>,
     // Keplerian orbital elements for TUI Orrery simulation
     pub semi_major_axis: Option<f64>,
     pub eccentricity: Option<f64>,
@@ -152,6 +154,7 @@ impl Body {
             volcanism: None,
             pressure_atm: None,
             surface_materials: Vec::new(),
+            atmosphere_composition: Vec::new(),
             semi_major_axis: None,
             eccentricity: None,
             inclination: None,

@@ -135,6 +135,8 @@ pub struct App {
     pub anomalies: HashMap<u32, Vec<Anomaly>>,
     /// Jumponium / Green System status for the current system.
     pub jumponium: Option<JumponiumResult>,
+    /// Vertical scroll offset for the inspector sidebar.
+    pub inspector_scroll: u16,
 }
 
 impl App {
@@ -168,6 +170,7 @@ impl App {
             visited_systems: HashMap::new(),
             anomalies: HashMap::new(),
             jumponium: None,
+            inspector_scroll: 0,
         }
     }
 
@@ -335,6 +338,7 @@ impl App {
         if !self.body_display_order.is_empty() {
             self.selected_body_index =
                 (self.selected_body_index + 1) % self.body_display_order.len();
+            self.inspector_scroll = 0;
         }
     }
 
@@ -345,6 +349,7 @@ impl App {
                 .selected_body_index
                 .checked_sub(1)
                 .unwrap_or(self.body_display_order.len() - 1);
+            self.inspector_scroll = 0;
         }
     }
 
