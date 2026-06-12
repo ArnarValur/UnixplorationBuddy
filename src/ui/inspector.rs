@@ -1,4 +1,4 @@
-use ratatui::layout::Rect;
+use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph};
@@ -22,8 +22,19 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
         None => return,
     };
 
+    // Render outer block, extract inner area for content layout
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(format!(" Telemetry: {} ", body.short_name))
+        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK));
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+
+    let is_planetary = body.body_type == BodyType::Planet || body.body_type == BodyType::Moon;
+
+    // ── Header (full-width: Class + Landable) ──
     let binding = format_body_type(body);
-    let mut lines = vec![
+    let mut header_lines = vec![
         Line::from(vec![
             Span::styled("Class: ", Style::default().fg(ELITE_DIM)),
             Span::styled(
@@ -33,128 +44,159 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
         ]),
     ];
 
-    if body.body_type == BodyType::Planet || body.body_type == BodyType::Moon {
-        lines.push(Line::from(vec![
+    if is_planetary {
+        header_lines.push(Line::from(vec![
             Span::styled("Landable: ", Style::default().fg(ELITE_DIM)),
             Span::styled(if body.landable { "YES 🚀" } else { "NO" }, Style::default().fg(if body.landable { COLOR_STAR } else { ELITE_DIM })),
         ]));
+    }
 
-        // ── Physical Properties ──
+    // ── Physical Properties (left column when materials present) ──
+    let mut phys_lines: Vec<Line> = Vec::new();
+    // ── Materials (right column) ──
+    let mut mat_lines: Vec<Line> = Vec::new();
+    // ── Everything below the side-by-side section ──
+    let mut rest_lines: Vec<Line> = Vec::new();
+
+    if is_planetary {
+        // ── Physical ──
+        phys_lines.push(Line::from(Span::styled("── Physical ──", Style::default().fg(ELITE_DIM))));
+
         if let Some(mass) = body.mass {
-            lines.push(Line::from(vec![
-                Span::styled("Mass:     ", Style::default().fg(ELITE_DIM)),
+            phys_lines.push(Line::from(vec![
+                Span::styled("Mass: ", Style::default().fg(ELITE_DIM)),
                 Span::styled(format!("{:.4} EM", mass), Style::default().fg(ELITE_ORANGE)),
             ]));
         }
-
         if let Some(radius) = body.radius {
-            let radius_km = radius / 1000.0;
-            lines.push(Line::from(vec![
-                Span::styled("Radius:   ", Style::default().fg(ELITE_DIM)),
-                Span::styled(format!("{} km", format_number(radius_km)), Style::default().fg(ELITE_ORANGE)),
+            phys_lines.push(Line::from(vec![
+                Span::styled("Rad:  ", Style::default().fg(ELITE_DIM)),
+                Span::styled(format!("{} km", format_number(radius / 1000.0)), Style::default().fg(ELITE_ORANGE)),
             ]));
         }
-
-        let gravity_text = body.gravity.map(|g| format!("{:.2} G", g)).unwrap_or_else(|| "—".into());
-        lines.push(Line::from(vec![
-            Span::styled("Gravity:  ", Style::default().fg(ELITE_DIM)),
-            Span::styled(gravity_text, Style::default().fg(ELITE_ORANGE)),
-        ]));
-
-        let temp_text = body.temperature.map(|t| format!("{:.0} K ({:.0}°C)", t, t - 273.15)).unwrap_or_else(|| "—".into());
-        lines.push(Line::from(vec![
-            Span::styled("Temp:     ", Style::default().fg(ELITE_DIM)),
-            Span::styled(temp_text, Style::default().fg(ELITE_ORANGE)),
-        ]));
-
+        if let Some(g) = body.gravity {
+            phys_lines.push(Line::from(vec![
+                Span::styled("Grav: ", Style::default().fg(ELITE_DIM)),
+                Span::styled(format!("{:.2} G", g), Style::default().fg(ELITE_ORANGE)),
+            ]));
+        }
+        if let Some(t) = body.temperature {
+            phys_lines.push(Line::from(vec![
+                Span::styled("Temp: ", Style::default().fg(ELITE_DIM)),
+                Span::styled(format!("{:.0}K ({:.0}°C)", t, t - 273.15), Style::default().fg(ELITE_ORANGE)),
+            ]));
+        }
         if let Some(pressure) = body.pressure_atm {
-            lines.push(Line::from(vec![
-                Span::styled("Pressure: ", Style::default().fg(ELITE_DIM)),
+            phys_lines.push(Line::from(vec![
+                Span::styled("Pres: ", Style::default().fg(ELITE_DIM)),
                 Span::styled(format!("{:.2} atm", pressure), Style::default().fg(ELITE_ORANGE)),
             ]));
         }
 
-        let atmo_text = body.atmosphere.as_deref().unwrap_or("None");
-        lines.push(Line::from(vec![
-            Span::styled("Atmo:     ", Style::default().fg(ELITE_DIM)),
+        let atmo_text = body.atmosphere.as_deref().unwrap_or("No Atmosphere");
+        phys_lines.push(Line::from(vec![
+            Span::styled("Atmo: ", Style::default().fg(ELITE_DIM)),
             Span::styled(atmo_text, Style::default().fg(ELITE_ORANGE)),
         ]));
 
+        if !body.atmosphere_composition.is_empty() {
+            let mut atmo = body.atmosphere_composition.clone();
+            atmo.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+            let parts: Vec<String> = atmo.iter()
+                .map(|(name, pct)| format!("{} {:.1}%", atmo_formula(name), pct))
+                .collect();
+            phys_lines.push(Line::from(vec![
+                Span::styled("      ", Style::default()),
+                Span::styled(parts.join("  "), Style::default().fg(COLOR_FIRST)),
+            ]));
+        }
+
         let volc_text = body.volcanism.as_deref().map(format_volcanism).unwrap_or_else(|| "No Volcanism".into());
-        lines.push(Line::from(vec![
-            Span::styled("Volcanism:", Style::default().fg(ELITE_DIM)),
-            Span::styled(format!(" {}", volc_text), Style::default().fg(ELITE_ORANGE)),
+        phys_lines.push(Line::from(vec![
+            Span::styled("Volc: ", Style::default().fg(ELITE_DIM)),
+            Span::styled(volc_text, Style::default().fg(ELITE_ORANGE)),
         ]));
 
-        // ── Orbital Properties ──
-        lines.push(Line::from(Span::styled("── Orbital ──", Style::default().fg(ELITE_DIM))));
+        // ── Materials ──
+        if !body.surface_materials.is_empty() {
+            mat_lines.push(Line::from(Span::styled("── Materials ──", Style::default().fg(ELITE_DIM))));
 
+            let mut mats = body.surface_materials.clone();
+            mats.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+            for chunk in mats.chunks(2) {
+                let mut spans = Vec::new();
+                for (i, (name, pct)) in chunk.iter().enumerate() {
+                    if i > 0 { spans.push(Span::styled("  ", Style::default())); }
+                    spans.push(Span::styled(
+                        format!("{:>2}", material_symbol(name)),
+                        Style::default().fg(COLOR_FIRST).add_modifier(Modifier::BOLD),
+                    ));
+                    spans.push(Span::styled(
+                        format!(" {:<5}", format!("{:.1}%", pct)),
+                        Style::default().fg(ELITE_ORANGE),
+                    ));
+                }
+                mat_lines.push(Line::from(spans));
+            }
+        }
+
+        // ── Orbital (full-width below) ──
+        rest_lines.push(Line::from(Span::styled("── Orbital ──", Style::default().fg(ELITE_DIM))));
+
+        let mut orbital_items: Vec<(&str, String)> = Vec::new();
         if let Some(period) = body.orbital_period {
-            let days = period / 86400.0;
-            lines.push(Line::from(vec![
-                Span::styled("Orbit:    ", Style::default().fg(ELITE_DIM)),
-                Span::styled(format!("{:.1} D", days), Style::default().fg(ELITE_ORANGE)),
-            ]));
+            orbital_items.push(("Orb", format!("{:.1} D", period / 86400.0)));
         }
-
         if let Some(sma) = body.semi_major_axis {
-            let au = sma / 149_597_870_700.0;
-            lines.push(Line::from(vec![
-                Span::styled("SMA:      ", Style::default().fg(ELITE_DIM)),
-                Span::styled(format!("{:.2} AU", au), Style::default().fg(ELITE_ORANGE)),
-            ]));
+            orbital_items.push(("SMA", format!("{:.2} AU", sma / 149_597_870_700.0)));
         }
-
         if let Some(ecc) = body.eccentricity {
-            lines.push(Line::from(vec![
-                Span::styled("Ecc:      ", Style::default().fg(ELITE_DIM)),
-                Span::styled(format!("{:.4}", ecc), Style::default().fg(ELITE_ORANGE)),
-            ]));
+            orbital_items.push(("Ecc", format!("{:.4}", ecc)));
         }
-
         if let Some(inc) = body.inclination {
-            lines.push(Line::from(vec![
-                Span::styled("Inc:      ", Style::default().fg(ELITE_DIM)),
-                Span::styled(format!("{:.2}°", inc), Style::default().fg(ELITE_ORANGE)),
-            ]));
+            orbital_items.push(("Inc", format!("{:.2}°", inc)));
+        }
+        if let Some(peri) = body.periapsis {
+            orbital_items.push(("Per", format!("{:.2}°", peri)));
+        }
+        if let Some(tilt) = body.axial_tilt {
+            orbital_items.push(("Tlt", format!("{:.2}°", tilt.to_degrees())));
         }
 
-        if let Some(peri) = body.periapsis {
-            lines.push(Line::from(vec![
-                Span::styled("Periapsis:", Style::default().fg(ELITE_DIM)),
-                Span::styled(format!(" {:.2}°", peri), Style::default().fg(ELITE_ORANGE)),
-            ]));
+        for chunk in orbital_items.chunks(2) {
+            let mut spans = Vec::new();
+            spans.push(Span::styled(format!("{}: ", chunk[0].0), Style::default().fg(ELITE_DIM)));
+            spans.push(Span::styled(format!("{:<10}", chunk[0].1), Style::default().fg(ELITE_ORANGE)));
+            if let Some(second) = chunk.get(1) {
+                spans.push(Span::styled(format!(" {}: ", second.0), Style::default().fg(ELITE_DIM)));
+                spans.push(Span::styled(second.1.clone(), Style::default().fg(ELITE_ORANGE)));
+            }
+            rest_lines.push(Line::from(spans));
         }
 
         if let Some(rot) = body.rotational_period {
             let days = rot / 86400.0;
-            let tidal = if body.tidal_lock { " (Tidally Locked)" } else { "" };
-            lines.push(Line::from(vec![
-                Span::styled("Rotation: ", Style::default().fg(ELITE_DIM)),
+            let tidal = if body.tidal_lock { " (Locked)" } else { "" };
+            rest_lines.push(Line::from(vec![
+                Span::styled("Rot: ", Style::default().fg(ELITE_DIM)),
                 Span::styled(format!("{:.1} D", days), Style::default().fg(ELITE_ORANGE)),
                 Span::styled(tidal, Style::default().fg(ELITE_DIM)),
             ]));
         }
-
-        if let Some(tilt) = body.axial_tilt {
-            let degrees = tilt.to_degrees();
-            lines.push(Line::from(vec![
-                Span::styled("Tilt:     ", Style::default().fg(ELITE_DIM)),
-                Span::styled(format!("{:.2}°", degrees), Style::default().fg(ELITE_ORANGE)),
-            ]));
-        }
     }
 
+    // ── EDSM Telemetry ──
     if let Some(cache) = app.edsm_cache.get(&app.system.name) {
-        lines.push(Line::from(""));
-        lines.push(Line::from(Span::styled("── EDSM TELEMETRY ──", Style::default().fg(ELITE_DIM))));
+        rest_lines.push(Line::from(""));
+        rest_lines.push(Line::from(Span::styled("── EDSM TELEMETRY ──", Style::default().fg(ELITE_DIM))));
         if let Some(ref cmdr) = cache.discoverer {
-            lines.push(Line::from(vec![
+            rest_lines.push(Line::from(vec![
                 Span::styled("CMDR:     ", Style::default().fg(ELITE_DIM)),
                 Span::styled(cmdr, Style::default().fg(COLOR_STAR)),
             ]));
         }
-        lines.push(Line::from(vec![
+        rest_lines.push(Line::from(vec![
             Span::styled("Value:    ", Style::default().fg(ELITE_DIM)),
             Span::styled(format!("{} cr", format_credits(cache.estimated_value_mapped)), Style::default().fg(COLOR_VALUE_HIGH)),
         ]));
@@ -162,32 +204,33 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
 
     // ── Anomaly / POI Section ──
     if let Some(anomalies) = app.anomalies.get(&body_id) {
-        lines.push(Line::from(""));
-        lines.push(Line::from(Span::styled("── ANOMALIES / POI ──", Style::default().fg(COLOR_ANOMALY))));
+        rest_lines.push(Line::from(""));
+        rest_lines.push(Line::from(Span::styled("── ANOMALIES / POI ──", Style::default().fg(COLOR_ANOMALY))));
         for anomaly in anomalies {
-            lines.push(Line::from(vec![
+            rest_lines.push(Line::from(vec![
                 Span::styled(format!(" {} ", anomaly.kind.icon()), Style::default().fg(COLOR_ANOMALY)),
                 Span::styled(anomaly.kind.label(), Style::default().fg(COLOR_ANOMALY).add_modifier(Modifier::BOLD)),
             ]));
-            lines.push(Line::from(vec![
+            rest_lines.push(Line::from(vec![
                 Span::styled("   ", Style::default()),
                 Span::styled(&anomaly.description, Style::default().fg(ELITE_DIM)),
             ]));
         }
     }
 
-    lines.push(Line::from(""));
-    lines.push(Line::from(Span::styled("── EXOBIOLOGY PREDICTIONS ──", Style::default().fg(ELITE_DIM))));
+    // ── Exobiology Predictions ──
+    rest_lines.push(Line::from(""));
+    rest_lines.push(Line::from(Span::styled("── EXOBIOLOGY PREDICTIONS ──", Style::default().fg(ELITE_DIM))));
     if body.bio_signals > 0 && body.landable {
         let primary_star_id = app.system.primary_star_id.unwrap_or(0);
         let primary_star = app.bodies.get(&primary_star_id).and_then(|b| b.star_class_enum.as_ref());
         let predictions = predictor::predict_species(body, primary_star, app.system.region_id);
 
         if predictions.is_empty() {
-            lines.push(Line::from(" No matching species boundaries"));
+            rest_lines.push(Line::from(" No matching species boundaries"));
         } else {
-            lines.push(Line::from(format!(" Signals: {} detected", body.bio_signals)));
-            lines.push(Line::from(""));
+            rest_lines.push(Line::from(format!(" Signals: {} detected", body.bio_signals)));
+            rest_lines.push(Line::from(""));
             let scan_key = format!("{}_{}", app.system.system_address, body.body_id);
             let organic_scans = app.trip.organic_scans.get(&scan_key);
 
@@ -310,7 +353,7 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
                 if g.active_scanned || g.active_progress == 3 {
                     completed_count += 1;
                     total_earned += first_discovery_value;
-                    lines.push(Line::from(vec![
+                    rest_lines.push(Line::from(vec![
                         Span::styled(format!(" R ▸ {} ", g.active_variant.as_deref().unwrap_or(&g.base_name)), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
                         Span::styled("[Completed]", Style::default().fg(COLOR_BIO)),
                     ]));
@@ -318,7 +361,7 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
                     let sep_str = min_separation_for_genus(&g.genus)
                         .map(|d| format!(" | {}m", d))
                         .unwrap_or_default();
-                    lines.push(Line::from(vec![
+                    rest_lines.push(Line::from(vec![
                         Span::styled(format!(" R ▸ {} ", g.active_variant.as_deref().unwrap_or(&g.base_name)), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
                         Span::styled(format!("[Scanned {}/3{}]", g.active_progress, sep_str), Style::default().fg(COLOR_FIRST).add_modifier(Modifier::BOLD)),
                     ]));
@@ -341,7 +384,7 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
                                 "".to_string()
                             };
 
-                            lines.push(Line::from(vec![
+                            rest_lines.push(Line::from(vec![
                                 Span::styled(prefix, Style::default().fg(ELITE_DIM)),
                                 Span::styled(format!("Location [{}/3]: ", i + 1), Style::default().fg(ELITE_DIM)),
                                 Span::styled(format!("{:.4}°, {:.4}°", loc.latitude, loc.longitude), Style::default().fg(COLOR_VALUE_HIGH)),
@@ -358,7 +401,7 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
                     let sep_span = min_separation_for_genus(&g.genus)
                         .map(|d| Span::styled(format!(" [{}m]", d), Style::default().fg(ELITE_DIM)))
                         .unwrap_or_else(|| Span::raw(""));
-                    lines.push(Line::from(vec![
+                    rest_lines.push(Line::from(vec![
                         Span::styled(format!(" ▸ {}{} ", g.base_name, variants_str), Style::default().fg(ELITE_ORANGE)),
                         Span::styled(format!(": {} cr (First)", format_credits(first_discovery_value)), Style::default().fg(COLOR_FIRST)),
                         sep_span,
@@ -368,23 +411,23 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
 
             // Bio value summary
             if species_count > 0 {
-                lines.push(Line::from(Span::styled(" ─────────────────────────────────", Style::default().fg(ELITE_DIM))));
+                rest_lines.push(Line::from(Span::styled(" ─────────────────────────────────", Style::default().fg(ELITE_DIM))));
                 if completed_count == species_count {
                     // All done — celebratory total
-                    lines.push(Line::from(vec![
+                    rest_lines.push(Line::from(vec![
                         Span::styled(" Total earned: ", Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
                         Span::styled(format!("{} cr ✓", format_credits(total_earned)), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
                     ]));
                 } else if completed_count > 0 {
                     // Partial progress — earned / estimated
-                    lines.push(Line::from(vec![
+                    rest_lines.push(Line::from(vec![
                         Span::styled(" Earned: ", Style::default().fg(COLOR_FIRST)),
                         Span::styled(format!("{} cr", format_credits(total_earned)), Style::default().fg(COLOR_FIRST).add_modifier(Modifier::BOLD)),
                         Span::styled(format!(" / Est: {} cr", format_credits(total_estimated)), Style::default().fg(ELITE_DIM)),
                     ]));
                 } else {
                     // Nothing scanned yet — just estimate
-                    lines.push(Line::from(vec![
+                    rest_lines.push(Line::from(vec![
                         Span::styled(" Est. total: ", Style::default().fg(ELITE_DIM)),
                         Span::styled(format!("~{} cr", format_credits(total_estimated)), Style::default().fg(COLOR_FIRST)),
                     ]));
@@ -392,19 +435,113 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
             }
         }
     } else if body.bio_signals > 0 {
-        lines.push(Line::from(" Not landable (exobiology locked)"));
+        rest_lines.push(Line::from(" Not landable (exobiology locked)"));
     } else {
-        lines.push(Line::from(" No bio signals reported"));
+        rest_lines.push(Line::from(" No bio signals reported"));
     }
 
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title(format!(" Telemetry: {} ", body.short_name))
-        .style(Style::default().fg(ELITE_ORANGE).bg(BG_DARK));
+    // ══════════════════════════════════════════════════════
+    // ── Render Layout ──
+    // ══════════════════════════════════════════════════════
+    let header_h = header_lines.len() as u16;
+    let bg = Style::default().bg(BG_DARK);
 
-    let paragraph = Paragraph::new(lines)
-        .block(block)
-        .style(Style::default().bg(BG_DARK));
+    if is_planetary && !mat_lines.is_empty() {
+        // Side-by-side: Physical (left) | Materials (right)
+        let side_h = std::cmp::max(phys_lines.len(), mat_lines.len()) as u16;
 
-    frame.render_widget(paragraph, area);
+        let rows = Layout::vertical([
+            Constraint::Length(header_h),
+            Constraint::Length(side_h),
+            Constraint::Min(0),
+        ]).split(inner);
+
+        frame.render_widget(Paragraph::new(header_lines).style(bg), rows[0]);
+
+        let cols = Layout::horizontal([
+            Constraint::Percentage(50),
+            Constraint::Percentage(50),
+        ]).split(rows[1]);
+
+        frame.render_widget(Paragraph::new(phys_lines).style(bg), cols[0]);
+        frame.render_widget(Paragraph::new(mat_lines).style(bg), cols[1]);
+        frame.render_widget(Paragraph::new(rest_lines).style(bg), rows[2]);
+    } else if is_planetary {
+        // No materials — physical full-width, then rest
+        let phys_h = phys_lines.len() as u16;
+
+        let rows = Layout::vertical([
+            Constraint::Length(header_h),
+            Constraint::Length(phys_h),
+            Constraint::Min(0),
+        ]).split(inner);
+
+        frame.render_widget(Paragraph::new(header_lines).style(bg), rows[0]);
+        frame.render_widget(Paragraph::new(phys_lines).style(bg), rows[1]);
+        frame.render_widget(Paragraph::new(rest_lines).style(bg), rows[2]);
+    } else {
+        // Star / non-planetary — header + rest only
+        let rows = Layout::vertical([
+            Constraint::Length(header_h),
+            Constraint::Min(0),
+        ]).split(inner);
+
+        frame.render_widget(Paragraph::new(header_lines).style(bg), rows[0]);
+        frame.render_widget(Paragraph::new(rest_lines).style(bg), rows[1]);
+    }
+}
+
+/// Map Elite Dangerous material names to chemical element symbols.
+fn material_symbol(name: &str) -> &str {
+    match name.to_lowercase().as_str() {
+        "iron" => "Fe",
+        "nickel" => "Ni",
+        "sulphur" => "S",
+        "carbon" => "C",
+        "phosphorus" => "P",
+        "manganese" => "Mn",
+        "zinc" => "Zn",
+        "chromium" => "Cr",
+        "germanium" => "Ge",
+        "vanadium" => "V",
+        "niobium" => "Nb",
+        "molybdenum" => "Mo",
+        "tin" => "Sn",
+        "tungsten" => "W",
+        "arsenic" => "As",
+        "selenium" => "Se",
+        "cadmium" => "Cd",
+        "tellurium" => "Te",
+        "ruthenium" => "Ru",
+        "technetium" => "Tc",
+        "mercury" => "Hg",
+        "polonium" => "Po",
+        "yttrium" => "Y",
+        "zirconium" => "Zr",
+        "antimony" => "Sb",
+        "lead" => "Pb",
+        "boron" => "B",
+        "rhenium" => "Re",
+        _ => "??",
+    }
+}
+
+/// Map atmosphere element names to chemical formulas.
+fn atmo_formula(name: &str) -> &str {
+    match name {
+        "Hydrogen" => "H₂",
+        "Helium" => "He",
+        "Water" => "H₂O",
+        "Oxygen" => "O₂",
+        "CarbonDioxide" => "CO₂",
+        "SulphurDioxide" => "SO₂",
+        "Ammonia" => "NH₃",
+        "Methane" => "CH₄",
+        "Nitrogen" => "N₂",
+        "Neon" => "Ne",
+        "Argon" => "Ar",
+        "Silicates" => "SiO₂",
+        "Iron" => "Fe",
+        _ => name,
+    }
 }

@@ -1,13 +1,15 @@
 # Pulse — Current Project State
 
-**Last Updated:** 2026-06-12 14:16
-**Session Focus:** POI anomaly detection engine + TUI integration + E2E validation
+**Last Updated:** 2026-06-12 17:04
+**Session Focus:** Inspector telemetry sidebar layout rework
 
 ## 🚀 Active Tracks
 
 _None active._
 
 ## ✅ Recently Completed
+
+- **Inspector Sidebar Layout Rework (2026-06-12):** Restructured inspector from single monolithic Paragraph to multi-section Layout. Physical properties (left column) + Materials (right column) side-by-side using Ratatui horizontal Layout split. Orbital/EDSM/Anomalies/Exobiology full-width below. 165/165 tests.
 
 - **POI Anomaly Detection + TUI Integration (2026-06-12):** Built anomaly detection engine from EDMC-Canonn codex.py. 11 detectors (close orbit, flypast, collision, trojan, satellite star, moon³, fast rotator, retrograde orbit, high eccentricity, extreme tilt). Jumponium Green System detection (Basic/Standard/Premium). Header bar repurposed as POI ticker. Inspector panel shows anomaly details. 165/165 tests. Commits up to `f8db7f8`.
 
@@ -31,6 +33,9 @@ _None._
 - _2026-06-12_ — **Neighborhood black hole scanning** — Investigated EDSM/Spansh APIs for nearby POI discovery. APIs are blind in deep unexplored space. Mass code heuristic (PG name → star type) noted as future track idea. No API can control in-game galaxy map. _(operational)_
 - _2026-06-12_ — **NavRoute mass code scanner idea** — Parse plotted route system names, flag mass code `g`/`h` systems as likely black holes/neutrons. Zero API calls, pure name math. Noted in hunting checklist future ideas. _(operational)_
 - _2026-06-12_ — **E2E validation: Extreme Tilt** — First anomaly confirmed in-game at `Flya Eom ES-A d1-1` body 1 (HMC, 164° axial tilt). Header POI ticker, inspector ANOMALIES/POI section both rendering correctly. _(operational)_
+- _2026-06-12_ — **Nearest carrier/station search research** _(elite)_ — Inara API has no search endpoint (push-only). Spansh `POST /api/stations/search` with `type: Fleet Carrier` + `reference_system` works but needs known system. Inara web scrape (`GET /elite/nearest-stations/?formbrief=1&ps1=SYSTEM&pi16=39`) returns server-rendered HTML with carrier IDs, systems, distances — parseable, no auth. Both fail in deep unexplored space (unknown systems). Thought experiment only, no track planned. _(operational)_
+- _2026-06-12_ — **EDDN upload feasibility** _(elite)_ — Standalone apps CAN upload to EDDN (HTTP POST + zlib to `eddn.edcd.io:4430/upload/`). No registration needed. UB already has journal parsing + `ureq`. Would need schema transform, PII stripping, `gameversion`/`gamebuild` from Fileheader. EDSM also accepts direct uploads (`api-journal-v1` with API key). ~300-500 lines Rust total. Noted as future possibility. _(operational)_
+- _2026-06-12_ — **Inspector sidebar side-by-side layout** — Restructured from single Paragraph to Layout-based rendering. Physical props left column, Materials right column. Block rendered separately, inner area split with Layout::vertical + Layout::horizontal. Bodies without materials fall back to full-width physical. Stars skip side-by-side entirely. _(operational)_
 
 ## 📋 Next Session Suggestions
 

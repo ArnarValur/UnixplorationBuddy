@@ -8,6 +8,13 @@ Timestamped entries for context continuity between sessions.
 
 _None._
 
+## 2026-06-12 17:04
+- **Session:** Inspector telemetry sidebar layout rework
+- **Tracks touched:** None (free-form visual improvement)
+- **Status:** Inspector restructured from single Paragraph to Layout-based side-by-side rendering. Physical properties (left) + Materials (right). Orbital/EDSM/Anomalies/Exobiology full-width below. 165/165 tests.
+- **Decisions:** None (visual/operational, easily reversible)
+- **Next:** Live review of side-by-side layout. Visual tuning. Continue E2E anomaly testing. NavRoute mass code scanner.
+
 ## 2026-06-12 14:16
 - **Session:** E2E anomaly validation in the field
 - **Tracks touched:** None
