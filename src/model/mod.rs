@@ -7,9 +7,11 @@ pub mod system;
 pub mod trip;
 pub mod valuation;
 pub mod biology;
+pub mod anomaly;
 
 
 pub use body::{Body, BodyType, ScanState};
+pub use anomaly::{Anomaly, AnomalyKind, detect_anomalies};
 pub use hierarchy::BodyHierarchy;
 pub use navigation::{NavRoute, Status};
 pub use region::find_region;

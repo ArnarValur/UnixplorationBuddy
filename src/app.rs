@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use crate::model::{Body, BodyHierarchy, System, Trip, NavRoute};
+use crate::model::{Body, BodyHierarchy, System, Trip, NavRoute, Anomaly};
 
 /// Which tab is currently active in the TUI.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -129,6 +129,9 @@ pub struct App {
     /// Cache of visited systems' bodies for back-navigation.
     /// Keyed by system_address → (System, bodies HashMap).
     pub visited_systems: HashMap<u64, (System, HashMap<u32, Body>)>,
+    /// Detected anomalies/POIs for bodies in the current system.
+    /// Recomputed after each Scan event.
+    pub anomalies: HashMap<u32, Vec<Anomaly>>,
 }
 
 impl App {
@@ -160,6 +163,7 @@ impl App {
             bodies_subtab: BodiesSubTab::default(),
             current_primary_star_class: None,
             visited_systems: HashMap::new(),
+            anomalies: HashMap::new(),
         }
     }
 

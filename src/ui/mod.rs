@@ -41,6 +41,8 @@ pub const COLOR_VALUE_HIGH: Color = Color::Rgb(80, 220, 80);
 pub const COLOR_BIO: Color = Color::Rgb(80, 230, 160);
 /// First discovery / first mapping marker.
 pub const COLOR_FIRST: Color = Color::Rgb(255, 215, 0);
+/// Anomaly / POI highlight — magenta to stand out.
+pub const COLOR_ANOMALY: Color = Color::Rgb(255, 100, 200);
 
 /// Value threshold for "high value" highlighting (credits).
 pub const HIGH_VALUE_THRESHOLD: u64 = 100_000;

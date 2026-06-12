@@ -549,11 +549,13 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                 app.system = sys;
                 app.bodies = cached_bodies;
                 app.rebuild_display_order();
+                app.anomalies = crate::model::detect_anomalies(&app.bodies);
             } else {
                 app.system = sys;
                 app.bodies.clear();
                 app.body_display_order.clear();
                 app.system.body_count_discovered = 0;
+                app.anomalies.clear();
             }
 
             app.selected_body_index = 0;
@@ -775,6 +777,9 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
 
             // Recompute system total value
             app.system.total_value = aggregate_system_value(&app.bodies);
+
+            // Recompute anomaly detections
+            app.anomalies = crate::model::detect_anomalies(&app.bodies);
         }
 
         // --- Body signals (bio/geo counts from FSS) ---

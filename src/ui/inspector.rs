@@ -8,7 +8,7 @@ use crate::app::App;
 use crate::model::BodyType;
 use crate::model::biology::{colors, predictor};
 use super::{
-    ELITE_ORANGE, ELITE_DIM, BG_DARK, COLOR_STAR, COLOR_BIO, COLOR_FIRST, COLOR_VALUE_HIGH,
+    ELITE_ORANGE, ELITE_DIM, BG_DARK, COLOR_STAR, COLOR_BIO, COLOR_FIRST, COLOR_VALUE_HIGH, COLOR_ANOMALY,
     format_body_type, format_credits, format_number, format_volcanism, min_separation_for_genus, calculate_haversine_distance,
 };
 
@@ -158,6 +158,22 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
             Span::styled("Value:    ", Style::default().fg(ELITE_DIM)),
             Span::styled(format!("{} cr", format_credits(cache.estimated_value_mapped)), Style::default().fg(COLOR_VALUE_HIGH)),
         ]));
+    }
+
+    // ── Anomaly / POI Section ──
+    if let Some(anomalies) = app.anomalies.get(&body_id) {
+        lines.push(Line::from(""));
+        lines.push(Line::from(Span::styled("── ANOMALIES / POI ──", Style::default().fg(COLOR_ANOMALY))));
+        for anomaly in anomalies {
+            lines.push(Line::from(vec![
+                Span::styled(format!(" {} ", anomaly.kind.icon()), Style::default().fg(COLOR_ANOMALY)),
+                Span::styled(anomaly.kind.label(), Style::default().fg(COLOR_ANOMALY).add_modifier(Modifier::BOLD)),
+            ]));
+            lines.push(Line::from(vec![
+                Span::styled("   ", Style::default()),
+                Span::styled(&anomaly.description, Style::default().fg(ELITE_DIM)),
+            ]));
+        }
     }
 
     lines.push(Line::from(""));

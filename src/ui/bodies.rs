@@ -5,7 +5,7 @@ use ratatui::widgets::{Block, Borders, Paragraph, Row, Scrollbar, ScrollbarOrien
 use ratatui::Frame;
 
 use crate::app::{App, Tab};
-use super::{ELITE_ORANGE, ELITE_DIM, BG_DARK, HIGHLIGHT_BG, body_type_color, format_body_type, format_body_value, format_atmosphere, tab_title};
+use super::{ELITE_ORANGE, ELITE_DIM, BG_DARK, HIGHLIGHT_BG, COLOR_ANOMALY, body_type_color, format_body_type, format_body_value, format_atmosphere, tab_title};
 
 /// Bodies tab — hierarchical, scrollable body table with color-coded types.
 pub fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
@@ -147,10 +147,18 @@ pub fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
                         "—".into()
                     };
 
+                    // Anomaly / POI badges
+                    let poi = if let Some(anomalies) = app.anomalies.get(&body_id) {
+                        anomalies.iter().map(|a| a.kind.icon()).collect::<Vec<_>>().join("")
+                    } else {
+                        "—".into()
+                    };
 
-
+                    let has_anomaly = app.anomalies.contains_key(&body_id);
                     let row_style = if is_selected {
                         Style::default().fg(type_color).bg(HIGHLIGHT_BG)
+                    } else if has_anomaly {
+                        Style::default().fg(type_color).add_modifier(Modifier::BOLD)
                     } else {
                         Style::default().fg(type_color)
                     };
@@ -203,6 +211,7 @@ pub fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
                         "—".into(),
                         "—".into(),
                         "—".into(),
+                        "—".into(),
                     ]);
 
                     Row::new(cells).style(style)
@@ -231,13 +240,14 @@ pub fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
         widths.push(Constraint::Length(6));
     }
 
-    header_cells.extend(vec!["Dist(Ls)", "Scan", "Value(cr)", "Bio", "Geo"]);
+    header_cells.extend(vec!["Dist(Ls)", "Scan", "Value(cr)", "Bio", "Geo", "POI"]);
     widths.extend(vec![
         Constraint::Length(9),
         Constraint::Length(4),
         Constraint::Length(11),
         Constraint::Length(4),
         Constraint::Length(4),
+        Constraint::Length(5),
     ]);
 
     let header = Row::new(header_cells)
