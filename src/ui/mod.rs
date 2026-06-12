@@ -82,21 +82,12 @@ pub fn draw(frame: &mut Frame, app: &App) {
 
 // ── System header ────────────────────────────────────────────────
 
-/// Slim single-line system header: system name · body count · total value.
+/// Slim single-line system header: system name · region · POI/anomaly summary.
 fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
     let system_name = if app.system.name.is_empty() {
         "No system"
     } else {
         &app.system.name
-    };
-
-    let body_progress = if app.system.body_count_total > 0 {
-        format!(
-            "{}/{}",
-            app.system.body_count_discovered, app.system.body_count_total
-        )
-    } else {
-        format!("{}", app.system.body_count_discovered)
     };
 
     let mut spans = vec![
@@ -116,24 +107,6 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
         ));
     }
 
-    spans.extend(vec![
-        Span::styled(" │ ", Style::default().fg(ELITE_DIM)),
-        Span::styled(
-            format!("{} bodies", body_progress),
-            Style::default().fg(ELITE_ORANGE),
-        ),
-        Span::styled(" │ ", Style::default().fg(ELITE_DIM)),
-        Span::styled(
-            format!("{} cr", format_credits(app.system.total_value)),
-            Style::default()
-                .fg(if app.system.total_value >= HIGH_VALUE_THRESHOLD {
-                    COLOR_VALUE_HIGH
-                } else {
-                    ELITE_ORANGE
-                }),
-        ),
-    ]);
-
     // Jumponium / Green System badge
     if let Some(ref jumpo) = app.jumponium {
         spans.push(Span::styled(" │ ", Style::default().fg(ELITE_DIM)));
@@ -141,6 +114,37 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
             format!("{} {}", jumpo.grade.icon(), jumpo.grade.label()),
             Style::default().fg(COLOR_VALUE_HIGH).add_modifier(Modifier::BOLD),
         ));
+    }
+
+    // POI / anomaly summary — collect unique anomaly kinds across all bodies
+    if !app.anomalies.is_empty() {
+        let mut kind_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+        for anomalies in app.anomalies.values() {
+            for a in anomalies {
+                *kind_counts.entry(format!("{} {}", a.kind.icon(), a.kind.label())).or_default() += 1;
+            }
+        }
+
+        if !kind_counts.is_empty() {
+            spans.push(Span::styled(" │ ", Style::default().fg(ELITE_DIM)));
+
+            let mut badges: Vec<String> = kind_counts
+                .iter()
+                .map(|(label, count)| {
+                    if *count > 1 {
+                        format!("{}×{}", label, count)
+                    } else {
+                        label.clone()
+                    }
+                })
+                .collect();
+            badges.sort();
+
+            spans.push(Span::styled(
+                badges.join("  "),
+                Style::default().fg(COLOR_ANOMALY),
+            ));
+        }
     }
 
     let header = Line::from(spans);
@@ -602,20 +606,19 @@ mod tests {
     }
 
     #[test]
-    fn header_renders_system_name_and_body_count() {
+    fn header_renders_system_name_and_region() {
         let mut app = App::new();
         app.system = System::new("Sagittarius A*".into(), 123);
-        app.system.body_count_discovered = 5;
-        app.system.body_count_total = 10;
+        app.system.region = Some("Galactic Centre".into());
 
-        let output = render_to_string(&app, 80, 10);
+        let output = render_to_string(&app, 120, 10);
         assert!(
             output.contains("Sagittarius A*"),
             "Header should contain system name.\nOutput:\n{output}"
         );
         assert!(
-            output.contains("5/10 bodies"),
-            "Header should show body count.\nOutput:\n{output}"
+            output.contains("Galactic Centre"),
+            "Header should show region.\nOutput:\n{output}"
         );
     }
 
@@ -777,15 +780,22 @@ mod tests {
     }
 
     #[test]
-    fn header_shows_total_value() {
+    fn header_shows_anomaly_badges() {
         let mut app = App::new();
-        app.system = System::new("Rich System".into(), 42);
-        app.system.total_value = 1_234_567;
+        app.system = System::new("Anomaly System".into(), 42);
 
-        let output = render_to_string(&app, 80, 10);
+        // Add a retrograde orbit anomaly
+        use crate::model::{Anomaly, AnomalyKind};
+        app.anomalies.insert(1, vec![Anomaly {
+            body_id: 1,
+            kind: AnomalyKind::RetrogradeOrbit,
+            description: "test".into(),
+        }]);
+
+        let output = render_to_string(&app, 120, 10);
         assert!(
-            output.contains("1,234,567 cr"),
-            "Header should show formatted total value.\nOutput:\n{output}"
+            output.contains("Retrograde Orbit"),
+            "Header should show anomaly badge.\nOutput:\n{output}"
         );
     }
 
