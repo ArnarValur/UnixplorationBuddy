@@ -100,6 +100,8 @@ pub struct App {
     pub targeted_body_id: Option<u32>,
     /// Plotted route waypoints from NavRoute.json.
     pub plotted_route: Option<NavRoute>,
+    /// Selected row index in the route exploration table.
+    pub selected_route_index: usize,
     /// EDSM systems data cache.
     pub edsm_cache: HashMap<String, EdsmSystemData>,
     /// Active sub-tab in Trip tab.
@@ -154,6 +156,7 @@ impl App {
             show_help: false,
             targeted_body_id: None,
             plotted_route: None,
+            selected_route_index: 0,
             edsm_cache: HashMap::new(),
             active_codex_tab: CodexTab::default(),
             selected_stellar_index: 0,
@@ -240,35 +243,17 @@ impl App {
     }
 
     /// Calculate the maximum number of rows in the planetary codex panel.
-    /// Counts category headers + planet class rows + sub-attribute rows.
+    /// Condensed layout: 1 row per planet class + 1 header per category.
     pub fn max_planetary_rows(&self) -> usize {
-        // Aggregate unique planet classes and their sub-attribute flags
-        let mut class_flags: HashMap<String, (bool, bool, bool, bool, bool)> = HashMap::new();
+        let mut class_set: std::collections::HashSet<String> = std::collections::HashSet::new();
+        let mut categories = std::collections::HashSet::new();
         for key in self.trip.planetary_codex.keys() {
             let parts: Vec<&str> = key.split('|').collect();
             let planet_class = parts[0].to_string();
-            let entry = class_flags.entry(planet_class).or_insert((false, false, false, false, false));
-            if parts.contains(&"R") { entry.0 = true; }
-            if parts.contains(&"T") { entry.1 = true; }
-            if parts.contains(&"L") { entry.2 = true; }
-            if parts.contains(&"B") { entry.3 = true; }
-            if parts.contains(&"C") { entry.4 = true; }
+            categories.insert(get_planet_category(&planet_class));
+            class_set.insert(planet_class);
         }
-
-        let mut categories = std::collections::HashSet::new();
-        let mut rows = 0usize;
-        for (planet_class, (has_r, has_t, has_l, has_b, has_c)) in &class_flags {
-            categories.insert(get_planet_category(planet_class));
-            rows += 1; // planet class row
-            // sub-attribute rows
-            if *has_r { rows += 1; }
-            if *has_t { rows += 1; }
-            if *has_l { rows += 1; }
-            if *has_b { rows += 1; }
-            if *has_c { rows += 1; }
-        }
-        rows += categories.len(); // category header rows
-        rows
+        class_set.len() + categories.len()
     }
 
     /// Move selection down in the active codex.
@@ -351,6 +336,21 @@ impl App {
                 .unwrap_or(self.body_display_order.len() - 1);
             self.inspector_scroll = 0;
         }
+    }
+
+    /// Move selection down in the route list.
+    pub fn select_next_route(&mut self) {
+        if let Some(ref route) = self.plotted_route {
+            let max = route.route.len().saturating_sub(1);
+            if self.selected_route_index < max {
+                self.selected_route_index += 1;
+            }
+        }
+    }
+
+    /// Move selection up in the route list.
+    pub fn select_previous_route(&mut self) {
+        self.selected_route_index = self.selected_route_index.saturating_sub(1);
     }
 
     /// Rebuild `body_display_order` from the current bodies using [`BodyHierarchy`].
@@ -451,12 +451,8 @@ mod tests {
         app.trip.planetary_codex.insert("Earth-like World|L".to_string(), 2);
         app.trip.planetary_codex.insert("Rocky body|L".to_string(), 5);
 
-        // Categories: "Rare Worlds", "Terrestrial Worlds" = 2 header rows
-        // HMC: 1 class row + Ringed(1) + Terraformable(1) + Landable(1) = 4 rows
-        // Earth-like: 1 class row + Landable(1) = 2 rows
-        // Rocky body: 1 class row + Landable(1) = 2 rows
-        // Total = 2 + 4 + 2 + 2 = 10
-        assert_eq!(app.max_planetary_rows(), 10);
+        // Condensed layout: 2 category headers + 3 planet classes = 5
+        assert_eq!(app.max_planetary_rows(), 5);
     }
 
     #[test]

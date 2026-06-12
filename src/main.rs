@@ -147,6 +147,9 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
     let nav_route_path = journal_dir.join("NavRoute.json");
     if let Ok(content) = std::fs::read_to_string(&nav_route_path) {
         if let Ok(nav_route) = serde_json::from_str::<model::NavRoute>(&content) {
+            if let Some(idx) = nav_route.route.iter().position(|e| e.star_system == app.system.name) {
+                app.selected_route_index = idx;
+            }
             app.plotted_route = Some(nav_route);
         }
     }
@@ -193,6 +196,9 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                                 if !r.route.is_empty() {
                                     app.active_tab = app::Tab::Bodies;
                                     app.bodies_subtab = app::BodiesSubTab::Route;
+                                    if let Some(idx) = r.route.iter().position(|e| e.star_system == app.system.name) {
+                                        app.selected_route_index = idx;
+                                    }
                                 }
                             }
                         }
@@ -209,6 +215,9 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                         }
                     }
                     JournalUpdate::NavRouteUpdate(nav_route) => {
+                        if let Some(idx) = nav_route.route.iter().position(|e| e.star_system == app.system.name) {
+                            app.selected_route_index = idx;
+                        }
                         app.plotted_route = Some(nav_route);
                         if let Some(ref tx) = edsm_tx {
                             queue_edsm_requests(&app, tx);
@@ -262,6 +271,8 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                             KeyCode::Up => {
                                 if app.active_tab == app::Tab::History {
                                     app.select_previous_codex_row();
+                                } else if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Route {
+                                    app.select_previous_route();
                                 } else {
                                     app.select_previous_body();
                                 }
@@ -269,6 +280,8 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                             KeyCode::Down => {
                                 if app.active_tab == app::Tab::History {
                                     app.select_next_codex_row();
+                                } else if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Route {
+                                    app.select_next_route();
                                 } else {
                                     app.select_next_body();
                                 }
@@ -329,12 +342,13 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                         MouseEventKind::ScrollUp => {
                             if app.active_tab == app::Tab::History {
                                 if app.active_codex_tab == app::CodexTab::Stellar {
-                                    // Use mouse column to determine panel
                                     let term_width = terminal.size()?.width;
                                     let mid = (term_width as f32 * 0.45) as u16;
                                     app.codex_focus_left = mouse.column < mid;
                                 }
                                 app.select_previous_codex_row();
+                            } else if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Route {
+                                app.select_previous_route();
                             } else {
                                 app.select_previous_body();
                             }
@@ -347,6 +361,8 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                                     app.codex_focus_left = mouse.column < mid;
                                 }
                                 app.select_next_codex_row();
+                            } else if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Route {
+                                app.select_next_route();
                             } else {
                                 app.select_next_body();
                             }

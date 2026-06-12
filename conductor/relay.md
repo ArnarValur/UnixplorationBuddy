@@ -8,6 +8,20 @@ Timestamped entries for context continuity between sessions.
 
 _None._
 
+## 2026-06-12 22:23
+- **Session:** Planetary Codex polish + Route Exploration enrichment
+- **Tracks touched:** None (free-form TUI improvements)
+- **Status:** Codex condensed (sub-rows → inline badges, ~60% fewer rows, brightness gradient, alphabetical sort). Route tab enriched (StarPos distances, remaining ly, progress title, star coloring, visited dimming, fuel streak warnings, keyboard/mouse scroll). 165/165 tests.
+- **Decisions:** None (5 Pulse, 1 Drop)
+- **Next:** Trip reset at carrier. NavRoute mass code scanner. FSDTarget event. Status.json fuel. README.
+
+## 2026-06-12 18:31
+- **Session:** Inspector scrolling + EDSM cleanup
+- **Tracks touched:** None (free-form UX improvements)
+- **Status:** PgUp/PgDn scrolling added to inspector sidebar. EDSM Telemetry section removed (dead clutter). Scroll indicator shows direction hints. Auto-reset on body change. 165/165 tests.
+- **Decisions:** None (operational, easily reversible)
+- **Next:** Live test scrolling on bio-rich bodies. NavRoute mass code scanner. Inspector jumponium drill-down.
+
 ## 2026-06-12 17:04
 - **Session:** Inspector telemetry sidebar layout rework
 - **Tracks touched:** None (free-form visual improvement)

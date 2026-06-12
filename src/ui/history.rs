@@ -1,7 +1,7 @@
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
-use ratatui::style::{Modifier, Style};
+use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Paragraph, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table, TableState};
+use ratatui::widgets::{Block, Borders, Cell, Paragraph, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table, TableState};
 use ratatui::Frame;
 
 use crate::app::{App, Tab, CodexTab};
@@ -298,9 +298,9 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 }
             }
 
-            rare_list.sort_by(|a, b| b.total_scans.cmp(&a.total_scans).then_with(|| a.planet_class.cmp(&b.planet_class)));
-            terrestrial_list.sort_by(|a, b| b.total_scans.cmp(&a.total_scans).then_with(|| a.planet_class.cmp(&b.planet_class)));
-            gas_list.sort_by(|a, b| b.total_scans.cmp(&a.total_scans).then_with(|| a.planet_class.cmp(&b.planet_class)));
+            rare_list.sort_by(|a, b| a.planet_class.cmp(&b.planet_class));
+            terrestrial_list.sort_by(|a, b| a.planet_class.cmp(&b.planet_class));
+            gas_list.sort_by(|a, b| a.planet_class.cmp(&b.planet_class));
 
             let mut planetary_rows = Vec::new();
 
@@ -313,12 +313,12 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
             for (cat_name, list, cat_color) in categories {
                 if !list.is_empty() {
                     let cat_total: u32 = list.iter().map(|e| e.total_scans).sum();
+                    let max_scans = list.iter().map(|e| e.total_scans).max().unwrap_or(1);
                     planetary_rows.push(
                         Row::new(vec![
-                            cat_name.to_string(),
-                            cat_total.to_string(),
+                            Cell::from(Span::styled(cat_name.to_string(), Style::default().fg(cat_color).add_modifier(Modifier::BOLD))),
+                            Cell::from(Span::styled(cat_total.to_string(), Style::default().fg(cat_color).add_modifier(Modifier::BOLD))),
                         ])
-                        .style(Style::default().fg(cat_color).add_modifier(Modifier::BOLD))
                     );
 
                     let len = list.len();
@@ -326,66 +326,49 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                         let is_last_entry = i == len - 1;
                         let prefix = if is_last_entry { "  └─ " } else { "  ├─ " };
 
-                        // Collect sub-attributes for indented child rows
-                        let mut badges = Vec::new();
+                        // Color gradient: brighter orange for higher scan counts
+                        let ratio = entry.total_scans as f32 / max_scans as f32;
+                        let name_color = Color::Rgb(
+                            (140.0 + (115.0 * ratio)) as u8,
+                            (85.0 + (62.0 * ratio)) as u8,
+                            0,
+                        );
+
+                        let has_life = entry.confirmed_life_count > 0;
+                        let name_style = if has_life {
+                            Style::default().fg(name_color).add_modifier(Modifier::BOLD)
+                        } else {
+                            Style::default().fg(name_color)
+                        };
+
+                        // Build multi-span cell with colorized inline badges
+                        let mut spans = vec![
+                            Span::styled(prefix.to_string(), Style::default().fg(ELITE_DIM)),
+                            Span::styled(entry.planet_class.clone(), name_style),
+                        ];
+
+                        if entry.ringed_count > 0 {
+                            spans.push(Span::styled(format!(" 🪐{}", entry.ringed_count), Style::default().fg(ELITE_DIM)));
+                        }
                         if entry.landable_count > 0 {
-                            badges.push(format!("🚀x{}", entry.landable_count));
+                            spans.push(Span::styled(format!(" 🚀{}", entry.landable_count), Style::default().fg(ELITE_DIM)));
                         }
                         if entry.terraformable_count > 0 {
-                            badges.push(format!("🌍x{}", entry.terraformable_count));
-                        }
-                        if entry.ringed_count > 0 {
-                            badges.push(format!("🪐x{}", entry.ringed_count));
+                            spans.push(Span::styled(format!(" 🌍{}", entry.terraformable_count), Style::default().fg(COLOR_VALUE_HIGH)));
                         }
                         if entry.bio_signal_count > 0 {
-                            badges.push(format!("🌿x{}", entry.bio_signal_count));
+                            spans.push(Span::styled(format!(" 🌿{}", entry.bio_signal_count), Style::default().fg(COLOR_BIO)));
                         }
-
-                        let badges_str = if badges.is_empty() {
-                            "".to_string()
-                        } else {
-                            format!("  ({})", badges.join(" │ "))
-                        };
+                        if entry.confirmed_life_count > 0 {
+                            spans.push(Span::styled(format!(" ✅{}", entry.confirmed_life_count), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)));
+                        }
 
                         planetary_rows.push(
                             Row::new(vec![
-                                format!("{}{}{}", prefix, entry.planet_class, badges_str),
-                                entry.total_scans.to_string(),
+                                Cell::from(Line::from(spans)),
+                                Cell::from(Span::styled(entry.total_scans.to_string(), Style::default().fg(name_color))),
                             ])
-                            .style(Style::default().fg(ELITE_DIM))
                         );
-
-                        // Sub-attribute rows (indented under the planet type)
-                        let connector = if is_last_entry { "     " } else { "  │  " };
-                        let mut sub_attrs: Vec<(&str, u32, bool)> = Vec::new();
-                        if entry.ringed_count > 0 {
-                            sub_attrs.push(("Ringed", entry.ringed_count, false));
-                        }
-                        if entry.terraformable_count > 0 {
-                            sub_attrs.push(("Terraformable", entry.terraformable_count, false));
-                        }
-                        if entry.landable_count > 0 {
-                            sub_attrs.push(("Landable", entry.landable_count, false));
-                        }
-                        if entry.bio_signal_count > 0 {
-                            sub_attrs.push(("Bio Signals", entry.bio_signal_count, false));
-                        }
-                        if entry.confirmed_life_count > 0 {
-                            sub_attrs.push(("Confirmed Life", entry.confirmed_life_count, true));
-                        }
-
-                        let sub_len = sub_attrs.len();
-                        for (j, (label, count, is_bio)) in sub_attrs.iter().enumerate() {
-                            let sub_prefix = if j == sub_len - 1 { "└─ " } else { "├─ " };
-                            let sub_color = if *is_bio { COLOR_BIO } else { ELITE_DIM };
-                            planetary_rows.push(
-                                Row::new(vec![
-                                    format!("{}  {}{}", connector, sub_prefix, label),
-                                    count.to_string(),
-                                ])
-                                .style(Style::default().fg(sub_color))
-                            );
-                        }
                     }
                 }
             }
@@ -435,7 +418,7 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
             let header_planetary = Row::new(vec!["Planet Class Hierarchy", "Scans"])
                 .style(Style::default().fg(ELITE_ORANGE).add_modifier(Modifier::BOLD | Modifier::UNDERLINED));
 
-            let table_planetary = Table::new(planetary_rows, [Constraint::Length(42), Constraint::Min(10)])
+            let table_planetary = Table::new(planetary_rows, [Constraint::Min(30), Constraint::Length(8)])
                 .header(header_planetary)
                 .block(
                     Block::default()
