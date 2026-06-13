@@ -8,6 +8,20 @@ Timestamped entries for context continuity between sessions.
 
 _None._
 
+## 2026-06-13 09:42
+- **Session:** Fleet carrier docking + data sell + ship documentation
+- **Tracks touched:** None (exploration + documentation)
+- **Status:** Carrier found on 3rd attempt. Bio sold 1.3B CR (first discoveries), cartographics ~400M (25% tariff). Balance 5.0→5.4B. Elite III rank. Ship loadout doc created. Trip reset. 165/165 tests.
+- **Decisions:** None (0 ADRs — 2 dropped)
+- **Next:** Explore onward from carrier. Backlog: NavRoute mass code scanner, FSDTarget jump counter, Status.json fuel parsing, jumponium drill-down, README.
+
+## 2026-06-12 23:59
+- **Session:** Planetary codex toggle + fleet carrier run
+- **Tracks touched:** None (free-form)
+- **Status:** `v` key toggles compact/expanded codex. Carrier gone at Fojea HG-X D1-1. 12-star system in Vulcan Gate. 165/165 tests.
+- **Decisions:** None (2 Pulse)
+- **Next:** Find another carrier or station. Sell cartographics. Trip reset. Test route tab enrichment live.
+
 ## 2026-06-12 22:23
 - **Session:** Planetary Codex polish + Route Exploration enrichment
 - **Tracks touched:** None (free-form TUI improvements)
