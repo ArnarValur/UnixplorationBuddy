@@ -1,0 +1,9 @@
+{
+  "track_id": "phase4_tab_transitions_20260527",
+  "type": "feature",
+  "status": "completed",
+  "domain": "core",
+  "created_at": "2026-05-27T18:10:00Z",
+  "updated_at": "2026-05-27T18:10:00Z",
+  "description": "Implement automatic TUI tab transitions: switch to Route view upon FSD jump start if a route is plotted, and switch back to Bodies view upon system arrival."
+}

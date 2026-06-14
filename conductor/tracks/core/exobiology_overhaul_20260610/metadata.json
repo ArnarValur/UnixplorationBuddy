@@ -1,0 +1,9 @@
+{
+  "track_id": "exobiology_overhaul_20260610",
+  "type": "feature",
+  "status": "completed",
+  "domain": "core",
+  "created_at": "2026-06-10T12:47:00+02:00",
+  "updated_at": "2026-06-10T13:22:00+02:00",
+  "description": "Exobiology Prediction Overhaul — galactic region lookup, volcanism/pressure/material filtering, variant color narrowing, BioScan-grade ruleset engine"
+}

@@ -1,0 +1,342 @@
+{
+  "2101400": {
+    "atmosComposition": [], 
+    "atmosphereType": [
+      "No atmosphere"
+    ], 
+    "bodies": [
+      "Metal-rich body"
+    ], 
+    "count": 682, 
+    "fdevname": "$Codex_Ent_Vents_Name;", 
+    "histograms": {
+      "atmos_types": {
+        "No atmosphere": 662
+      }, 
+      "body_types": {
+        "Metal-rich body": 662
+      }, 
+      "distance": [
+        {
+          "max": 49167.878801666666, 
+          "min": 25.648311, 
+          "value": 578
+        }, 
+        {
+          "max": 98310.10929233333, 
+          "min": 49167.878801666666, 
+          "value": 23
+        }, 
+        {
+          "max": 147452.339783, 
+          "min": 98310.10929233333, 
+          "value": 9
+        }, 
+        {
+          "max": 196594.57027366667, 
+          "min": 147452.339783, 
+          "value": 8
+        }, 
+        {
+          "max": 245736.80076433334, 
+          "min": 196594.57027366667, 
+          "value": 11
+        }, 
+        {
+          "max": 294879.03125500004, 
+          "min": 245736.80076433334, 
+          "value": 8
+        }, 
+        {
+          "max": 344021.26174566674, 
+          "min": 294879.03125500004, 
+          "value": 6
+        }, 
+        {
+          "max": 393163.4922363333, 
+          "min": 344021.2617456667, 
+          "value": 6
+        }, 
+        {
+          "max": 442305.722727, 
+          "min": 393163.4922363334, 
+          "value": 5
+        }, 
+        {
+          "max": 491447.9532176667, 
+          "min": 442305.7227270001, 
+          "value": 5
+        }, 
+        {
+          "max": 540590.1837083334, 
+          "min": 491447.9532176667, 
+          "value": 2
+        }, 
+        {
+          "max": 589732.414199, 
+          "min": 540590.1837083333, 
+          "value": 1
+        }
+      ], 
+      "gravity": [
+        {
+          "max": 0.4117044458040178, 
+          "min": 0.0425029060874885, 
+          "value": 148
+        }, 
+        {
+          "max": 0.7809059855205471, 
+          "min": 0.4117044458040178, 
+          "value": 48
+        }, 
+        {
+          "max": 1.1501075252370765, 
+          "min": 0.7809059855205471, 
+          "value": 60
+        }, 
+        {
+          "max": 1.5193090649536056, 
+          "min": 1.1501075252370763, 
+          "value": 98
+        }, 
+        {
+          "max": 1.888510604670135, 
+          "min": 1.5193090649536056, 
+          "value": 171
+        }, 
+        {
+          "max": 2.257712144386664, 
+          "min": 1.888510604670135, 
+          "value": 69
+        }, 
+        {
+          "max": 2.6269136841031933, 
+          "min": 2.257712144386664, 
+          "value": 47
+        }, 
+        {
+          "max": 2.996115223819723, 
+          "min": 2.6269136841031937, 
+          "value": 11
+        }, 
+        {
+          "max": 3.365316763536252, 
+          "min": 2.996115223819723, 
+          "value": 4
+        }, 
+        {
+          "max": 3.734518303252781, 
+          "min": 3.365316763536252, 
+          "value": 2
+        }, 
+        {
+          "max": 4.103719842969311, 
+          "min": 3.7345183032527816, 
+          "value": 2
+        }, 
+        {
+          "max": 4.472921382685841, 
+          "min": 4.103719842969311, 
+          "value": 2
+        }
+      ], 
+      "local_stars": {
+        "A (Blue-White) Star": 411, 
+        "B (Blue-White) Star": 8, 
+        "F (White) Star": 25, 
+        "G (White-Yellow) Star": 42, 
+        "K (Yellow-Orange) Star": 135, 
+        "L (Brown dwarf) Star": 2, 
+        "M (Red dwarf) Star": 38, 
+        "null": 1
+      }, 
+      "materials": {
+        "Antimony": 98, 
+        "Arsenic": 80, 
+        "Cadmium": 233, 
+        "Carbon": 1, 
+        "Chromium": 484, 
+        "Germanium": 83, 
+        "Iron": 662, 
+        "Manganese": 491, 
+        "Mercury": 158, 
+        "Molybdenum": 230, 
+        "Nickel": 662, 
+        "Niobium": 243, 
+        "Phosphorus": 1, 
+        "Polonium": 80, 
+        "Ruthenium": 165, 
+        "Selenium": 29, 
+        "Sulphur": 1, 
+        "Technetium": 102, 
+        "Tellurium": 51, 
+        "Tin": 251, 
+        "Tungsten": 209, 
+        "Vanadium": 336, 
+        "Yttrium": 166, 
+        "Zinc": 328, 
+        "Zirconium": 155
+      }, 
+      "pressure": [], 
+      "primary_stars": {
+        "A (Blue-White) Star": 667, 
+        "B (Blue-White) Star": 12, 
+        "F (White) Star": 1, 
+        "Neutron Star": 1, 
+        "null": 1
+      }, 
+      "system_bodies": {
+        "A (Blue-White) Star": 681, 
+        "Ammonia world": 30, 
+        "B (Blue-White) Star": 12, 
+        "Class I gas giant": 178, 
+        "Class II gas giant": 282, 
+        "Class III gas giant": 473, 
+        "Class IV gas giant": 126, 
+        "Class V gas giant": 2, 
+        "Earth-like world": 40, 
+        "F (White) Star": 85, 
+        "G (White-Yellow) Star": 117, 
+        "Gas giant with ammonia-based life": 64, 
+        "Gas giant with water-based life": 648, 
+        "Helium-rich gas giant": 16, 
+        "High metal content world": 618, 
+        "Icy body": 286, 
+        "K (Yellow-Orange) Star": 266, 
+        "L (Brown dwarf) Star": 11, 
+        "M (Red dwarf) Star": 131, 
+        "Metal-rich body": 682, 
+        "Neutron Star": 1, 
+        "Rocky Ice world": 86, 
+        "Rocky body": 648, 
+        "T (Brown dwarf) Star": 23, 
+        "T Tauri Star": 11, 
+        "Water giant": 36, 
+        "Water world": 134, 
+        "Y (Brown dwarf) Star": 158, 
+        "null": 434
+      }, 
+      "temperature": [
+        {
+          "max": 1022.1234993333333, 
+          "min": 954.86322, 
+          "value": 66
+        }, 
+        {
+          "max": 1089.3837786666666, 
+          "min": 1022.1234993333333, 
+          "value": 162
+        }, 
+        {
+          "max": 1156.6440579999999, 
+          "min": 1089.3837786666666, 
+          "value": 138
+        }, 
+        {
+          "max": 1223.9043373333332, 
+          "min": 1156.6440579999999, 
+          "value": 86
+        }, 
+        {
+          "max": 1291.1646166666667, 
+          "min": 1223.9043373333334, 
+          "value": 50
+        }, 
+        {
+          "max": 1358.424896, 
+          "min": 1291.1646166666667, 
+          "value": 49
+        }, 
+        {
+          "max": 1425.6851753333333, 
+          "min": 1358.424896, 
+          "value": 23
+        }, 
+        {
+          "max": 1492.9454546666666, 
+          "min": 1425.6851753333333, 
+          "value": 32
+        }, 
+        {
+          "max": 1560.205734, 
+          "min": 1492.9454546666666, 
+          "value": 25
+        }, 
+        {
+          "max": 1627.4660133333334, 
+          "min": 1560.2057340000001, 
+          "value": 16
+        }, 
+        {
+          "max": 1694.7262926666667, 
+          "min": 1627.4660133333334, 
+          "value": 9
+        }, 
+        {
+          "max": 1761.986572, 
+          "min": 1694.7262926666667, 
+          "value": 6
+        }
+      ], 
+      "volcanic_body_types": {
+        "Metal-rich body - Major Metallic Magma": 382, 
+        "Metal-rich body - Major Rocky Magma": 100, 
+        "Metal-rich body - Major Silicate Vapour Geysers": 180
+      }
+    }, 
+    "hud_category": "Biology", 
+    "id": "$Codex_Ent_Vents_Name;", 
+    "localStars": [
+      "K (Yellow-Orange) Star", 
+      "B (Blue-White) Star", 
+      "M (Red dwarf) Star", 
+      "L (Brown dwarf) Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      "G (White-Yellow) Star", 
+      null
+    ], 
+    "materials": [
+      "Iron", 
+      "Nickel"
+    ], 
+    "maxd": 589732.414199, 
+    "maxg": 4.47292138268584, 
+    "maxp": null, 
+    "maxt": 1761.986572, 
+    "mind": 25.648311, 
+    "ming": 0.0425029060874885, 
+    "minp": null, 
+    "mint": 954.86322, 
+    "name": "Amphora Plant", 
+    "platform": null, 
+    "primaryStars": [
+      "B (Blue-White) Star", 
+      "Neutron Star", 
+      "F (White) Star", 
+      "A (Blue-White) Star", 
+      null
+    ], 
+    "regions": [
+      "Mare Somnia", 
+      "Dryman's Point", 
+      "Sagittarius-Carina Arm", 
+      "Hawking's Gap", 
+      "Norma Expanse"
+    ], 
+    "reward": 1628800, 
+    "solidComposition": [
+      "Ice", 
+      "Metal", 
+      "Rock"
+    ], 
+    "systemBodyTypes": [
+      "Metal-rich body"
+    ], 
+    "volcanism": [
+      "Major Silicate Vapour Geysers", 
+      "Major Rocky Magma", 
+      "Major Metallic Magma"
+    ]
+  }
+}

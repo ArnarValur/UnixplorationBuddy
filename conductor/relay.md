@@ -8,6 +8,13 @@ Timestamped entries for context continuity between sessions.
 
 _None._
 
+## 2026-06-14 08:56
+- **Session:** Fix planetary codex bio signal counting + expanded variant sub-rows
+- **Tracks touched:** None (bug fix + UI enhancement)
+- **Status:** Fixed critical bulk-move bug in codex key upgrade (ADR-0015). FSSBodySignals race condition also fixed. Expanded codex view now shows individual key variants instead of aggregated totals. Trip.json patched from journals. 165/165 tests. **Note:** Last build required `touch` to force cargo recompile — verify variant sub-rows on next restart.
+- **Decisions:** ADR-0015 (codex-key-single-decrement-upgrade)
+- **Next:** Verify expanded codex rendering, NavRoute mass code scanner, FSDTarget jump counter, fuel parsing
+
 ## 2026-06-13 09:42
 - **Session:** Fleet carrier docking + data sell + ship documentation
 - **Tracks touched:** None (exploration + documentation)
