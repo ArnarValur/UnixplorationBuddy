@@ -8,6 +8,13 @@ Timestamped entries for context continuity between sessions.
 
 _None._
 
+## 2026-06-15 21:22
+- **Session:** Bodies table visual polish + bio scan genus fallback
+- **Tracks touched:** None (UI polish + bug fix)
+- **Status:** Tree guides (`├─ └─ │`) for hierarchy, planet-class accent colors (7 new constants + `body_display_color()`), per-cell bio/geo/value/POI coloring, dash cleanup. Extended `display_order` tuple to 3-element across 9 files. Fixed bio progress mismatch via genus-level dataset fallback in inspector. 165/165 tests.
+- **Decisions:** None (0 ADRs — 4 to Pulse)
+- **Next:** Enhancement backlog quick wins (#1 planet subtype, #10 star class highlight, #13 bio total value). NavRoute mass code scanner. FSDTarget jump counter.
+
 ## 2026-06-14 08:56
 - **Session:** Fix planetary codex bio signal counting + expanded variant sub-rows
 - **Tracks touched:** None (bug fix + UI enhancement)
