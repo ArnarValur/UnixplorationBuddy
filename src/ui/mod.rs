@@ -39,10 +39,24 @@ pub const COLOR_BELT: Color = Color::Rgb(120, 110, 90);
 pub const COLOR_VALUE_HIGH: Color = Color::Rgb(80, 220, 80);
 /// Bio signal color.
 pub const COLOR_BIO: Color = Color::Rgb(80, 230, 160);
+/// Geo signal color — cool cyan.
+pub const COLOR_GEO: Color = Color::Rgb(100, 180, 255);
 /// First discovery / first mapping marker.
 pub const COLOR_FIRST: Color = Color::Rgb(255, 215, 0);
 /// Anomaly / POI highlight — magenta to stand out.
 pub const COLOR_ANOMALY: Color = Color::Rgb(255, 100, 200);
+/// Sub-moon color — slightly dimmer grey for depth 3+ bodies.
+pub const COLOR_SUBMOON: Color = Color::Rgb(140, 140, 155);
+/// Metal Rich body accent — warm copper.
+pub const COLOR_METAL_RICH: Color = Color::Rgb(210, 160, 80);
+/// Earth-like body accent — lush green.
+pub const COLOR_EARTHLIKE: Color = Color::Rgb(80, 200, 120);
+/// Water World accent — deep blue.
+pub const COLOR_WATER: Color = Color::Rgb(80, 160, 255);
+/// Ammonia World accent — purple tint.
+pub const COLOR_AMMONIA: Color = Color::Rgb(180, 130, 200);
+/// Gas Giant accent — warm tan.
+pub const COLOR_GAS_GIANT: Color = Color::Rgb(200, 150, 100);
 
 /// Value threshold for "high value" highlighting (credits).
 pub const HIGH_VALUE_THRESHOLD: u64 = 100_000;
@@ -107,14 +121,6 @@ fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
         ));
     }
 
-    // Jumponium / Green System badge
-    if let Some(ref jumpo) = app.jumponium {
-        spans.push(Span::styled(" │ ", Style::default().fg(ELITE_DIM)));
-        spans.push(Span::styled(
-            format!("{} {}", jumpo.grade.icon(), jumpo.grade.label()),
-            Style::default().fg(COLOR_VALUE_HIGH).add_modifier(Modifier::BOLD),
-        ));
-    }
 
     // POI / anomaly summary — collect unique anomaly kinds across all bodies
     if !app.anomalies.is_empty() {
@@ -321,6 +327,41 @@ pub fn body_type_color(bt: BodyType) -> Color {
         BodyType::Moon => COLOR_MOON,
         BodyType::BeltCluster => COLOR_BELT,
         BodyType::Unknown => ELITE_DIM,
+    }
+}
+
+/// Planet-class-aware color for the bodies table.
+/// Provides richer visual hierarchy than flat body_type_color.
+pub fn body_display_color(body: &crate::model::Body, depth: u32) -> Color {
+    match body.body_type {
+        BodyType::Star => COLOR_STAR,
+        BodyType::BeltCluster => COLOR_BELT,
+        BodyType::Unknown => ELITE_DIM,
+        BodyType::Planet | BodyType::Moon => {
+            if let Some(ref pc) = body.planet_class {
+                match pc.to_lowercase().as_str() {
+                    "metal rich body" => COLOR_METAL_RICH,
+                    "earthlike body" | "earth-like body" => COLOR_EARTHLIKE,
+                    "water world" => COLOR_WATER,
+                    "ammonia world" => COLOR_AMMONIA,
+                    s if s.contains("gas giant") || s.contains("water giant") => COLOR_GAS_GIANT,
+                    _ => depth_color(body.body_type, depth),
+                }
+            } else {
+                depth_color(body.body_type, depth)
+            }
+        }
+    }
+}
+
+/// Depth-aware color fallback for generic planet/moon types.
+fn depth_color(bt: BodyType, depth: u32) -> Color {
+    if depth >= 3 {
+        COLOR_SUBMOON
+    } else if bt == BodyType::Moon {
+        COLOR_MOON
+    } else {
+        COLOR_PLANET
     }
 }
 

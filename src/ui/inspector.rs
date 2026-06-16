@@ -16,7 +16,7 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
     if app.body_display_order.is_empty() {
         return;
     }
-    let (body_id, _) = app.body_display_order[app.selected_body_index];
+    let (body_id, _, _) = app.body_display_order[app.selected_body_index];
     let body = match app.bodies.get(&body_id) {
         Some(b) => b,
         None => return,
@@ -231,7 +231,7 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
 
             let mut grouped: Vec<GroupedPrediction> = Vec::new();
 
-            for variant in predictions {
+            for variant in &predictions {
                 let parts: Vec<&str> = variant.name.split(" - ").collect();
                 let base_name = parts[0].to_string();
                 let color = parts.get(1).map(|s| s.to_string()).unwrap_or_default();
@@ -242,11 +242,50 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
                 let progress_key_base = format!("{}_{}_{}", app.system.system_address, body.body_id, base_name);
                 let progress_val_base = app.trip.organic_progress.get(&progress_key_base).cloned().unwrap_or(0);
 
-                let progress_val = std::cmp::max(progress_val_full, progress_val_base);
+                let mut progress_val = std::cmp::max(progress_val_full, progress_val_base);
 
-                let has_scanned = organic_scans.map(|s| {
+                // Genus-level fallback: when the predicted species differs from what
+                // the journal recorded (e.g. predictor says "Prasinum Bioluminescent
+                // Anemone" but the player found "Luteolum Anemone"), scan all progress
+                // keys on this body and match by genus via the dataset.
+                // Guard: only use genus fallback when this genus appears once in predictions.
+                // Multiple species of the same genus (e.g. Osseus Discus + Osseus Spiralis)
+                // makes genus matching ambiguous — skip fallback in that case.
+                let genus_count = predictions.iter().filter(|p| p.genus == variant.genus).count();
+                if progress_val == 0 && genus_count == 1 {
+                    let body_prefix = format!("{}_{}_", app.system.system_address, body.body_id);
+                    for (key, &val) in &app.trip.organic_progress {
+                        if key.starts_with(&body_prefix) {
+                            let scanned_name = &key[body_prefix.len()..];
+                            // Look up the scanned species in the dataset and check genus match
+                            let same_genus = crate::model::biology::dataset::DATASET.iter().any(|sv| {
+                                sv.name == scanned_name && sv.genus == variant.genus
+                            });
+                            if same_genus {
+                                progress_val = progress_val.max(val);
+                            }
+                        }
+                    }
+                }
+
+                let mut has_scanned = organic_scans.map(|s| {
                     s.contains(&variant.name.to_string()) || s.contains(&base_name)
                 }).unwrap_or(false);
+
+                // Genus-level fallback for completed scans (same guard)
+                if !has_scanned && genus_count == 1 {
+                    if let Some(scans) = organic_scans {
+                        for scanned in scans {
+                            let same_genus = crate::model::biology::dataset::DATASET.iter().any(|sv| {
+                                sv.name == scanned.as_str() && sv.genus == variant.genus
+                            });
+                            if same_genus {
+                                has_scanned = true;
+                                break;
+                            }
+                        }
+                    }
+                }
 
                 if let Some(g) = grouped.iter_mut().find(|g| g.base_name == base_name) {
                     if !color.is_empty() && !g.variants.contains(&color) {
@@ -326,14 +365,12 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
             // Sort grouped predictions alphabetically by base name
             grouped.sort_by(|a, b| a.base_name.cmp(&b.base_name));
 
-            let mut total_estimated: u64 = 0;
             let mut total_earned: u64 = 0;
             let species_count = grouped.len();
             let mut completed_count: usize = 0;
 
             for g in grouped {
                 let first_discovery_value = g.reward * 5;
-                total_estimated += first_discovery_value;
 
                 if g.active_scanned || g.active_progress == 3 {
                     completed_count += 1;
@@ -404,17 +441,10 @@ pub fn draw_inspector(frame: &mut Frame, app: &App, area: Rect) {
                         Span::styled(format!("{} cr ✓", format_credits(total_earned)), Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
                     ]));
                 } else if completed_count > 0 {
-                    // Partial progress — earned / estimated
+                    // Partial progress — earned only
                     rest_lines.push(Line::from(vec![
                         Span::styled(" Earned: ", Style::default().fg(COLOR_FIRST)),
                         Span::styled(format!("{} cr", format_credits(total_earned)), Style::default().fg(COLOR_FIRST).add_modifier(Modifier::BOLD)),
-                        Span::styled(format!(" / Est: {} cr", format_credits(total_estimated)), Style::default().fg(ELITE_DIM)),
-                    ]));
-                } else {
-                    // Nothing scanned yet — just estimate
-                    rest_lines.push(Line::from(vec![
-                        Span::styled(" Est. total: ", Style::default().fg(ELITE_DIM)),
-                        Span::styled(format!("~{} cr", format_credits(total_estimated)), Style::default().fg(COLOR_FIRST)),
                     ]));
                 }
             }
