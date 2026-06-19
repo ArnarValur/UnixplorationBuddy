@@ -32,9 +32,9 @@ struct CanonnVariant {
 
 fn main() {
     // Only rerun if canonn-data changes
-    println!("cargo:rerun-if-changed=conductor/canonn-data");
+    println!("cargo:rerun-if-changed=data/canonn");
 
-    let canonn_dir = Path::new("conductor/canonn-data");
+    let canonn_dir = Path::new("data/canonn");
     if !canonn_dir.exists() {
         return;
     }

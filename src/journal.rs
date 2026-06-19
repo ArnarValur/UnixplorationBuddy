@@ -30,23 +30,40 @@ pub fn discover_journal_dir(explicit_path: Option<&str>) -> Result<PathBuf, Stri
         return Err(format!("Journal path does not exist: {}", path));
     }
 
-    // Default: Steam Proton path on Linux
+    // Default: try common Steam Proton paths on Linux
     let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-    let default = home.join(
-        ".var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/\
-         compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/\
-         Frontier Developments/Elite Dangerous",
-    );
 
-    if default.is_dir() {
-        Ok(default)
-    } else {
-        Err(format!(
-            "Default journal directory not found: {}\n\
-             Use --journal-path <dir> to specify the journal location.",
-            default.display()
-        ))
+    let candidates = [
+        // Flatpak Steam
+        home.join(
+            ".var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/\
+             compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/\
+             Frontier Developments/Elite Dangerous",
+        ),
+        // Native Steam
+        home.join(
+            ".local/share/Steam/steamapps/\
+             compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/\
+             Frontier Developments/Elite Dangerous",
+        ),
+    ];
+
+    for candidate in &candidates {
+        if candidate.is_dir() {
+            return Ok(candidate.clone());
+        }
     }
+
+    let checked = candidates
+        .iter()
+        .map(|p| format!("  - {}", p.display()))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    Err(format!(
+        "Journal directory not found. Checked:\n{checked}\n\n\
+         Use --journal-path <dir> to specify the journal location."
+    ))
 }
 
 /// Result of a journal replay, used for state snapshot persistence.
@@ -683,6 +700,12 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     body.calculated_value = value.fss_value;
                 }
                 ed_journals::logs::scan_event::ScanEventKind::Planet(planet) => {
+                    // Track whether this is the first Scan for this body's planet data.
+                    // FSSBodySignals can arrive before Scan, creating the body entry
+                    // (with bio_signals set) but without planet_class. Using is_new_body
+                    // alone would skip the codex entry entirely in that case.
+                    let needs_codex_entry = body.planet_class.is_none();
+
                     // Determine if this is a planet or moon from parents
                     body.body_type = if has_planet_parent(&e.parents) {
                         BodyType::Moon
@@ -757,7 +780,7 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                     body.axial_tilt = Some(planet.axial_tilt as f64);
                     body.tidal_lock = planet.tidal_lock;
 
-                    if track_trip && is_new_body {
+                    if track_trip && needs_codex_entry {
                         let mut key = format!("{}", planet.planet_class);
                         if planet.landable {
                             key.push_str("|L");
@@ -767,6 +790,9 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                         }
                         if !planet.rings.is_empty() {
                             key.push_str("|R");
+                        }
+                        if body.bio_signals > 0 {
+                            key.push_str("|B");
                         }
                         *app.trip.planetary_codex.entry(key).or_insert(0) += 1;
                     }
@@ -841,10 +867,15 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                         old_key.push_str("|R");
                     }
 
-                    if let Some(count) = app.trip.planetary_codex.remove(&old_key) {
+                    if let Some(count) = app.trip.planetary_codex.get_mut(&old_key) {
+                        if *count > 1 {
+                            *count -= 1;
+                        } else {
+                            app.trip.planetary_codex.remove(&old_key);
+                        }
                         let mut new_key = old_key.clone();
                         new_key.push_str("|B");
-                        *app.trip.planetary_codex.entry(new_key).or_insert(0) += count;
+                        *app.trip.planetary_codex.entry(new_key).or_insert(0) += 1;
                     }
                 }
             }
@@ -929,10 +960,15 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                             old_key.push_str("|R");
                         }
 
-                        if let Some(count) = app.trip.planetary_codex.remove(&old_key) {
+                        if let Some(count) = app.trip.planetary_codex.get_mut(&old_key) {
+                            if *count > 1 {
+                                *count -= 1;
+                            } else {
+                                app.trip.planetary_codex.remove(&old_key);
+                            }
                             let mut new_key = old_key.clone();
                             new_key.push_str("|B");
-                            *app.trip.planetary_codex.entry(new_key).or_insert(0) += count;
+                            *app.trip.planetary_codex.entry(new_key).or_insert(0) += 1;
                         }
                     }
                 }
@@ -1011,10 +1047,15 @@ pub fn process_event(app: &mut App, event: &LogEvent, track_trip: bool) {
                                 if body.ringed { old_key.push_str("|R"); }
                                 old_key.push_str("|B");
 
-                                if let Some(count) = app.trip.planetary_codex.remove(&old_key) {
+                                if let Some(count) = app.trip.planetary_codex.get_mut(&old_key) {
+                                    if *count > 1 {
+                                        *count -= 1;
+                                    } else {
+                                        app.trip.planetary_codex.remove(&old_key);
+                                    }
                                     let mut new_key = old_key.clone();
                                     new_key.push_str("|C");
-                                    *app.trip.planetary_codex.entry(new_key).or_insert(0) += count;
+                                    *app.trip.planetary_codex.entry(new_key).or_insert(0) += 1;
                                 }
                             }
                         }
@@ -1185,7 +1226,7 @@ mod tests {
     fn fsdjump_resets_system_and_clears_bodies() {
         let mut app = app_with_system("Old System", 111);
         app.bodies.insert(1, Body::new(1, "Old Body".into()));
-        app.body_display_order.push((1, 0));
+        app.body_display_order.push((1, 0, true));
         app.selected_body_index = 5;
 
         let event = parse_event(FSDJUMP_JSON);

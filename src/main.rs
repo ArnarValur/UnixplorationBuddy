@@ -135,7 +135,7 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
             if let Some(ref dest) = status.destination {
                 if dest.system == app.system.system_address {
                     app.targeted_body_id = Some(dest.body);
-                    if let Some(pos) = app.body_display_order.iter().position(|&(id, _)| id == dest.body) {
+                    if let Some(pos) = app.body_display_order.iter().position(|&(id, _, _)| id == dest.body) {
                         app.selected_body_index = pos;
                     }
                 }
@@ -206,7 +206,7 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                         if let Some(ref dest) = status.destination {
                             if dest.system == app.system.system_address {
                                 app.targeted_body_id = Some(dest.body);
-                                if let Some(pos) = app.body_display_order.iter().position(|&(id, _)| id == dest.body) {
+                                if let Some(pos) = app.body_display_order.iter().position(|&(id, _, _)| id == dest.body) {
                                     app.selected_body_index = pos;
                                 }
                             }
@@ -268,7 +268,7 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                             KeyCode::Tab => app.next_tab(),
                             KeyCode::Char('1') => app.active_tab = app::Tab::Bodies,
                             KeyCode::Char('2') => app.active_tab = app::Tab::History,
-                            KeyCode::Up => {
+                            KeyCode::Up | KeyCode::Char('w') | KeyCode::Char('W') => {
                                 if app.active_tab == app::Tab::History {
                                     app.select_previous_codex_row();
                                 } else if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Route {
@@ -277,7 +277,7 @@ fn run(terminal: &mut DefaultTerminal, journal_dir: &std::path::Path) -> io::Res
                                     app.select_previous_body();
                                 }
                             }
-                            KeyCode::Down => {
+                            KeyCode::Down | KeyCode::Char('s') | KeyCode::Char('S') => {
                                 if app.active_tab == app::Tab::History {
                                     app.select_next_codex_row();
                                 } else if app.active_tab == app::Tab::Bodies && app.bodies_subtab == app::BodiesSubTab::Route {
