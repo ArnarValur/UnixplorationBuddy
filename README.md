@@ -10,6 +10,8 @@ I usually work on this while I play Elite. Fork it, request something, send me a
 
 CMDR Addinator o7
 
+PS! This shouldn't be very arbitrary to setup, I'm also not going to spoon-feed the setup more than how my agent write it out here below. I've made an alias on my host so I simply hit 'unibuddy' that openes the binary and boom, easy. Issues? Just use your Agent to fetch the repo and setup the TUI for you, easy peasy.
+
 ![Status](https://img.shields.io/badge/status-alpha-orange)
 ![Language](https://img.shields.io/badge/language-Rust-B7410E)
 ![Platform](https://img.shields.io/badge/platform-Linux-FCC624)
