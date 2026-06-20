@@ -57,7 +57,7 @@ pub fn draw_orrery(frame: &mut Frame, app: &App, area: Rect) {
     // --- Dynamic Stable Normalization ---
     // 1. Find max semi-major axis for all planet/star bodies (excluding Moons/BeltClusters)
     let mut max_planet_a: f64 = 1.0;
-    for &(body_id, _) in &app.body_display_order {
+    for &(body_id, _, _) in &app.body_display_order {
         if body_id == primary_star_id {
             continue;
         }
@@ -76,7 +76,7 @@ pub fn draw_orrery(frame: &mut Frame, app: &App, area: Rect) {
 
     // 2. Find max semi-major axis for moons of each planet
     let mut max_moon_a: std::collections::HashMap<u32, f64> = std::collections::HashMap::new();
-    for &(body_id, _) in &app.body_display_order {
+    for &(body_id, _, _) in &app.body_display_order {
         if let Some(b) = app.bodies.get(&body_id) {
             if let Some(pid) = b.parent_id {
                 if b.body_type == crate::model::BodyType::Moon {
@@ -101,7 +101,7 @@ pub fn draw_orrery(frame: &mut Frame, app: &App, area: Rect) {
     let mut abs_scaled_positions: std::collections::HashMap<u32, (f64, f64, f64)> = std::collections::HashMap::new();
     abs_scaled_positions.insert(primary_star_id, (0.0, 0.0, 0.0));
 
-    for &(body_id, _) in &app.body_display_order {
+    for &(body_id, _, _) in &app.body_display_order {
         if body_id == primary_star_id {
             continue;
         }
@@ -186,7 +186,7 @@ pub fn draw_orrery(frame: &mut Frame, app: &App, area: Rect) {
 
     // 4. Resolve orbital path lines for all scanned bodies
     let mut orbits = Vec::new();
-    for &(body_id, _) in &app.body_display_order {
+    for &(body_id, _, _) in &app.body_display_order {
         if body_id == primary_star_id {
             continue;
         }
@@ -282,7 +282,7 @@ pub fn draw_orrery(frame: &mut Frame, app: &App, area: Rect) {
     }
 
     let mut drawables = Vec::new();
-    for &(body_id, _) in &app.body_display_order {
+    for &(body_id, _, _) in &app.body_display_order {
         if body_id == primary_star_id {
             continue;
         }

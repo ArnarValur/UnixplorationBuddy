@@ -91,7 +91,7 @@ pub struct App {
     /// Index into `body_display_order` for the selected row.
     pub selected_body_index: usize,
     /// Cached display order: `(body_id, depth)` pairs derived from the body hierarchy.
-    pub body_display_order: Vec<(u32, u32)>,
+    pub body_display_order: Vec<(u32, u32, bool)>,
     /// Status message displayed in the footer bar.
     pub status_message: Option<String>,
     /// Whether the help overlay is currently visible.
@@ -251,21 +251,19 @@ impl App {
     pub fn max_planetary_rows(&self) -> usize {
         let mut class_set: std::collections::HashSet<String> = std::collections::HashSet::new();
         let mut categories = std::collections::HashSet::new();
-        let mut class_attrs: std::collections::HashMap<String, std::collections::HashSet<String>> = std::collections::HashMap::new();
+        let mut class_variant_count: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
         for key in self.trip.planetary_codex.keys() {
             let parts: Vec<&str> = key.split('|').collect();
             let planet_class = parts[0].to_string();
             categories.insert(get_planet_category(&planet_class));
             class_set.insert(planet_class.clone());
             if self.planetary_codex_expanded {
-                for part in &parts[1..] {
-                    class_attrs.entry(planet_class.clone()).or_default().insert(part.to_string());
-                }
+                *class_variant_count.entry(planet_class).or_default() += 1;
             }
         }
         let base = class_set.len() + categories.len();
         if self.planetary_codex_expanded {
-            let sub_rows: usize = class_attrs.values().map(|attrs| attrs.len()).sum();
+            let sub_rows: usize = class_variant_count.values().sum();
             base + sub_rows
         } else {
             base
@@ -377,7 +375,7 @@ impl App {
 
         // Target Sync: Auto-focus the targeted body if it exists in the hierarchy
         if let Some(body_id) = self.targeted_body_id {
-            if let Some(pos) = self.body_display_order.iter().position(|&(id, _)| id == body_id) {
+            if let Some(pos) = self.body_display_order.iter().position(|&(id, _, _)| id == body_id) {
                 self.selected_body_index = pos;
                 return;
             }
@@ -470,9 +468,9 @@ mod tests {
         // Condensed layout: 2 category headers + 3 planet classes = 5
         assert_eq!(app.max_planetary_rows(), 5);
 
-        // Expanded layout: 5 base + sub-attrs (HMC: L,T,R=3; ELW: L=1; Rocky: L=1) = 10
+        // Expanded layout: 5 base + variant keys (HMC: 2, ELW: 1, Rocky: 1) = 9
         app.planetary_codex_expanded = true;
-        assert_eq!(app.max_planetary_rows(), 10);
+        assert_eq!(app.max_planetary_rows(), 9);
     }
 
     #[test]

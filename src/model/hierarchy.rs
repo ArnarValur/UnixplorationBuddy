@@ -67,11 +67,12 @@ impl BodyHierarchy {
         Self { roots }
     }
 
-    /// Return `(body_id, depth)` pairs in display order (depth-first traversal).
-    pub fn display_order(&self) -> Vec<(u32, u32)> {
+    /// Return `(body_id, depth, is_last_sibling)` triples in display order (depth-first traversal).
+    pub fn display_order(&self) -> Vec<(u32, u32, bool)> {
         let mut result = Vec::new();
-        for root in &self.roots {
-            Self::collect_display_order(root, &mut result);
+        let root_count = self.roots.len();
+        for (i, root) in self.roots.iter().enumerate() {
+            Self::collect_display_order(root, &mut result, i == root_count - 1);
         }
         result
     }
@@ -97,10 +98,11 @@ impl BodyHierarchy {
         }
     }
 
-    fn collect_display_order(node: &HierarchyNode, result: &mut Vec<(u32, u32)>) {
-        result.push((node.body_id, node.depth));
-        for child in &node.children {
-            Self::collect_display_order(child, result);
+    fn collect_display_order(node: &HierarchyNode, result: &mut Vec<(u32, u32, bool)>, is_last: bool) {
+        result.push((node.body_id, node.depth, is_last));
+        let child_count = node.children.len();
+        for (i, child) in node.children.iter().enumerate() {
+            Self::collect_display_order(child, result, i == child_count - 1);
         }
     }
 }
@@ -133,7 +135,7 @@ mod tests {
             body_with_name(3, "C"),
         ];
         let order = BodyHierarchy::build(&bodies).display_order();
-        assert_eq!(order, vec![(1, 0), (2, 0), (3, 0)]);
+        assert_eq!(order, vec![(1, 0, false), (2, 0, false), (3, 0, true)]);
     }
 
     #[test]
@@ -149,7 +151,7 @@ mod tests {
 
         let bodies = vec![moon, star, planet]; // intentionally unordered
         let order = BodyHierarchy::build(&bodies).display_order();
-        assert_eq!(order, vec![(0, 0), (1, 1), (2, 2)]);
+        assert_eq!(order, vec![(0, 0, true), (1, 1, true), (2, 2, true)]);
     }
 
     #[test]
@@ -165,6 +167,6 @@ mod tests {
         let order = BodyHierarchy::build(&bodies).display_order();
         
         // Star is a root (depth 0). Moon has missing parent so it also becomes a temporary root (depth 0).
-        assert_eq!(order, vec![(0, 0), (2, 0)]);
+        assert_eq!(order, vec![(0, 0, false), (2, 0, true)]);
     }
 }

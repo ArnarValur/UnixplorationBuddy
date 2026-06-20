@@ -243,6 +243,8 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                 ringed_count: u32,
                 bio_signal_count: u32,
                 confirmed_life_count: u32,
+                /// Individual key variants (flags_str, count) for expanded sub-rows
+                variants: Vec<(String, u32)>,
             }
 
             let mut grouped: std::collections::HashMap<String, PlanetCodexGrouped> = std::collections::HashMap::new();
@@ -263,7 +265,12 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                     ringed_count: 0,
                     bio_signal_count: 0,
                     confirmed_life_count: 0,
+                    variants: Vec::new(),
                 });
+
+                // Store the individual variant (flags after planet class)
+                let flags = if parts.len() > 1 { parts[1..].join("|") } else { String::new() };
+                entry.variants.push((flags, *count));
 
                 entry.total_scans += count;
                 if is_landable {
@@ -370,28 +377,46 @@ pub fn draw_history(frame: &mut Frame, app: &App, area: Rect) {
                             ])
                         );
 
-                        // Expanded view: add sub-attribute detail rows
+                        // Expanded view: show individual key variants as sub-rows
                         if app.planetary_codex_expanded {
                             let continuation = if is_last_entry { "       " } else { "  │    " };
-                            let attrs: Vec<(&str, &str, u32, Style)> = vec![
-                                ("🪐", "Ringed", entry.ringed_count, Style::default().fg(ELITE_DIM)),
-                                ("🚀", "Landable", entry.landable_count, Style::default().fg(ELITE_DIM)),
-                                ("🌍", "Terraformable", entry.terraformable_count, Style::default().fg(COLOR_VALUE_HIGH)),
-                                ("🌿", "Bio Signals", entry.bio_signal_count, Style::default().fg(COLOR_BIO)),
-                                ("✅", "Confirmed Life", entry.confirmed_life_count, Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD)),
-                            ];
-                            let non_zero: Vec<_> = attrs.into_iter().filter(|(_, _, count, _)| *count > 0).collect();
-                            let attr_len = non_zero.len();
-                            for (j, (icon, label, count, style)) in non_zero.into_iter().enumerate() {
-                                let is_last_attr = j == attr_len - 1;
-                                let attr_prefix = if is_last_attr { "└─ " } else { "├─ " };
+
+                            // Sort variants: by count descending
+                            let mut sorted_variants = entry.variants.clone();
+                            sorted_variants.sort_by(|a, b| b.1.cmp(&a.1));
+
+                            let var_len = sorted_variants.len();
+                            for (j, (flags, vcount)) in sorted_variants.iter().enumerate() {
+                                let is_last_var = j == var_len - 1;
+                                let var_prefix = if is_last_var { "└─ " } else { "├─ " };
+
+                                // Build emoji + label from flag letters
+                                let (icons, label, style) = if flags.is_empty() {
+                                    (String::new(), "Plain".to_string(), Style::default().fg(ELITE_DIM))
+                                } else {
+                                    let mut icons = String::new();
+                                    let mut labels = Vec::new();
+                                    let mut best_style = Style::default().fg(ELITE_DIM);
+                                    for flag in flags.split('|') {
+                                        match flag {
+                                            "L" => { icons.push_str("🚀"); labels.push("Landable"); }
+                                            "T" => { icons.push_str("🌍"); labels.push("Terraformable"); best_style = Style::default().fg(COLOR_VALUE_HIGH); }
+                                            "R" => { icons.push_str("🪐"); labels.push("Ringed"); }
+                                            "B" => { icons.push_str("🌿"); labels.push("Bio"); best_style = Style::default().fg(COLOR_BIO); }
+                                            "C" => { icons.push_str("✅"); labels.push("Life"); best_style = Style::default().fg(COLOR_BIO).add_modifier(Modifier::BOLD); }
+                                            _ => {}
+                                        }
+                                    }
+                                    (icons, labels.join(" · "), best_style)
+                                };
+
                                 planetary_rows.push(
                                     Row::new(vec![
                                         Cell::from(Line::from(vec![
-                                            Span::styled(format!("{}{}", continuation, attr_prefix), Style::default().fg(ELITE_DIM)),
-                                            Span::styled(format!("{} {}: {}", icon, label, count), style),
+                                            Span::styled(format!("{}{}", continuation, var_prefix), Style::default().fg(ELITE_DIM)),
+                                            Span::styled(format!("{} {}", icons, label), style),
                                         ])),
-                                        Cell::from(""),
+                                        Cell::from(Span::styled(vcount.to_string(), Style::default().fg(ELITE_DIM))),
                                     ])
                                 );
                             }

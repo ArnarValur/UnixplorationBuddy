@@ -1,11 +1,11 @@
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Paragraph, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table, TableState};
+use ratatui::widgets::{Block, Borders, Cell, Paragraph, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table, TableState};
 use ratatui::Frame;
 
 use crate::app::{App, Tab};
-use super::{ELITE_ORANGE, ELITE_DIM, BG_DARK, HIGHLIGHT_BG, COLOR_ANOMALY, body_type_color, format_body_type, format_body_value, format_atmosphere, tab_title};
+use super::{ELITE_ORANGE, ELITE_DIM, BG_DARK, HIGHLIGHT_BG, COLOR_ANOMALY, COLOR_BIO, COLOR_GEO, COLOR_VALUE_HIGH, HIGH_VALUE_THRESHOLD, body_display_color, format_body_type, format_body_value, format_atmosphere, tab_title};
 
 /// Bodies tab — hierarchical, scrollable body table with color-coded types.
 pub fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
@@ -79,22 +79,51 @@ pub fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
 
     let table_area = content_area;
 
+    // ── Tree guide state ────────────────────────────────────────
+    // Track which ancestor depths have continuation lines (│).
+    // ancestor_is_last[d] = true means the body at depth d was the last sibling,
+    // so no vertical continuation line is drawn for that column.
+    let mut ancestor_is_last: Vec<bool> = Vec::new();
+
     // Build table rows from display order
     let rows: Vec<Row> = app
         .body_display_order
         .iter()
         .enumerate()
-        .map(|(i, &(body_id, depth))| {
+        .map(|(i, &(body_id, depth, is_last))| {
+            // Update tree guide stack
+            ancestor_is_last.truncate(depth as usize);
+            ancestor_is_last.push(is_last);
+
             let body = app.bodies.get(&body_id);
-            let indent = "  ".repeat(depth as usize);
+
+            // Build tree guide prefix
+            let mut prefix = String::new();
+            if depth > 0 {
+                for d in 1..depth as usize {
+                    if ancestor_is_last[d] {
+                        prefix.push_str("   ");
+                    } else {
+                        prefix.push_str("│  ");
+                    }
+                }
+                if is_last {
+                    prefix.push_str("└─ ");
+                } else {
+                    prefix.push_str("├─ ");
+                }
+            }
 
             match body {
                 Some(b) => {
-                    let type_color = body_type_color(b.body_type);
+                    let type_color = body_display_color(b, depth);
                     let is_selected = i == app.selected_body_index;
 
-                    // Name with hierarchy indentation
-                    let name = format!("{}{}", indent, b.short_name);
+                    // Name cell with tree guide prefix (dim) + body name (colored)
+                    let name_cell = Cell::from(Line::from(vec![
+                        Span::styled(prefix, Style::default().fg(ELITE_DIM)),
+                        Span::styled(b.short_name.clone(), Style::default().fg(type_color)),
+                    ]));
 
                     // Body type label
                     let body_type_str = format_body_type(b);
@@ -104,16 +133,16 @@ pub fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
                         .atmosphere
                         .as_deref()
                         .map(|a| format_atmosphere(a))
-                        .unwrap_or_else(|| "—".into());
+                        .unwrap_or_default();
 
                     // Gravity
-                    let gravity_str = b.gravity.map(|g| format!("{:.2} G", g)).unwrap_or_else(|| "—".into());
+                    let gravity_str = b.gravity.map(|g| format!("{:.2} G", g)).unwrap_or_default();
 
                     // Temp
-                    let temp_str = b.temperature.map(|t| format!("{:.0} K", t)).unwrap_or_else(|| "—".into());
+                    let temp_str = b.temperature.map(|t| format!("{:.0} K", t)).unwrap_or_default();
 
                     // Discovered flag
-                    let discoverer_str = if b.was_discovered { "✓" } else { "—" };
+                    let discoverer_str = if b.was_discovered { "✓" } else { "" };
 
                     // Distance from arrival
                     let dist = b
@@ -127,60 +156,85 @@ pub fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
                                 format!("{:.2}", d)
                             }
                         })
-                        .unwrap_or_else(|| "—".into());
+                        .unwrap_or_default();
 
                     // Scan state icon
                     let scan = b.scan_state.icon().to_string();
 
                     // Value display — show mapped_value for DSS'd bodies
-                    let value = format_body_value(b);
-
-                    // Bio/Geo signal counts
-                    let bio = if b.bio_signals > 0 {
-                        b.bio_signals.to_string()
+                    let value_str = format_body_value(b);
+                    let value_num = if b.scan_state >= crate::model::ScanState::DSSMapped && b.mapped_value > 0 {
+                        b.mapped_value
                     } else {
-                        "—".into()
+                        b.calculated_value
                     };
-                    let geo = if b.geo_signals > 0 {
-                        b.geo_signals.to_string()
+                    let value_color = if value_num >= HIGH_VALUE_THRESHOLD {
+                        COLOR_VALUE_HIGH
                     } else {
-                        "—".into()
+                        type_color
+                    };
+
+                    // Bio/Geo signal counts — colored per-cell
+                    let bio_cell = if b.bio_signals > 0 {
+                        Cell::from(b.bio_signals.to_string()).style(Style::default().fg(COLOR_BIO))
+                    } else {
+                        Cell::from("")
+                    };
+                    let geo_cell = if b.geo_signals > 0 {
+                        Cell::from(b.geo_signals.to_string()).style(Style::default().fg(COLOR_GEO))
+                    } else {
+                        Cell::from("")
                     };
 
                     // Anomaly / POI badges
-                    let poi = if let Some(anomalies) = app.anomalies.get(&body_id) {
-                        anomalies.iter().map(|a| a.kind.icon()).collect::<Vec<_>>().join("")
+                    let poi_cell = if let Some(anomalies) = app.anomalies.get(&body_id) {
+                        let badges = anomalies.iter().map(|a| a.kind.icon()).collect::<Vec<_>>().join("");
+                        Cell::from(badges).style(Style::default().fg(COLOR_ANOMALY))
                     } else {
-                        "—".into()
+                        Cell::from("")
                     };
 
-                    let has_anomaly = app.anomalies.contains_key(&body_id);
-                    let row_style = if is_selected {
-                        Style::default().fg(type_color).bg(HIGHLIGHT_BG)
-                    } else if has_anomaly {
-                        Style::default().fg(type_color).add_modifier(Modifier::BOLD)
+                    let row_bg = if is_selected {
+                        Some(HIGHLIGHT_BG)
+                    } else {
+                        None
+                    };
+                    let base_style = if let Some(bg) = row_bg {
+                        Style::default().fg(type_color).bg(bg)
                     } else {
                         Style::default().fg(type_color)
                     };
 
-                    let mut cells = vec![name, body_type_str];
+                    let mut cells: Vec<Cell> = vec![
+                        name_cell,
+                        Cell::from(body_type_str),
+                    ];
 
                     if app.column_settings.show_atmosphere {
-                        cells.push(atmo);
+                        cells.push(Cell::from(atmo));
                     }
                     if app.column_settings.show_gravity {
-                        cells.push(gravity_str);
+                        cells.push(Cell::from(gravity_str));
                     }
                     if app.column_settings.show_temperature {
-                        cells.push(temp_str);
+                        cells.push(Cell::from(temp_str));
                     }
                     if app.column_settings.show_discoverer {
-                        cells.push(discoverer_str.to_string());
+                        cells.push(Cell::from(discoverer_str.to_string()));
                     }
 
-                    cells.extend(vec![dist, scan, value, bio, geo]);
+                    cells.extend(vec![
+                        Cell::from(dist),
+                        Cell::from(scan),
+                        Cell::from(value_str).style(Style::default().fg(value_color)),
+                        bio_cell,
+                        geo_cell,
+                    ]);
 
-                    Row::new(cells).style(row_style)
+                    // POI column last
+                    cells.push(poi_cell);
+
+                    Row::new(cells).style(base_style)
                 }
                 None => {
                     let style = if i == app.selected_body_index {
@@ -189,29 +243,33 @@ pub fn draw_bodies(frame: &mut Frame, app: &App, area: Rect) {
                         Style::default().fg(ELITE_DIM)
                     };
 
-                    let mut cells = vec![format!("{}?", indent), "?".into()];
+                    let name_cell = Cell::from(Line::from(vec![
+                        Span::styled(prefix, Style::default().fg(ELITE_DIM)),
+                        Span::styled("?", Style::default().fg(ELITE_DIM)),
+                    ]));
+
+                    let mut cells: Vec<Cell> = vec![name_cell, Cell::from("?")];
 
                     if app.column_settings.show_atmosphere {
-                        cells.push("—".into());
+                        cells.push(Cell::from(""));
                     }
                     if app.column_settings.show_gravity {
-                        cells.push("—".into());
+                        cells.push(Cell::from(""));
                     }
                     if app.column_settings.show_temperature {
-                        cells.push("—".into());
+                        cells.push(Cell::from(""));
                     }
                     if app.column_settings.show_discoverer {
-                        cells.push("—".into());
+                        cells.push(Cell::from(""));
                     }
 
                     cells.extend(vec![
-                        "—".into(),
-                        "—".into(),
-                        "○".into(),
-                        "—".into(),
-                        "—".into(),
-                        "—".into(),
-                        "—".into(),
+                        Cell::from(""),
+                        Cell::from("○"),
+                        Cell::from(""),
+                        Cell::from(""),
+                        Cell::from(""),
+                        Cell::from(""),
                     ]);
 
                     Row::new(cells).style(style)

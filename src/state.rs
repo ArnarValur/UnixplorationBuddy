@@ -17,7 +17,7 @@ pub struct StateSnapshot {
     /// All known bodies in the current system, keyed by body_id.
     pub bodies: HashMap<u32, Body>,
     /// Display order: `(body_id, depth)` pairs.
-    pub body_display_order: Vec<(u32, u32)>,
+    pub body_display_order: Vec<(u32, u32, bool)>,
     /// The journal file name (basename) that was last fully processed.
     pub last_journal_file: Option<String>,
     /// Number of events processed in the last journal file.
@@ -93,7 +93,7 @@ mod tests {
         let snapshot = StateSnapshot {
             system,
             bodies,
-            body_display_order: vec![(1, 0)],
+            body_display_order: vec![(1, 0, true)],
             last_journal_file: Some("Journal.2026-06-10.log".to_string()),
             last_journal_event_count: 500,
         };
