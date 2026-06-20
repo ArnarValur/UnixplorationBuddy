@@ -16,8 +16,6 @@ CMDR Addinator o7
 
 ![Bodies table](docs/screenshots/screenshot2.jpg)
 
-![Codex view](docs/screenshots/screenshot5.jpg)
-
 ## What It Does
 
 - **Bodies View** — Hierarchical body table (stars → planets → moons), ordered by the game's naming convention. Shows type, atmosphere, distance, scan/map status icons, calculated value, and bio/geo signal counts.
@@ -25,7 +23,7 @@ CMDR Addinator o7
 - **Real-time Updates** — Monitors journal files via background thread. Auto-updates as you honk, scan, and map.
 - **Calculate Credits** — Self-contained Rust port of the community-derived exploration value formulas (from [Pioneer's body_calc.py](https://github.com/Silarn/EDMC-Pioneer)), including first discovery/mapping bonuses, Odyssey bonus, and efficiency bonus.
 
-![Bodies table](docs/screenshots/screenshot5.jpg)
+![Codex view](docs/screenshots/screenshot5.jpg)
 
 ## Lineage
 
