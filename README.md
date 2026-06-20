@@ -4,15 +4,17 @@ Hello, when I finally grew into the Linux world, I missed few tools I used when 
 
 Well... I made a TUI that does the same, it is currently designed for having on the second monitor and a bit curated for my niche needs of looking at what is being explored.
 
-There is some lookups on routes and whether the system has been discovered and reported to EDSM, giving you some clues if you are first encountered. There is more data and improvements I'd like to add, but this is a solid start.
+There is some lookups on routes and whether the system has been discovered or reported to EDSM, giving you some clues if you are first visitor. There is more data and improvements I'd like to add, but this is a solid start.
 
-I usually work on this while I play Elite. Fork it, request something, send me a message somehow or just use it if you like it. ( It might feel a bit clonky but it works :D )
+I usually work on this while I play Elite. Fork it, request something, send me a message somehow or just use it if you like it. It might feel a bit clonky but it works, and its not difficult to make adjustments to suit our needs.
 
 CMDR Addinator o7
 
 ![Status](https://img.shields.io/badge/status-alpha-orange)
 ![Language](https://img.shields.io/badge/language-Rust-B7410E)
 ![Platform](https://img.shields.io/badge/platform-Linux-FCC624)
+
+![Bodies table](docs/screenshots/screenshot2.jpg)
 
 ## What It Does
 
